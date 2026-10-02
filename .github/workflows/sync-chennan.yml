@@ -1,4 +1,4 @@
-name: Sync ChenNan Workspace
+name: Sync ChenNan Workspace v2
 
 on:
   push:
@@ -33,6 +33,7 @@ jobs:
             --exclude='.git/' \
             --exclude='_chennan_source/' \
             --exclude='cloudphone-ready/' \
+            --exclude='.github/workflows/' \
             _chennan_source/ ./
           rm -rf _chennan_source
 
