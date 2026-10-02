@@ -1,0 +1,1 @@
+if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.serviceWorker.register('./offline-worker.js').catch(error=>console.warn('Offline application cache unavailable',error.message))})}

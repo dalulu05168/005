@@ -1,0 +1,79 @@
+/* 固定黑金登录：真实插画 + 真实表单；不从登录截图裁切动画素材。 */
+:root{--scene:url('./assets/login/landscape.webp');--gold:#f5ca72;--gold-strong:#ffe9a7}
+#authRoot{position:fixed;z-index:9999;inset:0;isolation:isolate;background:#080d14!important;color:#fff;overflow:auto!important;padding:0!important;display:block!important;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans CJK SC','PingFang SC','Microsoft YaHei',sans-serif}
+#authRoot.hidden{display:none!important;pointer-events:none}
+#authRoot:before,#authRoot:after{display:none!important}
+#authRoot .auth-cinematic{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden;filter:none!important;opacity:1!important;transition:none!important}
+#authRoot .cinematic-brand{position:absolute;inset:0;background-image:url('./assets/login/landscape.webp');background-size:cover;background-position:center;opacity:0;transform:scale(1.035);filter:brightness(.35)}
+#authRoot.auth-intro-active .cinematic-brand{animation:cnBrand 2.6s cubic-bezier(.2,.65,.2,1) forwards!important}
+#authRoot.auth-intro-finish .cinematic-brand{opacity:1;transform:none;filter:none}
+@keyframes cnBrand{0%{opacity:0;transform:scale(1.035);filter:brightness(.35)}42%{opacity:1;filter:brightness(.8)}100%{opacity:1;transform:none;filter:none}}
+#authRoot #authStage{position:relative;z-index:2;display:block!important;width:100%!important;min-height:100svh!important;margin:0!important;opacity:0;transform:translateY(12px);filter:none!important;transition:opacity .6s ease,transform .6s ease!important}
+#authRoot #authStage.auth-stage-visible{opacity:1;transform:none}
+#authRoot .login-shell{position:relative!important;display:block!important;width:100%!important;min-height:100svh!important;height:100svh;max-height:none!important;padding:0!important;margin:0!important;background:none!important;border:0!important;box-shadow:none!important;overflow:visible!important;transform:none!important;filter:none!important;gap:0!important}
+#authRoot .login-accessible-brand,#authRoot .auth-field>label{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+#authRoot .login-language{position:absolute;right:2.2%;top:3.5%;display:flex;align-items:center;gap:8px;padding:8px 14px;border-radius:22px;background:rgba(20,23,29,.84);color:#fff;font-size:clamp(12px,1.1vw,17px)}
+#authRoot .login-language img{width:19px;height:19px}
+#authRoot .login-shell .auth-card{position:absolute!important;left:59.7%!important;right:auto!important;top:28.4%!important;bottom:auto!important;width:29.3%!important;max-width:none!important;min-height:0!important;padding:clamp(18px,1.4vw,28px) clamp(20px,1.8vw,36px)!important;background:rgba(14,16,21,.86)!important;color:#fff!important;border:2px solid #f4cf80!important;border-radius:17px!important;box-shadow:0 0 0 1px rgba(255,217,129,.14),0 0 20px rgba(252,188,70,.72),inset 0 0 18px rgba(246,195,95,.05),0 22px 64px rgba(0,0,0,.5)!important;backdrop-filter:blur(16px)!important;-webkit-backdrop-filter:blur(16px);transform:none!important;animation:none!important;filter:none!important;align-self:auto!important;justify-self:auto!important}
+#authRoot .auth-title{margin:0 0 5px!important;font-size:clamp(24px,2.2vw,38px)!important;line-height:1.2!important;font-weight:800!important;letter-spacing:0!important;font-family:inherit!important;color:#ffe6a5!important}
+#authRoot .auth-sub{margin:0 0 12px!important;font-size:clamp(12px,1.1vw,18px)!important;color:#d9d7d1!important;line-height:1.5!important}
+#authRoot .auth-field{display:block!important;margin:0 0 12px!important}
+#authRoot .auth-input-wrap{position:relative}
+#authRoot .auth-input-icon{position:absolute;left:13px;top:50%;transform:translateY(-50%);width:21px;height:21px;pointer-events:none}
+#authRoot .auth-field input{display:block;width:100%!important;min-height:45px!important;height:clamp(45px,3.5vw,62px);padding:10px 42px!important;background:rgba(18,20,25,.85)!important;border:1px solid #56534a!important;border-radius:11px!important;font-size:clamp(14px,1.1vw,19px)!important;color:#f4f2ed!important;outline:none!important;box-shadow:inset 0 1px 4px rgba(0,0,0,.18)!important}
+#authRoot .auth-field input::placeholder{color:#aaa8a4}
+#authRoot .auth-field input:focus{border-color:#f7d385!important;box-shadow:0 0 0 3px rgba(244,193,86,.18)!important}
+#authRoot .auth-password-toggle{position:absolute;right:8px;top:50%;transform:translateY(-50%);width:32px;height:32px;background:transparent;border:0;display:grid;place-items:center;padding:5px;cursor:pointer}
+#authRoot .auth-password-toggle img{width:21px;height:21px;filter:grayscale(1) brightness(1.8)}
+#authRoot .auth-btn{width:100%!important;min-height:45px!important;height:clamp(45px,3.5vw,62px);margin:0!important;border-radius:11px!important;border:1px solid #ffe4a1!important;background:linear-gradient(115deg,#ffe783,#ffd268 48%,#eba12e)!important;color:#211908!important;letter-spacing:0!important;font-weight:800!important;font-size:clamp(14px,1.1vw,19px)!important;box-shadow:0 3px 16px rgba(255,186,57,.25),inset 0 1px 0 #fff0ba!important;display:flex;align-items:center;justify-content:center;gap:8px;cursor:pointer}
+#authRoot .auth-btn img{width:19px;height:19px;filter:brightness(.15)}
+#authRoot .auth-btn:hover{background:#ffdb7d!important;transform:none!important;filter:none!important}
+#authRoot .auth-btn:disabled{opacity:.65;cursor:wait}
+#authRoot .auth-error{font-size:12px!important;line-height:1.4;color:#ffb9ab!important;margin:7px 0 0!important;min-height:0!important}
+#authRoot .auth-error:empty{display:none}
+#authRoot .auth-assist{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:12px;color:#e0ded8;font-size:clamp(12px,1vw,16px)}
+#authRoot .auth-assist label{display:flex;align-items:center;gap:7px;cursor:pointer}
+#authRoot .auth-assist input{width:16px;height:16px;accent-color:#e9b64f;margin:0}
+#authRoot #passwordHelp{background:none;color:#e0ded8;padding:0;font-size:inherit}
+#authRoot #authHelp{font-size:12px;line-height:1.5;margin:12px 0 0;color:#eee4cd}
+#authRoot .login-features{position:absolute;left:26.5%;right:26.5%;bottom:1.7%;height:9.2%;display:grid;grid-template-columns:repeat(4,1fr);align-items:center;border-top:1px solid rgba(247,198,106,.26);color:#ede9df;background:rgba(8,12,18,.3)}
+#authRoot .login-features>div{display:flex;flex-direction:column;align-items:center;gap:7px;font-size:clamp(12px,1.05vw,18px);border-right:1px solid rgba(235,216,175,.35)}
+#authRoot .login-features>div:last-child{border-right:0}
+#authRoot .login-features img{width:clamp(24px,2.2vw,38px);height:clamp(24px,2.2vw,38px)}
+#authRoot .intro-skip{position:fixed;right:20px;bottom:20px;z-index:4;min-height:44px;padding:10px 18px;background:rgba(9,13,20,.85);border:1px solid rgba(245,202,114,.65);border-radius:9px;color:#fff}
+#authRoot :is(button,input):focus-visible{outline:2px solid #ffe49d;outline-offset:3px}
+#authRoot .auth-card-resume{position:absolute;right:11%;top:30%;width:375px;padding:26px;background:rgba(14,16,21,.92);border:1px solid #c89a4a;border-radius:17px}
+#authRoot.auth-success #authStage{opacity:0;transition:opacity .6s ease!important}
+/* 电脑端优先；小屏保留真实表单可用，不改变主设计。 */
+@media(max-width:800px){
+ #authRoot .cinematic-brand{background-position:40% center}
+ #authRoot .login-shell{min-height:740px!important;height:100svh}
+ #authRoot .login-shell .auth-card{left:50%!important;top:34%!important;width:min(420px,calc(100% - 32px))!important;transform:translateX(-50%)!important;padding:24px!important}
+ #authRoot .login-features{left:6%;right:6%;bottom:2%;height:76px}
+ #authRoot .login-features>div{font-size:11px}
+ #authRoot .login-features img{width:25px;height:25px}
+}
+@media(min-width:801px) and (max-height:620px){
+ #authRoot .login-shell{min-height:680px!important;height:100svh}
+ #authRoot .login-shell .auth-card{top:26%!important;width:32%!important;left:58%!important}
+}
+@media(prefers-reduced-motion:reduce){
+ #authRoot.auth-intro-active .cinematic-brand{animation-duration:.01ms!important;filter:none!important;transform:none!important}
+ #authRoot #authStage,#authRoot.auth-success #authStage{transition:none!important;transform:none!important}
+}
+/* 分层持续动态场景，登录卡从下方缓缓进入。 */
+#authRoot .cinematic-brand{background-image:url('./assets/login/landscape.webp')}
+#authRoot .scene-lake{position:absolute;inset:0;width:100%;height:100%;display:block}
+#authRoot .scene-brush{position:absolute;left:-7%;top:-2%;width:39%;height:auto;transform-origin:15% 15%;animation:cnBrushDrift 9s ease-in-out infinite;filter:drop-shadow(0 10px 20px #0005);pointer-events:none}
+#authRoot .scene-coin{position:absolute;left:32%;top:31%;width:24%;aspect-ratio:1;transform-style:preserve-3d;animation:cnCoinRotate 18s linear infinite;perspective:1200px;pointer-events:none}
+#authRoot .scene-coin img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;backface-visibility:hidden;transform:translateZ(4px);filter:drop-shadow(0 0 18px #ffc34466)}
+#authRoot .scene-coin .coin-back{transform:rotateY(180deg) translateZ(4px)}
+#authRoot #authStage{transform:none!important;transition:opacity .5s ease!important}
+#authRoot #authStage.auth-stage-visible .auth-card{animation:cnLoginRise 1.8s cubic-bezier(.16,.7,.2,1) both!important}
+#authRoot .auth-card{backdrop-filter:blur(12px)!important;background:rgba(14,16,21,.9)!important}
+@keyframes cnBrushDrift{0%,100%{transform:translate(0,0) rotate(-3deg)}50%{transform:translate(6px,4px) rotate(1deg)}}
+@keyframes cnCoinRotate{0%{transform:perspective(1200px) rotateY(0deg) rotateZ(-7deg) translateY(0)}50%{transform:perspective(1200px) rotateY(180deg) rotateZ(-7deg) translateY(-10px)}100%{transform:perspective(1200px) rotateY(360deg) rotateZ(-7deg) translateY(0)}}
+@keyframes cnLoginRise{from{opacity:0;translate:0 100px}to{opacity:1;translate:0 0}}
+@media(prefers-reduced-motion:reduce){#authRoot .scene-brush,#authRoot .scene-coin,#authRoot #authStage.auth-stage-visible .auth-card{animation:none!important;translate:none!important;transform:none!important}#authRoot .auth-card{backdrop-filter:none!important}}
+
+@media(prefers-reduced-motion:reduce){#authRoot #authStage,#authRoot.auth-success #authStage{transition:none!important}}

@@ -1,0 +1,17 @@
+{
+  "name": "chennan-growth-story-workspace",
+  "private": true,
+  "version": "2.4.0",
+  "scripts": {
+    "test": "node --test tests/*.test.cjs",
+    "test:gate": "node tests/static-gate.cjs",
+    "test:e2e": "node tests/business-e2e.cjs",
+    "build:static": "node scripts/build-static.cjs",
+    "test:prelogin": "node tests/prelogin-e2e.cjs",
+    "test:public-login": "node tests/public-login.cjs"
+  },
+  "devDependencies": {
+    "acorn": "8.15.0",
+    "playwright": "1.55.1"
+  }
+}

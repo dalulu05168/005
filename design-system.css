@@ -1,0 +1,2020 @@
+/* 辰南统一设计系统 v2.0 · 2026-10-03
+   母版：投资者人物总览 + 人物库
+   目标：统一一级页面、动态二级页面、表格、表单、弹窗、空状态与轻交互。 */
+
+:root{
+  --cn-bg:#eef1f2;
+  --cn-surface:#fbfcfb;
+  --cn-surface-2:#f6f8f7;
+  --cn-surface-3:#ffffff;
+  --cn-border:#d7dcd8;
+  --cn-border-soft:#e5e8e5;
+  --cn-ink:#111514;
+  --cn-ink-2:#2f3733;
+  --cn-muted:#68716d;
+  --cn-muted-2:#8a928e;
+  --cn-gold:#c4932f;
+  --cn-gold-deep:#8a6416;
+  --cn-gold-soft:#f5e7bc;
+  --cn-blue:#214f82;
+  --cn-blue-hover:#163a62;
+  --cn-green:#4f7f68;
+  --cn-green-soft:#e9f2ed;
+  --cn-red:#8f2f2f;
+  --cn-red-soft:#f7ecea;
+  --cn-radius-lg:14px;
+  --cn-radius-md:10px;
+  --cn-radius-sm:8px;
+  --cn-shadow:0 6px 18px rgba(45,55,49,.045);
+  --cn-shadow-hover:0 8px 20px rgba(45,55,49,.065);
+  --cn-space-1:8px;
+  --cn-space-2:12px;
+  --cn-space-3:16px;
+  --cn-space-4:20px;
+  --cn-space-5:24px;
+  --cn-space-6:32px;
+  --cn-control-h:40px;
+  --cn-sidebar-w:176px;
+  --cn-font:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",Arial,sans-serif;
+}
+
+html,body{
+  background:var(--cn-bg)!important;
+  color:var(--cn-ink)!important;
+  font-family:var(--cn-font)!important;
+}
+body{letter-spacing:0!important}
+.app.app-ready{
+  background:linear-gradient(135deg,#edf1f2 0%,#f3f5f4 100%)!important;
+  color:var(--cn-ink)!important;
+}
+
+/* ===== Global shell ===== */
+@media(min-width:901px){
+  .app.app-ready>.sidebar{
+    width:var(--cn-sidebar-w)!important;
+    left:10px!important;top:8px!important;bottom:8px!important;height:auto!important;
+    padding:12px 10px!important;
+    border:1px solid transparent!important;border-radius:18px!important;
+    background:
+      linear-gradient(rgba(250,251,250,.97),rgba(250,251,250,.97)) padding-box,
+      linear-gradient(150deg,#ffffff 0%,#c9d0cc 35%,#ffffff 62%,#c5cdc8 100%) border-box!important;
+    box-shadow:var(--cn-shadow)!important;
+    overflow:hidden!important;
+  }
+  .app.app-ready>.main{
+    margin-left:196px!important;
+    width:calc(100% - 196px)!important;
+    min-height:100vh!important;
+    padding:8px 14px 8px 8px!important;
+    background:transparent!important;
+  }
+}
+.app.app-ready>.sidebar .brand{
+  height:62px!important;min-height:62px!important;margin:0 0 7px!important;
+  display:grid!important;place-items:center!important;
+  border:0!important;background:transparent!important;box-shadow:none!important;
+}
+.app.app-ready>.sidebar .nav{
+  margin:0!important;height:calc(100% - 69px)!important;
+  display:flex!important;flex-direction:column!important;justify-content:space-between!important;
+  gap:0!important;overflow:hidden!important;
+}
+.app.app-ready>.sidebar .nav button{
+  flex:0 0 45px!important;height:45px!important;min-height:45px!important;
+  width:100%!important;margin:0!important;padding:0 9px!important;
+  display:grid!important;grid-template-columns:27px minmax(0,1fr)!important;gap:9px!important;
+  align-items:center!important;border:0!important;border-radius:9px!important;
+  background:transparent!important;color:#202623!important;
+  font:650 13px/1 var(--cn-font)!important;letter-spacing:.04em!important;
+  box-shadow:none!important;transform:none!important;
+}
+.app.app-ready>.sidebar .nav button i{
+  width:26px!important;height:26px!important;display:grid!important;place-items:center!important;
+  margin:0!important;border:0!important;background:transparent!important;color:#222825!important;
+  font-style:normal!important;font-size:15px!important;
+}
+.app.app-ready>.sidebar .nav button span{font-size:13px!important;color:inherit!important}
+.app.app-ready>.sidebar .nav button i svg{
+  width:17px!important;height:17px!important;display:block!important;
+  fill:none!important;stroke:currentColor!important;stroke-width:1.8!important;
+  stroke-linecap:round!important;stroke-linejoin:round!important;
+}
+.app.app-ready>.sidebar .nav button:hover{
+  background:#f5f3ec!important;color:#333127!important;transform:none!important;
+}
+.app.app-ready>.sidebar .nav button.active{
+  background:linear-gradient(90deg,#f8edce,#eacb79)!important;
+  color:#171a18!important;
+  box-shadow:inset 0 0 0 1px rgba(181,133,28,.16)!important;
+}
+.app.app-ready>.sidebar #logoutBtn{
+  background:#faf8f4!important;color:#665749!important;
+  border:1px solid transparent!important;
+}
+
+/* ===== Typography ===== */
+.app.app-ready .eyebrow{
+  color:var(--cn-gold-deep)!important;
+  font:800 9px/1.2 var(--cn-font)!important;
+  letter-spacing:.16em!important;text-transform:uppercase!important;
+}
+.app.app-ready .page-title{
+  color:#0d100f!important;
+  font:800 28px/1.15 var(--cn-font)!important;
+  letter-spacing:-.025em!important;
+  text-shadow:none!important;
+}
+.app.app-ready .sub{
+  color:var(--cn-muted)!important;
+  font:400 12px/1.55 var(--cn-font)!important;
+}
+.app.app-ready :is(h2,.panel-head h2){
+  color:#151a17!important;
+  font:760 15px/1.3 var(--cn-font)!important;
+}
+.app.app-ready h3{
+  color:#1b211e!important;
+  font:730 13px/1.35 var(--cn-font)!important;
+}
+.app.app-ready :is(.muted,small,.meta,.trade-meta){
+  color:var(--cn-muted)!important;
+}
+.app.app-ready b,.app.app-ready strong{color:inherit}
+
+/* ===== Page headers ===== */
+.app.app-ready .section>.topbar,
+.app.app-ready .section .topbar.cn-page-header,
+.app.app-ready #personDetailPage .detail-head{
+  min-height:92px!important;
+  margin:0 0 9px!important;
+  padding:12px 18px!important;
+  display:flex!important;align-items:center!important;justify-content:space-between!important;gap:16px!important;
+  border:1px solid transparent!important;border-radius:var(--cn-radius-lg)!important;
+  background:
+    linear-gradient(rgba(252,253,252,.98),rgba(252,253,252,.98)) padding-box,
+    linear-gradient(135deg,#ffffff 0%,#ced4d0 28%,#ffffff 54%,#c6ceca 78%,#f9faf9 100%) border-box!important;
+  box-shadow:var(--cn-shadow)!important;
+}
+.app.app-ready .section>.topbar>div:first-child,
+.app.app-ready #personDetailPage .detail-identity{min-width:0!important}
+.app.app-ready .section>.topbar .actions,
+.app.app-ready #personDetailPage .detail-head .actions{
+  display:flex!important;align-items:center!important;justify-content:flex-end!important;gap:8px!important;flex-wrap:wrap!important;
+}
+
+/* ===== Surfaces / cards ===== */
+.app.app-ready :is(.card,.panel,.detail-card,.detail-kpi,.offer-stat,.batch-card,.holding-batch,.fr70-card,.fr70-stat,.memory-person-card,.check-box,.trade-item,.profile-row,.candidate-card,.holding-person-card,.doc-item,.event,.custom-group,.balanced-group-card){
+  border:1px solid var(--cn-border)!important;
+  border-radius:var(--cn-radius-md)!important;
+  background:var(--cn-surface)!important;
+  box-shadow:var(--cn-shadow)!important;
+  color:var(--cn-ink)!important;
+  backdrop-filter:none!important;
+}
+.app.app-ready :is(.panel,.detail-card){padding:14px!important}
+.app.app-ready .panel-head{
+  min-height:30px!important;margin:0 0 10px!important;
+  display:flex!important;align-items:center!important;justify-content:space-between!important;gap:10px!important;
+}
+.app.app-ready .panel-head h2{margin:0!important}
+.app.app-ready .panel-head h2:before{
+  content:"◆";color:var(--cn-gold)!important;margin-right:7px!important;font-size:9px!important;vertical-align:1px!important;
+}
+
+/* Parent modules never jump. Leaf cards can have restrained hover. */
+@media(hover:hover) and (pointer:fine){
+  .app.app-ready :is(.section>.card,.section>.panel,.detail-card,.balanced-groups-panel,.fr70-card,.editor-card,.memory-panel,.speech-panel):hover{
+    transform:none!important;filter:none!important;
+  }
+  .app.app-ready :is(.profile-row,.candidate-card,.holding-person-card,.balanced-member,.trade-item,.doc-item,.event):hover{
+    transform:translateY(-1px)!important;
+    border-color:#c8d0cb!important;
+    box-shadow:var(--cn-shadow-hover)!important;
+  }
+}
+
+/* ===== Buttons / links ===== */
+.app.app-ready .btn{
+  min-height:var(--cn-control-h)!important;height:auto!important;
+  padding:8px 14px!important;border-radius:9px!important;
+  font:700 11px/1.2 var(--cn-font)!important;
+  box-shadow:none!important;transition:.15s ease!important;
+}
+.app.app-ready .btn.small{min-height:30px!important;padding:5px 10px!important;font-size:9px!important}
+.app.app-ready .btn.primary{
+  color:#1f1b0f!important;
+  background:linear-gradient(135deg,#d9b04e,#c3912e)!important;
+  border:1px solid #b98624!important;
+}
+.app.app-ready .btn.primary:hover{filter:brightness(.985)!important;transform:translateY(-1px)!important}
+.app.app-ready .btn.ghost{
+  color:#25302b!important;background:#fff!important;border:1px solid var(--cn-border)!important;
+}
+.app.app-ready .btn.ghost:hover{background:#f7f9f8!important;border-color:#c6cdc9!important}
+.app.app-ready .btn.danger{
+  color:var(--cn-red)!important;background:var(--cn-red-soft)!important;border:1px solid #e5cfcc!important;
+}
+.app.app-ready .link-btn{
+  color:var(--cn-blue)!important;background:transparent!important;
+  border:0!important;font:720 10px/1.2 var(--cn-font)!important;
+  padding:2px 3px!important;
+}
+.app.app-ready .link-btn:hover{color:var(--cn-blue-hover)!important}
+.app.app-ready .link-btn.danger,
+.app.app-ready .delete-person{color:var(--cn-red)!important}
+
+/* ===== Inputs / filters / forms ===== */
+.app.app-ready :is(.input,.select,textarea,input:not([type=checkbox]):not([type=radio]),select){
+  min-height:var(--cn-control-h)!important;
+  border:1px solid var(--cn-border)!important;border-radius:9px!important;
+  background:#fff!important;color:#171c19!important;
+  font:500 11px/1.3 var(--cn-font)!important;
+  box-shadow:none!important;outline:0!important;
+}
+.app.app-ready :is(.input,.select,textarea,input:not([type=checkbox]):not([type=radio]),select):focus{
+  border-color:#c6aa67!important;box-shadow:0 0 0 3px rgba(196,147,47,.10)!important;
+}
+.app.app-ready :is(input,textarea)::placeholder{color:#9aa29e!important}
+.app.app-ready .field{display:grid!important;gap:6px!important}
+.app.app-ready .field label{color:#59635e!important;font-size:10px!important;font-weight:650!important}
+.app.app-ready .form-grid{
+  display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:12px!important;
+}
+.app.app-ready .form-grid .full{grid-column:1/-1!important}
+.app.app-ready .toolbar{
+  display:flex!important;align-items:center!important;gap:8px!important;flex-wrap:wrap!important;margin-bottom:8px!important;
+}
+
+/* ===== Notices / badges ===== */
+.app.app-ready .notice{
+  padding:10px 12px!important;border:1px solid #dce1de!important;border-radius:9px!important;
+  background:#f6f8f7!important;color:#5f6964!important;font-size:10px!important;line-height:1.55!important;
+}
+.app.app-ready .notice.success{background:var(--cn-green-soft)!important;color:#436e5a!important;border-color:#d2e2d8!important}
+.app.app-ready .notice.warn{background:#f8f4e9!important;color:#745f2d!important;border-color:#e7ddc5!important}
+.app.app-ready :is(.status,.tag,.type,.count,.sort-badge,.pill,.holding-state,.vip-level,.person-category){
+  display:inline-flex!important;align-items:center!important;justify-content:center!important;
+  min-height:20px!important;padding:2px 7px!important;border-radius:999px!important;
+  border:1px solid #d9dfdb!important;background:#f2f4f3!important;
+  color:#4f5a54!important;font-size:8px!important;font-weight:700!important;white-space:nowrap!important;
+}
+.app.app-ready :is(.status.good,.pill.good){background:var(--cn-green-soft)!important;color:#4c795f!important;border-color:#d2e2d8!important}
+.app.app-ready :is(.status.vip,.vip-level){background:#efe2bd!important;color:#4f3b0f!important;border-color:#d5ba73!important}
+.app.app-ready :is(.danger,.profit-neg){color:var(--cn-red)!important}
+.app.app-ready .profit-pos{color:#2f6f53!important}
+
+/* ===== Tables ===== */
+.app.app-ready :is(.table-wrap,.people-table-wrap){
+  width:100%!important;border:1px solid var(--cn-border)!important;border-radius:9px!important;
+  background:#fff!important;overflow:auto!important;
+}
+.app.app-ready :is(table,.mini-table,.people-data-table){
+  width:100%!important;border-collapse:collapse!important;border-spacing:0!important;
+  background:#fff!important;color:var(--cn-ink)!important;
+}
+.app.app-ready :is(table,.mini-table,.people-data-table) th{
+  height:32px!important;padding:6px 8px!important;
+  background:#f1f3f2!important;color:#080a09!important;
+  border-bottom:1px solid #cfd5d1!important;
+  font:800 9px/1.2 var(--cn-font)!important;text-align:left!important;white-space:nowrap!important;
+}
+.app.app-ready :is(table,.mini-table,.people-data-table) td{
+  height:40px!important;padding:6px 8px!important;
+  background:#fff!important;color:#161b18!important;
+  border-bottom:1px solid var(--cn-border-soft)!important;
+  font:500 9.5px/1.2 var(--cn-font)!important;vertical-align:middle!important;
+}
+.app.app-ready :is(table,.mini-table,.people-data-table) tbody tr:last-child td{border-bottom:0!important}
+.app.app-ready :is(table,.mini-table,.people-data-table) tbody tr:hover td{background:#f7f9fa!important}
+.app.app-ready :is(table,.mini-table,.people-data-table) th:last-child,
+.app.app-ready :is(table,.mini-table,.people-data-table) td:last-child{padding-right:10px!important}
+.app.app-ready .people-actions{
+  width:100%!important;display:flex!important;justify-content:space-between!important;align-items:center!important;gap:4px!important;
+}
+.app.app-ready .people-actions .link-btn{font-size:8px!important;padding:1px 2px!important}
+.app.app-ready .people-page-btn{
+  width:29px!important;height:27px!important;border-radius:7px!important;
+  border:1px solid var(--cn-border)!important;background:#fff!important;color:#26302c!important;
+  font-size:10px!important;font-weight:700!important;
+}
+.app.app-ready .people-page-btn.active{background:#252a27!important;color:#fff!important;border-color:#252a27!important}
+
+/* ===== Empty state ===== */
+.app.app-ready .empty:not(td){
+  min-height:110px!important;padding:22px!important;
+  display:grid!important;place-items:center!important;align-content:center!important;gap:6px!important;
+  color:#87908b!important;text-align:center!important;font-size:10px!important;
+  border:1px dashed #d9dfdb!important;border-radius:9px!important;background:#fafbfa!important;
+}
+.app.app-ready .empty:not(td)::before{
+  content:"◇";display:grid!important;place-items:center!important;
+  width:30px!important;height:30px!important;border-radius:50%!important;
+  background:#f0f2f1!important;color:#818b86!important;font-size:15px!important;
+}
+.app.app-ready td.empty{color:#89918d!important;text-align:center!important}
+
+/* ===== Modal / dialogs / secondary editor pages ===== */
+.app.app-ready .modal-wrap{
+  background:rgba(28,34,30,.28)!important;backdrop-filter:blur(3px)!important;
+}
+.app.app-ready .modal{
+  width:min(860px,calc(100vw - 40px))!important;max-height:88vh!important;overflow:auto!important;
+  padding:20px!important;border:1px solid var(--cn-border)!important;border-radius:14px!important;
+  background:#fbfcfb!important;color:var(--cn-ink)!important;
+  box-shadow:0 24px 70px rgba(31,38,34,.16)!important;
+}
+.app.app-ready .modal h2{font-size:18px!important;color:#101412!important;margin:0 0 16px!important}
+.app.app-ready .modal-foot{
+  display:flex!important;justify-content:flex-end!important;align-items:center!important;gap:8px!important;
+  margin-top:16px!important;padding-top:12px!important;border-top:1px solid var(--cn-border-soft)!important;
+}
+dialog.growth-notice{
+  border:1px solid var(--cn-border)!important;border-radius:14px!important;background:#fbfcfb!important;
+  color:var(--cn-ink)!important;box-shadow:0 24px 70px rgba(31,38,34,.16)!important;
+}
+
+/* ===== Trade plan page injected by trade-dashboard ===== */
+.app.app-ready #trades .trade-tabs{
+  display:flex!important;gap:6px!important;padding:4px!important;
+  border:1px solid var(--cn-border)!important;border-radius:10px!important;background:#f6f8f7!important;
+}
+.app.app-ready #trades .trade-tabs button{
+  min-height:32px!important;padding:5px 10px!important;border-radius:7px!important;
+  color:#5c6661!important;background:transparent!important;font-size:9px!important;
+}
+.app.app-ready #trades .trade-tabs button.active{
+  background:#fff!important;color:#171c19!important;box-shadow:0 2px 7px rgba(42,51,46,.06)!important;
+}
+.app.app-ready #trades .trade-list{display:grid!important;gap:7px!important}
+.app.app-ready #trades .trade-item{
+  min-height:54px!important;padding:9px 11px!important;
+  display:flex!important;align-items:center!important;justify-content:space-between!important;gap:12px!important;
+}
+.app.app-ready #trades .trade-actions{display:flex!important;align-items:center!important;gap:6px!important;flex-wrap:wrap!important}
+.app.app-ready #trades .trade-item b{font-size:10px!important;color:#151a17!important}
+.app.app-ready #trades .trade-meta{font-size:9px!important;margin-top:3px!important}
+
+/* ===== Person trade recommendation ===== */
+.app.app-ready #tradeRecommend .grid{
+  display:grid!important;grid-template-columns:minmax(0,1.05fr) minmax(0,.95fr)!important;gap:10px!important;
+}
+.app.app-ready #tradeRecommend .offer-list{display:grid!important;gap:6px!important}
+.app.app-ready #tradeRecommend .offer-row{
+  padding:9px 10px!important;border:1px solid var(--cn-border-soft)!important;border-radius:8px!important;
+  background:#fff!important;display:flex!important;justify-content:space-between!important;gap:10px!important;align-items:center!important;
+}
+.app.app-ready #tradeRecommend .offer-row.active{
+  border-color:#d9c58d!important;background:#fbf8ef!important;
+}
+.app.app-ready #tradeRecommend .offer-grid{
+  display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:7px!important;
+}
+.app.app-ready #tradeRecommend .offer-stat{padding:9px!important;box-shadow:none!important}
+.app.app-ready #tradeRecommend .offer-stat span{display:block!important;color:var(--cn-muted)!important;font-size:8px!important}
+.app.app-ready #tradeRecommend .offer-stat b{display:block!important;color:#151a17!important;font-size:11px!important;margin-top:3px!important}
+.app.app-ready #tradeRecommend .candidate-grid{
+  display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:8px!important;
+}
+.app.app-ready #tradeRecommend .candidate-card{
+  padding:10px!important;display:grid!important;grid-template-columns:42px minmax(0,1fr) auto!important;gap:8px!important;align-items:center!important;
+}
+.app.app-ready #tradeRecommend .candidate-card .gender-avatar{
+  width:38px!important;height:38px!important;border-radius:50%!important;overflow:hidden!important;background:#eff1f0!important;
+}
+.app.app-ready #tradeRecommend .candidate-card .meta{font-size:8px!important;color:var(--cn-muted)!important;margin-top:2px!important}
+.app.app-ready #tradeRecommend .candidate-card .actions{display:flex!important;gap:4px!important;flex-direction:column!important}
+
+/* ===== Holdings ===== */
+.app.app-ready #holdingsV2 .stock-chart-heading p{margin:4px 0 0!important;font-size:9px!important}
+.app.app-ready #holdingsV2 .hold-chart{
+  min-height:180px!important;padding:12px!important;border:1px solid var(--cn-border-soft)!important;border-radius:9px!important;
+  background:repeating-linear-gradient(to top,#fff 0,#fff 36px,#edf0ee 37px,#edf0ee 38px)!important;
+}
+.app.app-ready #holdingsV2 .stock-chart-legend{
+  display:flex!important;gap:12px!important;flex-wrap:wrap!important;margin-top:8px!important;color:var(--cn-muted)!important;font-size:8px!important;
+}
+.app.app-ready #holdingsV2 .holding-batch{padding:12px!important;margin-top:8px!important}
+.app.app-ready #holdingsV2 .holding-batch-head{
+  display:flex!important;justify-content:space-between!important;align-items:flex-start!important;gap:12px!important;
+  padding-bottom:10px!important;margin-bottom:10px!important;border-bottom:1px solid var(--cn-border-soft)!important;
+}
+.app.app-ready #holdingsV2 .batch-summary-grid{
+  display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:7px!important;margin-top:8px!important;
+}
+.app.app-ready #holdingsV2 .batch-summary-grid span,
+.app.app-ready #holdingsV2 .holding-info-grid>div{
+  padding:7px 8px!important;border:1px solid var(--cn-border-soft)!important;border-radius:7px!important;background:#f8f9f8!important;
+}
+.app.app-ready #holdingsV2 .batch-summary-grid em,
+.app.app-ready #holdingsV2 .holding-info-grid span{
+  display:block!important;font-style:normal!important;color:var(--cn-muted)!important;font-size:7.5px!important;
+}
+.app.app-ready #holdingsV2 .batch-summary-grid strong,
+.app.app-ready #holdingsV2 .holding-info-grid strong{
+  display:block!important;color:#151a17!important;font-size:9px!important;margin-top:2px!important;
+}
+.app.app-ready #holdingsV2 .holding-person-grid{
+  display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:8px!important;
+}
+.app.app-ready #holdingsV2 .holding-person-card{
+  padding:9px!important;display:grid!important;grid-template-columns:38px minmax(0,1fr)!important;gap:8px!important;align-items:start!important;
+}
+.app.app-ready #holdingsV2 .holding-person-card .gender-avatar{
+  width:36px!important;height:36px!important;border-radius:50%!important;overflow:hidden!important;
+}
+.app.app-ready #holdingsV2 .holding-info-grid{
+  display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:5px!important;margin-top:6px!important;
+}
+
+/* ===== Records ===== */
+.app.app-ready #records .toolbar{
+  display:grid!important;grid-template-columns:minmax(160px,.72fr) minmax(150px,.68fr) minmax(260px,1.4fr)!important;gap:8px!important;
+}
+.app.app-ready #records .timeline{display:grid!important;gap:7px!important}
+.app.app-ready #records .timeline-item{
+  display:grid!important;grid-template-columns:78px 14px minmax(0,1fr)!important;gap:9px!important;
+}
+.app.app-ready #records .event{padding:10px 12px!important;box-shadow:none!important}
+.app.app-ready #records .date{font-size:9px!important;color:var(--cn-muted)!important}
+.app.app-ready #records .dotline:before{background:var(--cn-gold)!important;box-shadow:0 0 0 3px #f4ead0!important}
+.app.app-ready #records .dotline:after{background:var(--cn-border-soft)!important}
+
+/* ===== Writing workspace ===== */
+.app.app-ready #novel .daily-doc-layout{
+  display:grid!important;grid-template-columns:150px minmax(0,1fr) 300px!important;gap:10px!important;
+}
+.app.app-ready #novel :is(.speech-panel,.editor-card,.memory-panel){padding:11px!important;min-width:0!important}
+.app.app-ready #novel .speech-row{
+  min-height:32px!important;border-radius:7px!important;color:#59645f!important;
+}
+.app.app-ready #novel .speech-row:hover,.app.app-ready #novel .speech-row.active{
+  background:#f2f5f3!important;color:#223b34!important;
+}
+.app.app-ready #novel .daily-tab{
+  border:1px solid var(--cn-border)!important;border-radius:7px!important;background:#fff!important;color:#66706b!important;
+}
+.app.app-ready #novel .daily-tab.active{
+  background:#f5ead0!important;color:#544019!important;border-color:#dec88f!important;
+}
+.app.app-ready #novel .word-toolbar{
+  border:1px solid var(--cn-border)!important;border-radius:8px 8px 0 0!important;background:#f7f8f7!important;
+}
+.app.app-ready #novel .word-toolbar button{
+  border:1px solid var(--cn-border-soft)!important;background:#fff!important;color:#4e5953!important;border-radius:6px!important;
+}
+.app.app-ready #novel .rich-editor{
+  min-height:470px!important;padding:20px 22px!important;
+  border:1px solid var(--cn-border)!important;border-top:0!important;border-radius:0 0 8px 8px!important;
+  background:#fff!important;color:#181d1a!important;font-size:13px!important;line-height:1.8!important;
+}
+.app.app-ready #novel .memory-timeline{max-height:470px!important;display:grid!important;gap:6px!important}
+.app.app-ready #novel .memory-row{
+  padding:7px 8px!important;border:1px solid var(--cn-border-soft)!important;border-left:2px solid #b7c2bc!important;border-radius:7px!important;background:#fafbfa!important;
+}
+
+/* ===== France 70 ===== */
+.app.app-ready #france70chat .fr70-stats{
+  display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:8px!important;margin-bottom:10px!important;
+}
+.app.app-ready #france70chat .fr70-stat{padding:10px 12px!important}
+.app.app-ready #france70chat .fr70-stat span{display:block!important;color:var(--cn-muted)!important;font-size:9px!important}
+.app.app-ready #france70chat .fr70-stat b{display:block!important;color:#131815!important;font-size:18px!important;margin-top:3px!important}
+.app.app-ready #france70chat .fr70-layout{
+  display:grid!important;grid-template-columns:minmax(0,1.08fr) minmax(0,.92fr)!important;gap:10px!important;
+}
+.app.app-ready #france70chat .fr70-card{padding:12px!important;margin-top:10px!important}
+.app.app-ready #france70chat .fr70-card:first-child{margin-top:0!important}
+.app.app-ready #france70chat :is(.fr70-textarea,.fr70-prompt,.fr70-output){
+  width:100%!important;border:1px solid var(--cn-border)!important;border-radius:8px!important;background:#fff!important;color:#171c19!important;
+}
+.app.app-ready #france70chat .fr70-seg{
+  display:flex!important;gap:3px!important;padding:3px!important;border:1px solid var(--cn-border)!important;border-radius:8px!important;background:#f4f6f5!important;
+}
+.app.app-ready #france70chat .fr70-seg button{
+  min-height:28px!important;padding:4px 9px!important;border-radius:6px!important;color:#67716c!important;background:transparent!important;
+}
+.app.app-ready #france70chat .fr70-seg button.active{background:#fff!important;color:#3a321d!important}
+.app.app-ready #france70chat .fr70-bubble,
+.app.app-ready #france70chat .fr70-history button,
+.app.app-ready #france70chat .fr70-memory-row{
+  border:1px solid var(--cn-border-soft)!important;border-radius:8px!important;background:#fff!important;color:#202624!important;
+}
+
+/* ===== Consistency ===== */
+.app.app-ready #topics>.card.panel{display:grid!important;gap:8px!important}
+.app.app-ready #topics .check-box{
+  padding:11px!important;box-shadow:none!important;background:#fafbfa!important;
+}
+.app.app-ready #topics .check-box h3{margin:0 0 4px!important}
+.app.app-ready #topics .check-box ul{margin:4px 0 0 18px!important;padding:0!important;color:#5f6863!important;font-size:10px!important}
+
+/* ===== Person detail secondary page ===== */
+.app.app-ready #personDetailPage{color:var(--cn-ink)!important}
+.app.app-ready #personDetailPage .detail-head{
+  position:relative!important;
+}
+.app.app-ready #personDetailPage .detail-avatar{
+  width:54px!important;height:54px!important;border-radius:12px!important;
+  border:1px solid var(--cn-border)!important;background:#eff1f0!important;overflow:hidden!important;
+}
+.app.app-ready #personDetailPage .detail-kpis{
+  display:grid!important;grid-template-columns:repeat(6,minmax(0,1fr))!important;gap:8px!important;margin-bottom:10px!important;
+}
+.app.app-ready #personDetailPage .detail-kpi{padding:10px!important;box-shadow:var(--cn-shadow)!important}
+.app.app-ready #personDetailPage .detail-kpi span{font-size:8.5px!important;color:var(--cn-muted)!important}
+.app.app-ready #personDetailPage .detail-kpi strong{display:block!important;font-size:15px!important;margin-top:4px!important;color:#141916!important}
+.app.app-ready #personDetailPage .detail-columns{
+  display:grid!important;grid-template-columns:minmax(0,1.08fr) minmax(0,.92fr)!important;gap:10px!important;
+}
+.app.app-ready #personDetailPage .detail-list{
+  display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:7px!important;
+}
+.app.app-ready #personDetailPage .detail-line{
+  min-height:52px!important;padding:8px 9px!important;border:1px solid var(--cn-border-soft)!important;border-radius:7px!important;background:#fafbfa!important;
+}
+.app.app-ready #personDetailPage .detail-line span{display:block!important;color:var(--cn-muted)!important;font-size:8px!important}
+.app.app-ready #personDetailPage .detail-line b{display:block!important;margin-top:3px!important;color:#171c19!important;font-size:9px!important}
+.app.app-ready #personDetailPage .journey-item{
+  display:grid!important;grid-template-columns:82px 14px minmax(0,1fr)!important;gap:8px!important;min-height:52px!important;
+}
+.app.app-ready #personDetailPage .journey-date{font-size:8px!important;color:var(--cn-muted)!important}
+.app.app-ready #personDetailPage .journey-body b{font-size:9px!important;color:#171c19!important}
+.app.app-ready #personDetailPage .journey-body small{font-size:8px!important;color:var(--cn-muted)!important}
+.app.app-ready #personDetailPage .journey-rail:before{background:var(--cn-gold)!important}
+.app.app-ready #personDetailPage .journey-rail:after{background:var(--cn-border-soft)!important}
+.app.app-ready #personDetailPage .detail-bottom-grid{
+  display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;
+  gap:10px!important;margin-top:10px!important;
+}
+.app.app-ready #personDetailPage .detail-bottom-card{
+  min-width:0!important;min-height:190px!important;padding:11px!important;
+}
+.app.app-ready #personDetailPage .detail-compact-list{
+  display:grid!important;gap:5px!important;
+}
+.app.app-ready #personDetailPage .detail-compact-row{
+  min-width:0!important;min-height:30px!important;padding:5px 7px!important;
+  display:grid!important;grid-template-columns:minmax(0,1fr) auto!important;gap:8px!important;align-items:center!important;
+  border:1px solid var(--cn-border-soft)!important;border-radius:7px!important;background:#fafbfa!important;
+}
+.app.app-ready #personDetailPage .detail-compact-row>div{min-width:0!important}
+.app.app-ready #personDetailPage .detail-compact-row b{
+  display:block!important;color:#171c19!important;font-size:8.5px!important;
+  white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;
+}
+.app.app-ready #personDetailPage .detail-compact-row small{
+  display:block!important;color:var(--cn-muted)!important;font-size:7.5px!important;margin-top:1px!important;
+  white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;
+}
+.app.app-ready #personDetailPage .detail-compact-row>span{
+  color:#6b746f!important;font-size:7.5px!important;white-space:nowrap!important;
+}
+.app.app-ready #personDetailPage .detail-holdings-table{
+  margin-top:10px!important;padding:11px!important;
+}
+@media(max-width:1250px){
+  .app.app-ready #personDetailPage .detail-bottom-grid{grid-template-columns:1fr!important}
+}
+
+/* ===== Group page ===== */
+.app.app-ready #groups .balanced-groups-grid{
+  display:grid!important;grid-template-columns:repeat(5,minmax(0,1fr))!important;gap:8px!important;
+}
+.app.app-ready #groups .balanced-group-card,
+.app.app-ready #groups .balanced-group-card:hover{
+  transform:none!important;filter:none!important;
+}
+.app.app-ready #groups .balanced-composition{
+  display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:4px!important;
+}
+.app.app-ready #groups .balanced-member{
+  min-height:27px!important;display:grid!important;grid-template-columns:42px minmax(0,1fr) 32px!important;
+  gap:6px!important;align-items:center!important;padding:0 6px!important;
+  border:1px solid var(--cn-border-soft)!important;border-radius:7px!important;background:#fff!important;
+}
+.app.app-ready #groups .balanced-member-avatar,
+.app.app-ready #groups .balanced-member .person-portrait{display:none!important}
+
+/* ===== Secondary flows & dense components ===== */
+
+/* Legacy/fallback profile detail modal and grouped information blocks */
+.app.app-ready .profile-detail{
+  display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:8px!important;
+}
+.app.app-ready .profile-detail .section-label{
+  grid-column:1/-1!important;margin:5px 0 0!important;padding-top:8px!important;
+  border-top:1px solid var(--cn-border-soft)!important;
+  color:#303834!important;font-size:10px!important;font-weight:760!important;
+}
+.app.app-ready .profile-detail .detail-box{
+  min-height:52px!important;padding:8px 9px!important;
+  border:1px solid var(--cn-border-soft)!important;border-radius:7px!important;background:#fafbfa!important;
+}
+.app.app-ready .profile-detail .detail-box span{
+  display:block!important;color:var(--cn-muted)!important;font-size:8px!important;
+}
+.app.app-ready .profile-detail .detail-box b{
+  display:block!important;margin-top:3px!important;color:#161b18!important;font-size:9px!important;line-height:1.35!important;
+}
+
+/* Timeline, tags and record chips */
+.app.app-ready .tags{
+  display:flex!important;align-items:center!important;gap:5px!important;flex-wrap:wrap!important;
+}
+.app.app-ready .timeline-item{min-width:0!important}
+.app.app-ready .event-head{
+  display:flex!important;justify-content:space-between!important;align-items:flex-start!important;gap:10px!important;
+}
+.app.app-ready .event-title{color:#171c19!important;font-size:10px!important;font-weight:740!important}
+.app.app-ready .event p{margin:4px 0!important;color:#4f5a54!important;font-size:9px!important;line-height:1.5!important}
+
+/* Trading settings mini people pickers / confirmation lists */
+.app.app-ready .person-mini-grid{
+  display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:7px!important;margin-top:10px!important;
+}
+.app.app-ready .person-mini{
+  min-width:0!important;min-height:54px!important;padding:8px!important;
+  display:grid!important;grid-template-columns:auto 38px minmax(0,1fr)!important;gap:7px!important;align-items:center!important;
+  border:1px solid var(--cn-border-soft)!important;border-radius:8px!important;background:#fff!important;
+}
+.app.app-ready .person-mini>input{width:14px!important;height:14px!important;min-height:0!important}
+.app.app-ready .person-mini .gender-avatar{
+  width:34px!important;height:34px!important;border-radius:50%!important;overflow:hidden!important;background:#eff1f0!important;
+}
+.app.app-ready .person-mini b{display:block!important;color:#171c19!important;font-size:9px!important}
+.app.app-ready .person-mini small{display:block!important;font-size:8px!important;margin-top:2px!important}
+
+/* Holding chart details */
+.app.app-ready #holdingsV2 .stock-chart-axis{
+  color:var(--cn-muted)!important;font-size:8px!important;margin:0 0 6px!important;
+}
+.app.app-ready #holdingsV2 .hold-bar-wrap{
+  min-width:54px!important;display:flex!important;align-items:flex-end!important;justify-content:center!important;height:100%!important;
+}
+.app.app-ready #holdingsV2 .hold-bar{
+  border-radius:7px 7px 2px 2px!important;background:#c7ae70!important;box-shadow:none!important;
+}
+.app.app-ready #holdingsV2 .hold-bar.ready{background:#78a28d!important}
+.app.app-ready #holdingsV2 .hold-bar.soon{background:#c6a55b!important}
+.app.app-ready #holdingsV2 .hold-bar-count{
+  color:#202724!important;font-size:8px!important;font-weight:760!important;
+}
+.app.app-ready #holdingsV2 .hold-bar-label{
+  color:#65706a!important;font-size:7.5px!important;text-align:center!important;line-height:1.25!important;
+}
+.app.app-ready #holdingsV2 .hold-bar-label b{color:#1e2521!important;font-size:8px!important}
+
+/* France 70 dense controls, history and memory */
+.app.app-ready #france70chat .fr70-row,
+.app.app-ready #france70chat .fr70-options{
+  display:flex!important;align-items:center!important;gap:7px!important;flex-wrap:wrap!important;
+}
+.app.app-ready #france70chat .fr70-selected{
+  min-height:34px!important;padding:7px 9px!important;border:1px solid var(--cn-border-soft)!important;
+  border-radius:8px!important;background:#fafbfa!important;color:#37403b!important;font-size:9px!important;
+}
+.app.app-ready #france70chat .fr70-note{
+  padding:8px 9px!important;border:1px solid #e4ddcc!important;border-radius:8px!important;
+  background:#f8f5ec!important;color:#665c43!important;font-size:8.5px!important;line-height:1.5!important;
+}
+.app.app-ready #france70chat .fr70-history{
+  display:grid!important;gap:6px!important;max-height:300px!important;overflow:auto!important;
+}
+.app.app-ready #france70chat .fr70-history button{
+  width:100%!important;padding:7px 8px!important;text-align:left!important;
+}
+.app.app-ready #france70chat .fr70-message{
+  min-width:0!important;display:grid!important;grid-template-columns:30px minmax(0,1fr)!important;gap:7px!important;align-items:start!important;
+}
+.app.app-ready #france70chat .fr70-avatar{
+  width:28px!important;height:28px!important;border-radius:50%!important;overflow:hidden!important;background:#eef1ef!important;
+}
+.app.app-ready #france70chat .fr70-meta{
+  display:flex!important;align-items:center!important;gap:5px!important;flex-wrap:wrap!important;margin-bottom:3px!important;
+}
+.app.app-ready #france70chat .fr70-meta b{color:#171c19!important;font-size:9px!important}
+.app.app-ready #france70chat .fr70-meta span{color:var(--cn-muted)!important;font-size:7.5px!important}
+.app.app-ready #france70chat .fr70-bubble p{margin:0!important;color:#303934!important;font-size:9px!important;line-height:1.55!important}
+.app.app-ready #france70chat .fr70-memory-list{display:grid!important;gap:6px!important}
+.app.app-ready #france70chat .fr70-memory-row{padding:7px 8px!important}
+
+/* Writing ranking and suggestion overlay */
+.app.app-ready #novel .speech-name{
+  min-width:0!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;
+  color:#29322e!important;font-size:8.5px!important;
+}
+.app.app-ready #novel .doc-suggest{
+  padding:7px 9px!important;border:1px solid var(--cn-border)!important;
+  background:#f8faf9!important;color:#55615b!important;font-size:8.5px!important;
+}
+.app.app-ready #novel .person-token{
+  background:#f4ead0!important;color:#544119!important;border-radius:5px!important;padding:1px 4px!important;font-weight:740!important;
+}
+.app.app-ready #novel .logic-warning{
+  padding:8px 9px!important;border:1px solid #ead7d4!important;border-radius:8px!important;
+  background:#f8efed!important;color:#87514d!important;font-size:8.5px!important;
+}
+
+/* Settings and compact control panels */
+.app.app-ready .member-picker{
+  max-height:380px!important;overflow:auto!important;padding:6px!important;
+  border:1px solid var(--cn-border)!important;border-radius:8px!important;background:#f8f9f8!important;
+}
+.app.app-ready .member-option{
+  min-height:42px!important;padding:6px!important;display:grid!important;
+  grid-template-columns:16px minmax(0,1fr)!important;gap:7px!important;align-items:center!important;
+  border-bottom:1px solid var(--cn-border-soft)!important;color:#202724!important;
+}
+.app.app-ready .member-option:last-child{border-bottom:0!important}
+.app.app-ready .member-option input{width:14px!important;height:14px!important;min-height:0!important}
+.app.app-ready .member-option b{font-size:9px!important}
+.app.app-ready .member-option small{font-size:7.5px!important}
+
+/* ===== Scrollbars ===== */
+.app.app-ready *{scrollbar-width:thin;scrollbar-color:#c5ccc8 transparent}
+.app.app-ready *::-webkit-scrollbar{width:6px;height:6px}
+.app.app-ready *::-webkit-scrollbar-track{background:transparent}
+.app.app-ready *::-webkit-scrollbar-thumb{background:#c5ccc8;border-radius:999px}
+
+/* ===== Desktop 16:9 rhythm ===== */
+@media(min-width:1180px) and (min-aspect-ratio:4/3){
+  html,body{overflow:hidden!important}
+  .app.app-ready{overflow:hidden!important}
+  .app.app-ready>.main{height:100vh!important;min-height:0!important;overflow:hidden!important}
+  .app.app-ready>.main>.section{
+    height:100%!important;max-height:100%!important;min-height:0!important;
+    overflow:auto!important;padding:0!important;
+  }
+  .app.app-ready>.main>.section::-webkit-scrollbar{width:5px}
+  .app.app-ready #overview.active{overflow:hidden!important}
+  .app.app-ready #people.active{overflow:hidden!important}
+  .app.app-ready #groups.active{overflow:hidden!important}
+  .app.app-ready #groups .balanced-groups-panel{height:calc(100% - 101px)!important;overflow:hidden!important}
+}
+
+/* ===== Responsive ===== */
+@media(max-width:1350px) and (min-width:901px){
+  .app.app-ready #groups .balanced-groups-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  .app.app-ready #groups .balanced-groups-panel{overflow:auto!important}
+  .app.app-ready #tradeRecommend .candidate-grid{grid-template-columns:1fr!important}
+  .app.app-ready #holdingsV2 .holding-person-grid{grid-template-columns:1fr!important}
+  .app.app-ready #novel .daily-doc-layout{grid-template-columns:130px minmax(0,1fr)!important}
+  .app.app-ready #novel .memory-panel{grid-column:1/-1!important}
+}
+@media(max-width:900px){
+  html,body{overflow:auto!important}
+  .app.app-ready>.main{margin-left:0!important;width:100%!important;padding:12px!important}
+  .app.app-ready .section>.topbar,.app.app-ready #personDetailPage .detail-head{
+    min-height:0!important;align-items:flex-start!important;flex-direction:column!important;padding:14px!important;
+  }
+  .app.app-ready .section>.topbar .actions,.app.app-ready #personDetailPage .detail-head .actions{width:100%!important;justify-content:flex-start!important}
+  .app.app-ready .form-grid{grid-template-columns:1fr!important}
+  .app.app-ready #tradeRecommend .grid,
+  .app.app-ready #france70chat .fr70-layout,
+  .app.app-ready #personDetailPage .detail-columns{grid-template-columns:1fr!important}
+  .app.app-ready #personDetailPage .detail-kpis{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  .app.app-ready #holdingsV2 .batch-summary-grid,
+  .app.app-ready #holdingsV2 .holding-info-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  .app.app-ready #groups .balanced-groups-grid{grid-template-columns:1fr!important}
+  .app.app-ready #novel .daily-doc-layout{grid-template-columns:1fr!important}
+}
+
+/* ===== Accessibility / reduced motion ===== */
+@media(prefers-reduced-motion:reduce){
+  .app.app-ready *{scroll-behavior:auto!important;transition:none!important;animation:none!important}
+}
+
+
+/* ===== V2 FINAL UNIFIED CONTRACT =====
+   以“投资者人物总览 / 人物库”为唯一母版。
+   本段为最终覆盖层：一级页、二级页、表格、编辑器、弹窗、空状态统一。 */
+:root{
+  --cn-space-7:40px;
+  --cn-space-8:48px;
+  --cn-line-strong:#d7dcd8;
+  --cn-line-soft:#e5e8e5;
+  --cn-page-gap:9px;
+  --cn-header-h:92px;
+}
+
+/* ---------- Global frame ---------- */
+.app.app-ready .main>.section,
+.app.app-ready .cn-secondary-page{
+  background:transparent!important;
+  background-image:none!important;
+  color:var(--cn-ink)!important;
+}
+.app.app-ready .main>.section.active{
+  animation:cnPageIn .18s ease both!important;
+}
+@keyframes cnPageIn{
+  from{opacity:.72;transform:translateY(3px)}
+  to{opacity:1;transform:none}
+}
+.app.app-ready .section>.topbar,
+.app.app-ready .cn-secondary-page .detail-head{
+  height:var(--cn-header-h)!important;
+  min-height:var(--cn-header-h)!important;
+  max-height:var(--cn-header-h)!important;
+  margin:0 0 var(--cn-page-gap)!important;
+  padding:12px 18px!important;
+  border:1px solid var(--cn-line-strong)!important;
+  border-radius:var(--cn-radius-lg)!important;
+  background:#fbfcfb!important;
+  background-image:none!important;
+  box-shadow:var(--cn-shadow)!important;
+}
+.app.app-ready .section>.topbar .page-title,
+.app.app-ready .cn-secondary-page .detail-head .page-title{
+  margin:3px 0 4px!important;
+}
+.app.app-ready .section>.topbar .sub,
+.app.app-ready .cn-secondary-page .detail-head .sub{
+  margin:0!important;
+  max-width:880px!important;
+}
+.app.app-ready .section>.topbar .actions,
+.app.app-ready .cn-secondary-page .detail-head .actions{
+  flex:0 0 auto!important;
+}
+
+/* ---------- Parent surface / leaf surface motion contract ---------- */
+.app.app-ready [data-ui-surface="parent"],
+.app.app-ready [data-ui-surface="parent"]:hover,
+.app.app-ready .section>.card,
+.app.app-ready .section>.panel,
+.app.app-ready .section>.card:hover,
+.app.app-ready .section>.panel:hover{
+  transform:none!important;
+  translate:none!important;
+  scale:1!important;
+  filter:none!important;
+}
+@media(hover:hover) and (pointer:fine){
+  .app.app-ready [data-ui-surface="leaf"]:hover{
+    transform:translateY(-1px)!important;
+    border-color:#c8cfcb!important;
+    box-shadow:0 5px 14px rgba(45,55,49,.055)!important;
+  }
+}
+
+/* ---------- Uniform edges / radius / typography ---------- */
+.app.app-ready :is(
+ .card,.panel,.detail-card,.detail-kpi,.cn-detail-kpi,.check-box,.offer-stat,
+ .batch-card,.holding-batch,.candidate-card,.holding-person-card,.trade-item,
+ .profile-row,.doc-item,.event,.balanced-group-card,.fr70-card,.fr70-stat,.memory-person-card
+){
+  border:1px solid var(--cn-line-strong)!important;
+  border-radius:var(--cn-radius-md)!important;
+  background:#fbfcfb!important;
+  background-image:none!important;
+}
+.app.app-ready :is(.detail-line,.detail-box,.cn-rule-list>div,.cn-linked-person,.detail-compact-row){
+  border:1px solid var(--cn-line-soft)!important;
+  border-radius:var(--cn-radius-sm)!important;
+  background:#fafbfa!important;
+}
+.app.app-ready :is(.panel-head h2,.section h2){
+  color:#111514!important;
+  font-size:15px!important;
+  font-weight:760!important;
+  line-height:1.3!important;
+}
+.app.app-ready :is(.panel-head h2,.section h2):before{
+  color:var(--cn-gold)!important;
+}
+.app.app-ready :is(.sub,.muted,.meta,small){color:#68716d!important}
+.app.app-ready :is(.panel,.card,.section) a:not(.btn){text-decoration:none!important}
+
+/* ---------- Buttons ---------- */
+.app.app-ready .btn{
+  min-height:40px!important;
+  border-radius:9px!important;
+  padding:8px 14px!important;
+  font-size:11px!important;
+  font-weight:700!important;
+}
+.app.app-ready .btn.primary{
+  background:linear-gradient(135deg,#d9b04e,#c3912e)!important;
+  color:#1e190d!important;
+  border-color:#b98624!important;
+}
+.app.app-ready .btn.ghost{
+  background:#fff!important;
+  color:#252d29!important;
+  border-color:var(--cn-line-strong)!important;
+}
+.app.app-ready .btn.danger{
+  background:var(--cn-red-soft)!important;
+  color:var(--cn-red)!important;
+  border-color:#e5cfcc!important;
+}
+.app.app-ready .link-btn:not(.danger){
+  color:var(--cn-blue)!important;
+}
+.app.app-ready .link-btn.danger,
+.app.app-ready .delete-person{
+  color:var(--cn-red)!important;
+}
+
+/* ---------- Controls ---------- */
+.app.app-ready :is(
+ .input,.select,textarea,input:not([type=checkbox]):not([type=radio]),select
+){
+  min-height:40px!important;
+  border:1px solid var(--cn-line-strong)!important;
+  border-radius:9px!important;
+  background:#fff!important;
+  color:#111514!important;
+  font-size:11px!important;
+}
+.app.app-ready :is(.input,.select,textarea,input,select):focus{
+  border-color:#c6aa67!important;
+  box-shadow:0 0 0 3px rgba(196,147,47,.10)!important;
+}
+.app.app-ready .form-grid{gap:12px!important}
+.app.app-ready .field{gap:6px!important}
+.app.app-ready .field label{
+  color:#59635e!important;
+  font-size:10px!important;
+  font-weight:680!important;
+}
+
+/* ---------- Standard tables ---------- */
+.app.app-ready [data-ui-table="standard"]{
+  width:100%!important;
+  table-layout:auto;
+}
+.app.app-ready [data-ui-table="standard"] th{
+  color:#050606!important;
+  background:#f1f3f2!important;
+  border-bottom:1px solid #cfd5d1!important;
+  font-size:9px!important;
+  font-weight:800!important;
+  letter-spacing:0!important;
+}
+.app.app-ready [data-ui-table="standard"] td{
+  color:#151a17!important;
+  border-bottom:1px solid var(--cn-line-soft)!important;
+}
+.app.app-ready [data-ui-table="standard"] tbody tr:hover td{
+  background:#f7f9fa!important;
+}
+.app.app-ready [data-ui-table="standard"] :is(th,td){
+  vertical-align:middle!important;
+}
+
+/* ---------- Structured empty state ---------- */
+.app.app-ready .empty[data-ui-empty="true"]:not(td){
+  min-height:116px!important;
+  padding:20px!important;
+  display:flex!important;
+  flex-direction:column!important;
+  align-items:center!important;
+  justify-content:center!important;
+  gap:4px!important;
+  border:1px dashed #d8ded9!important;
+  border-radius:var(--cn-radius-md)!important;
+  background:#fafbfa!important;
+  color:#7d8782!important;
+}
+.app.app-ready .empty[data-ui-empty="true"]:not(td)::before{display:none!important}
+.app.app-ready .cn-empty-icon{
+  width:30px!important;height:30px!important;
+  display:grid!important;place-items:center!important;
+  border-radius:50%!important;background:#eef1ef!important;color:#68746e!important;
+  font-size:14px!important;margin-bottom:2px!important;
+}
+.app.app-ready .cn-empty-title{
+  color:#3d4742!important;font-size:10px!important;font-weight:760!important;
+}
+.app.app-ready .cn-empty-desc{
+  color:#858f8a!important;font-size:9px!important;line-height:1.45!important;text-align:center!important;
+}
+
+/* ---------- Modal = unified secondary editor ---------- */
+.app.app-ready .modal{
+  width:min(900px,calc(100vw - 40px))!important;
+  padding:20px!important;
+  border:1px solid var(--cn-line-strong)!important;
+  border-radius:var(--cn-radius-lg)!important;
+  background:#fbfcfb!important;
+}
+.app.app-ready .cn-modal-eyebrow{
+  margin:0 0 4px!important;
+  color:var(--cn-gold-deep)!important;
+  font-size:8px!important;font-weight:800!important;letter-spacing:.16em!important;
+}
+.app.app-ready .modal h2{
+  margin:0 0 16px!important;
+  color:#101412!important;
+  font-size:19px!important;
+  font-weight:800!important;
+}
+.app.app-ready .modal-foot{
+  margin-top:16px!important;padding-top:12px!important;
+  border-top:1px solid var(--cn-line-soft)!important;
+}
+
+/* ---------- Dashboard mother page remains the density reference ---------- */
+.app.app-ready #overview .metric{
+  border-color:var(--cn-line-strong)!important;
+}
+.app.app-ready #overview :is(.overview-bottom-panel,.grid>.panel){
+  border-color:var(--cn-line-strong)!important;
+}
+
+/* ---------- People directory mother page ---------- */
+.app.app-ready #people>.card.panel{
+  padding:11px 12px 10px!important;
+}
+.app.app-ready #people .toolbar{
+  gap:8px!important;
+  margin:0 0 5px!important;
+}
+.app.app-ready #people .people-table-wrap{
+  border-color:var(--cn-line-strong)!important;
+}
+.app.app-ready #people .people-data-table thead th{
+  color:#050606!important;
+}
+.app.app-ready #people .people-data-table .table-name{
+  color:#050606!important;
+}
+.app.app-ready #people .people-pagination{
+  margin-top:6px!important;
+}
+
+/* ---------- Groups primary page ---------- */
+.app.app-ready #groups .balanced-groups-panel{
+  padding:12px!important;
+}
+.app.app-ready #groups .balanced-groups-grid{
+  gap:8px!important;
+}
+.app.app-ready #groups .balanced-group-card,
+.app.app-ready #groups .balanced-group-card:hover{
+  transform:none!important;
+  box-shadow:var(--cn-shadow)!important;
+}
+.app.app-ready #groups .balanced-members{
+  gap:4px!important;
+}
+.app.app-ready #groups .balanced-member{
+  min-height:27px!important;
+  border-color:var(--cn-line-soft)!important;
+  background:#fff!important;
+}
+.app.app-ready #groups .balanced-member-avatar,
+.app.app-ready #groups .balanced-member .person-portrait{
+  display:none!important;
+}
+.app.app-ready #groups .balanced-group-actions{
+  margin-top:auto!important;
+}
+
+/* ---------- Person transactions ---------- */
+.app.app-ready #tradeRecommend>.topbar,
+.app.app-ready #tradeRecommendBody>.topbar{
+  margin-bottom:9px!important;
+}
+.app.app-ready #tradeRecommend .grid{
+  gap:10px!important;
+}
+.app.app-ready #tradeRecommend .grid>.card,
+.app.app-ready #tradeRecommend .grid>.panel{
+  min-width:0!important;
+}
+.app.app-ready #tradeRecommend .offer-row{
+  min-height:48px!important;
+  border-color:var(--cn-line-soft)!important;
+}
+.app.app-ready #tradeRecommend .offer-row:hover{
+  background:#f7f9fa!important;
+  border-color:#ccd3cf!important;
+}
+.app.app-ready #tradeRecommend .candidate-card{
+  min-height:70px!important;
+}
+.app.app-ready #tradeRecommend .candidate-card .actions{
+  justify-content:center!important;
+}
+.app.app-ready #tradeRecommend .candidate-card .actions .btn{
+  width:100%!important;
+}
+
+/* ---------- Holdings ---------- */
+.app.app-ready #holdingsV2 .card.panel{
+  margin-bottom:9px!important;
+}
+.app.app-ready #holdingsV2 .holding-batch,
+.app.app-ready #holdingsV2 .holding-batch:hover{
+  transform:none!important;
+}
+.app.app-ready #holdingsV2 .holding-person-card{
+  min-height:104px!important;
+}
+.app.app-ready #holdingsV2 .holding-info-grid{
+  gap:5px!important;
+}
+.app.app-ready #holdingsV2 .holding-info-grid>div{
+  min-width:0!important;
+}
+.app.app-ready #holdingsV2 .stock-chart-legend span{
+  color:#68716d!important;
+}
+
+/* ---------- Trade plan ---------- */
+.app.app-ready #trades .trade-tabs{
+  margin-bottom:9px!important;
+}
+.app.app-ready #trades .trade-tab{
+  border:1px solid var(--cn-line-strong)!important;
+  color:#59635e!important;
+  background:#f6f8f7!important;
+}
+.app.app-ready #trades .trade-tab.active{
+  background:#fff!important;
+  color:#111514!important;
+  border-color:#c8cfcb!important;
+}
+.app.app-ready #trades .trade-item{
+  border-color:var(--cn-line-soft)!important;
+}
+.app.app-ready #trades .trade-item.due{
+  border-color:#dcc786!important;
+  background:#fbf8ef!important;
+}
+.app.app-ready #trades .trade-item.overdue{
+  border-color:#e2c5c2!important;
+  background:#fbf3f2!important;
+}
+
+/* ---------- Records ---------- */
+.app.app-ready #records>.notice{
+  margin:0 0 9px!important;
+}
+.app.app-ready #records>.card.panel{
+  padding:12px!important;
+}
+.app.app-ready #records .toolbar{
+  margin-bottom:10px!important;
+}
+.app.app-ready #records .event{
+  border-color:var(--cn-line-soft)!important;
+  background:#fff!important;
+}
+.app.app-ready #records .event .tags{
+  margin-top:7px!important;
+}
+.app.app-ready #records .view-record{
+  margin-left:auto!important;
+}
+
+/* ---------- Writing ---------- */
+.app.app-ready #novel .daily-doc-layout{
+  gap:10px!important;
+}
+.app.app-ready #novel :is(.speech-panel,.editor-card,.memory-panel),
+.app.app-ready #novel :is(.speech-panel,.editor-card,.memory-panel):hover{
+  transform:none!important;
+  box-shadow:var(--cn-shadow)!important;
+}
+.app.app-ready #novel .speech-row{
+  min-height:32px!important;
+}
+.app.app-ready #novel .word-toolbar{
+  background:#f6f8f7!important;
+  border-color:var(--cn-line-strong)!important;
+}
+.app.app-ready #novel .word-toolbar button{
+  color:#4d5953!important;
+  background:#fff!important;
+  border-color:var(--cn-line-soft)!important;
+}
+.app.app-ready #novel .rich-editor{
+  color:#151a17!important;
+  background:#fff!important;
+  border-color:var(--cn-line-strong)!important;
+}
+
+/* ---------- France 70 ---------- */
+.app.app-ready #france70chat .fr70-layout{
+  gap:10px!important;
+}
+.app.app-ready #france70chat .fr70-card,
+.app.app-ready #france70chat .fr70-card:hover{
+  transform:none!important;
+  box-shadow:var(--cn-shadow)!important;
+}
+.app.app-ready #france70chat :is(.fr70-textarea,.fr70-prompt,.fr70-output){
+  width:100%!important;
+  border:1px solid var(--cn-line-strong)!important;
+  border-radius:9px!important;
+  background:#fff!important;
+  color:#151a17!important;
+}
+.app.app-ready #france70chat .fr70-seg{
+  border:1px solid var(--cn-line-strong)!important;
+  border-radius:9px!important;
+  background:#f6f8f7!important;
+  padding:3px!important;
+}
+.app.app-ready #france70chat .fr70-seg button{
+  min-height:30px!important;
+  border-radius:7px!important;
+  color:#59635e!important;
+}
+.app.app-ready #france70chat .fr70-seg button.active{
+  background:#fff!important;
+  color:#111514!important;
+}
+.app.app-ready #france70chat .fr70-history button,
+.app.app-ready #france70chat .fr70-memory-row{
+  border:1px solid var(--cn-line-soft)!important;
+  border-radius:8px!important;
+  background:#fff!important;
+}
+
+/* ---------- Consistency ---------- */
+.app.app-ready #topics>.card.panel{
+  padding:14px!important;
+}
+.app.app-ready #topics .check-box{
+  border-color:var(--cn-line-soft)!important;
+  background:#fafbfa!important;
+}
+.app.app-ready #topics .tags{
+  gap:6px!important;
+}
+
+/* ---------- Unified secondary pages ---------- */
+.app.app-ready .cn-secondary-page{
+  color:var(--cn-ink)!important;
+}
+.app.app-ready .cn-secondary-page .detail-head{
+  border-color:var(--cn-line-strong)!important;
+}
+.app.app-ready .cn-secondary-page .detail-identity{
+  display:flex!important;
+  align-items:center!important;
+  gap:12px!important;
+  min-width:0!important;
+}
+.app.app-ready .cn-detail-mark{
+  width:54px!important;height:54px!important;min-width:54px!important;
+  display:grid!important;place-items:center!important;
+  border:1px solid var(--cn-line-strong)!important;
+  border-radius:12px!important;
+  background:#f2f4f3!important;
+  color:#4d5953!important;
+  font-size:13px!important;font-weight:800!important;letter-spacing:.04em!important;
+}
+.app.app-ready .cn-detail-kpis{
+  display:grid!important;
+  grid-template-columns:repeat(5,minmax(0,1fr))!important;
+  gap:8px!important;
+  margin-bottom:10px!important;
+}
+.app.app-ready .cn-detail-kpi{
+  min-height:74px!important;
+  padding:10px!important;
+}
+.app.app-ready .cn-detail-kpi span{
+  display:block!important;
+  color:var(--cn-muted)!important;
+  font-size:8.5px!important;
+}
+.app.app-ready .cn-detail-kpi strong{
+  display:block!important;
+  color:#111514!important;
+  font-size:17px!important;
+  margin-top:5px!important;
+}
+.app.app-ready .cn-two-column-detail{
+  display:grid!important;
+  grid-template-columns:minmax(0,1.35fr) minmax(300px,.65fr)!important;
+  gap:10px!important;
+}
+.app.app-ready .cn-rule-list{
+  display:grid!important;
+  grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  gap:7px!important;
+}
+.app.app-ready .cn-rule-list>div{
+  min-height:54px!important;
+  padding:8px 9px!important;
+}
+.app.app-ready .cn-rule-list span{
+  display:block!important;
+  color:var(--cn-muted)!important;
+  font-size:8px!important;
+}
+.app.app-ready .cn-rule-list b{
+  display:block!important;
+  margin-top:3px!important;
+  color:#171c19!important;
+  font-size:9.5px!important;
+}
+.app.app-ready .cn-record-detail-grid{
+  display:grid!important;
+  grid-template-columns:minmax(0,1.45fr) minmax(300px,.55fr)!important;
+  gap:10px!important;
+}
+.app.app-ready .cn-record-content{
+  min-height:230px!important;
+  padding:14px!important;
+  border:1px solid var(--cn-line-soft)!important;
+  border-radius:8px!important;
+  background:#fff!important;
+  color:#222a26!important;
+  font-size:11px!important;
+  line-height:1.75!important;
+  white-space:pre-wrap!important;
+}
+.app.app-ready .cn-linked-person{
+  min-height:110px!important;
+  padding:12px!important;
+  display:grid!important;
+  align-content:start!important;
+  gap:6px!important;
+}
+.app.app-ready .cn-linked-person b{
+  color:#111514!important;
+  font-size:12px!important;
+}
+.app.app-ready .cn-linked-person span{
+  color:var(--cn-muted)!important;
+  font-size:9px!important;
+}
+.app.app-ready .cn-linked-person .btn{
+  justify-self:start!important;
+  margin-top:6px!important;
+}
+
+/* Person detail: keep lower three modules roomy and aligned. */
+.app.app-ready #personDetailPage .detail-bottom-grid{
+  align-items:stretch!important;
+}
+.app.app-ready #personDetailPage .detail-bottom-card{
+  min-height:200px!important;
+  height:100%!important;
+}
+.app.app-ready #personDetailPage .detail-columns>.detail-card{
+  height:100%!important;
+}
+.app.app-ready #personDetailPage .detail-holdings-table{
+  margin-bottom:8px!important;
+}
+
+/* ---------- 16:9 desktop containment ---------- */
+@media(min-width:1180px) and (min-aspect-ratio:4/3){
+  .app.app-ready>.main>.section{
+    padding:0!important;
+    overflow:auto!important;
+  }
+  .app.app-ready #overview.active,
+  .app.app-ready #people.active,
+  .app.app-ready #groups.active{
+    overflow:hidden!important;
+  }
+  .app.app-ready #tradeRecommend.active,
+  .app.app-ready #holdingsV2.active,
+  .app.app-ready #trades.active,
+  .app.app-ready #records.active,
+  .app.app-ready #novel.active,
+  .app.app-ready #france70chat.active,
+  .app.app-ready #topics.active,
+  .app.app-ready .cn-secondary-page.active{
+    overflow:auto!important;
+    padding-right:2px!important;
+  }
+  .app.app-ready #records>.card.panel{
+    min-height:calc(100% - 142px)!important;
+  }
+  .app.app-ready #topics>.card.panel{
+    min-height:calc(100% - 101px)!important;
+  }
+}
+
+/* ---------- Responsive continuation ---------- */
+@media(max-width:1350px) and (min-width:901px){
+  .app.app-ready .cn-two-column-detail,
+  .app.app-ready .cn-record-detail-grid{
+    grid-template-columns:1fr!important;
+  }
+  .app.app-ready .cn-detail-kpis{
+    grid-template-columns:repeat(3,minmax(0,1fr))!important;
+  }
+}
+@media(max-width:900px){
+  .app.app-ready .cn-detail-kpis{
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  }
+  .app.app-ready .cn-rule-list{
+    grid-template-columns:1fr!important;
+  }
+  .app.app-ready .cn-two-column-detail,
+  .app.app-ready .cn-record-detail-grid{
+    grid-template-columns:1fr!important;
+  }
+  .app.app-ready .cn-secondary-page .detail-head{
+    height:auto!important;max-height:none!important;
+  }
+}
+
+
+/* France 70 persona secondary detail */
+.app.app-ready #fr70PersonDetailPage .cn-memory-detail-list{
+  display:grid!important;
+  gap:6px!important;
+  max-height:420px!important;
+  overflow:auto!important;
+}
+.app.app-ready #fr70PersonDetailPage .cn-memory-detail-row{
+  padding:8px 9px!important;
+  border:1px solid var(--cn-line-soft)!important;
+  border-radius:8px!important;
+  background:#fafbfa!important;
+}
+.app.app-ready #fr70PersonDetailPage .cn-memory-detail-row>div{
+  display:flex!important;
+  align-items:center!important;
+  justify-content:space-between!important;
+  gap:8px!important;
+}
+.app.app-ready #fr70PersonDetailPage .cn-memory-detail-row b{
+  color:#161b18!important;
+  font-size:9px!important;
+}
+.app.app-ready #fr70PersonDetailPage .cn-memory-detail-row small{
+  color:var(--cn-muted)!important;
+  font-size:7.5px!important;
+}
+.app.app-ready #fr70PersonDetailPage .cn-memory-detail-row p{
+  margin:5px 0 0!important;
+  color:#4f5a54!important;
+  font-size:9px!important;
+  line-height:1.55!important;
+}
+.app.app-ready .cn-json-preview{
+  max-height:520px!important;
+  margin:0!important;
+  padding:12px!important;
+  overflow:auto!important;
+  border:1px solid var(--cn-line-soft)!important;
+  border-radius:8px!important;
+  background:#f7f9f8!important;
+  color:#25302b!important;
+  font:500 9px/1.55 ui-monospace,SFMono-Regular,Consolas,monospace!important;
+  white-space:pre-wrap!important;
+  word-break:break-word!important;
+}
+
+
+/* ===== V3 FULL MODULE LAYOUTS ===== */
+/* Groups: 10 cards remain 5x2, but information is readable and complete. */
+.app.app-ready #groups .balanced-groups-grid{
+  grid-template-columns:repeat(5,minmax(0,1fr))!important;
+  gap:10px!important;
+}
+.app.app-ready #groups .balanced-group-card{
+  padding:12px!important;
+  min-height:0!important;
+}
+.app.app-ready #groups .balanced-group-head h3{
+  font-size:14px!important;
+  color:#111514!important;
+}
+.app.app-ready #groups .balanced-group-head small{
+  font-size:8.5px!important;
+}
+.app.app-ready #groups .balanced-group-total{
+  height:26px!important;
+  min-width:42px!important;
+  font-size:9px!important;
+}
+.app.app-ready #groups .balanced-composition{
+  gap:5px!important;
+}
+.app.app-ready #groups .balanced-composition span{
+  min-height:27px!important;
+  padding:5px 3px!important;
+  font-size:8.5px!important;
+  color:#4f5a54!important;
+}
+.app.app-ready #groups .balanced-member-head,
+.app.app-ready #groups .balanced-member{
+  display:grid!important;
+  grid-template-columns:42px minmax(0,1fr) 34px 38px!important;
+  gap:7px!important;
+  align-items:center!important;
+}
+.app.app-ready #groups .balanced-member-head{
+  padding:0 7px!important;
+  color:#7a847f!important;
+  font-size:7.5px!important;
+  min-height:18px!important;
+}
+.app.app-ready #groups .balanced-members{
+  gap:4px!important;
+}
+.app.app-ready #groups .balanced-member{
+  min-height:30px!important;
+  height:30px!important;
+  padding:0 7px!important;
+}
+.app.app-ready #groups .balanced-member-code{
+  font-size:8.5px!important;
+  color:#111514!important;
+}
+.app.app-ready #groups .balanced-member-name{
+  font-size:9px!important;
+  color:#111514!important;
+  font-weight:700!important;
+}
+.app.app-ready #groups .balanced-member-type{
+  font-size:8px!important;
+  color:#606a65!important;
+  justify-self:start!important;
+}
+.app.app-ready #groups .balanced-member-vip{
+  font-size:8px!important;
+  color:#5a4a23!important;
+  justify-self:end!important;
+}
+.app.app-ready #groups .balanced-group-actions .btn{
+  height:32px!important;
+  min-height:32px!important;
+  font-size:9px!important;
+}
+
+/* Person transaction page */
+.app.app-ready #tradeRecommend .trade-recommend-top{
+  display:grid!important;
+  grid-template-columns:minmax(0,.95fr) minmax(0,1.05fr)!important;
+  gap:10px!important;
+  margin-bottom:10px!important;
+}
+.app.app-ready #tradeRecommend .trade-plan-panel,
+.app.app-ready #tradeRecommend .trade-current-panel,
+.app.app-ready #tradeRecommend .trade-recommend-people{
+  padding:14px!important;
+}
+.app.app-ready #tradeRecommend .trade-plan-list{
+  display:grid!important;
+  gap:7px!important;
+}
+.app.app-ready #tradeRecommend .trade-plan-row{
+  min-height:64px!important;
+  padding:9px 10px!important;
+  display:grid!important;
+  grid-template-columns:minmax(0,1fr) auto!important;
+  gap:10px!important;
+  align-items:center!important;
+  border:1px solid var(--cn-line-soft)!important;
+  border-radius:9px!important;
+  background:#fff!important;
+}
+.app.app-ready #tradeRecommend .trade-plan-row.active{
+  border-color:#d6c28e!important;
+  background:#fbf8ef!important;
+}
+.app.app-ready #tradeRecommend .trade-plan-title{
+  display:flex!important;
+  align-items:center!important;
+  gap:7px!important;
+}
+.app.app-ready #tradeRecommend .trade-plan-title b{
+  color:#111514!important;
+  font-size:12px!important;
+}
+.app.app-ready #tradeRecommend .trade-plan-title span{
+  color:#39433e!important;
+  font-size:10px!important;
+  font-weight:650!important;
+}
+.app.app-ready #tradeRecommend .trade-plan-meta{
+  display:flex!important;
+  flex-wrap:wrap!important;
+  gap:4px 8px!important;
+  margin-top:5px!important;
+}
+.app.app-ready #tradeRecommend .trade-plan-meta span{
+  color:#68716d!important;
+  font-size:8.5px!important;
+}
+.app.app-ready #tradeRecommend .trade-plan-actions{
+  display:flex!important;
+  gap:8px!important;
+}
+.app.app-ready #tradeRecommend .trade-current-title{
+  display:flex!important;
+  gap:8px!important;
+  align-items:baseline!important;
+  margin-bottom:10px!important;
+}
+.app.app-ready #tradeRecommend .trade-current-title b{
+  font-size:18px!important;
+  color:#111514!important;
+}
+.app.app-ready #tradeRecommend .trade-current-title span{
+  font-size:11px!important;
+  color:#46504b!important;
+}
+.app.app-ready #tradeRecommend .offer-grid{
+  grid-template-columns:repeat(4,minmax(0,1fr))!important;
+  gap:7px!important;
+}
+.app.app-ready #tradeRecommend .offer-stat{
+  min-height:68px!important;
+  padding:9px 10px!important;
+  border-color:var(--cn-line-soft)!important;
+}
+.app.app-ready #tradeRecommend .offer-stat span{
+  font-size:8px!important;
+}
+.app.app-ready #tradeRecommend .offer-stat b{
+  font-size:12px!important;
+}
+.app.app-ready #tradeRecommend .trade-recommend-people{
+  min-height:250px!important;
+}
+.app.app-ready #tradeRecommend .trade-recommend-head-actions{
+  display:flex!important;
+  align-items:center!important;
+  gap:6px!important;
+  flex-wrap:wrap!important;
+}
+.app.app-ready #tradeRecommend .trade-summary-chip{
+  min-height:28px!important;
+  padding:5px 8px!important;
+  display:inline-flex!important;
+  align-items:center!important;
+  border:1px solid var(--cn-line-soft)!important;
+  border-radius:999px!important;
+  color:#53605a!important;
+  font-size:8px!important;
+  background:#f7f8f7!important;
+}
+.app.app-ready #tradeRecommend .trade-candidate-table{
+  display:grid!important;
+  border:1px solid var(--cn-line-strong)!important;
+  border-radius:10px!important;
+  overflow:hidden!important;
+}
+.app.app-ready #tradeRecommend .trade-candidate-head,
+.app.app-ready #tradeRecommend .trade-candidate-row{
+  display:grid!important;
+  grid-template-columns:minmax(180px,1.4fr) 70px 58px 110px minmax(120px,.9fr) 90px 150px!important;
+  gap:8px!important;
+  align-items:center!important;
+}
+.app.app-ready #tradeRecommend .trade-candidate-head{
+  min-height:34px!important;
+  padding:0 10px!important;
+  background:#f1f3f2!important;
+  color:#111514!important;
+  font-size:8px!important;
+  font-weight:800!important;
+  border-bottom:1px solid var(--cn-line-strong)!important;
+}
+.app.app-ready #tradeRecommend .trade-candidate-row{
+  min-height:54px!important;
+  padding:6px 10px!important;
+  background:#fff!important;
+  border-bottom:1px solid var(--cn-line-soft)!important;
+  color:#26302b!important;
+  font-size:8.5px!important;
+}
+.app.app-ready #tradeRecommend .trade-candidate-row:last-child{border-bottom:0!important}
+.app.app-ready #tradeRecommend .trade-candidate-row.invited{background:#fbf9f2!important}
+.app.app-ready #tradeRecommend .trade-candidate-row.rejected{background:#fafafa!important;opacity:.78!important}
+.app.app-ready #tradeRecommend .trade-candidate-row.bought{background:#f3f8f5!important}
+.app.app-ready #tradeRecommend .trade-candidate-person{
+  display:grid!important;
+  grid-template-columns:34px minmax(0,1fr)!important;
+  gap:7px!important;
+  align-items:center!important;
+}
+.app.app-ready #tradeRecommend .trade-candidate-avatar{
+  width:32px!important;height:32px!important;
+  display:block!important;
+  overflow:hidden!important;
+  border-radius:50%!important;
+  background:#eef1ef!important;
+}
+.app.app-ready #tradeRecommend .trade-candidate-avatar .person-portrait{
+  width:100%!important;height:100%!important;
+}
+.app.app-ready #tradeRecommend .trade-candidate-person b{
+  color:#111514!important;font-size:9px!important;
+}
+.app.app-ready #tradeRecommend .trade-candidate-person small,
+.app.app-ready #tradeRecommend .trade-candidate-row small{
+  display:block!important;
+  margin-top:2px!important;
+  color:#7a847f!important;
+  font-size:7.5px!important;
+}
+.app.app-ready #tradeRecommend .trade-candidate-actions{
+  display:flex!important;
+  justify-content:flex-end!important;
+  align-items:center!important;
+  gap:6px!important;
+}
+.app.app-ready #tradeRecommend .fund-ok{color:#4f7f68!important}
+.app.app-ready #tradeRecommend .fund-bad{color:#8f2f2f!important}
+.app.app-ready #tradeRecommend .fund-wait{color:#6c756f!important}
+.app.app-ready #tradeRecommend .candidate-state{
+  font-size:8px!important;
+  font-weight:700!important;
+  color:#59635e!important;
+}
+.app.app-ready #tradeRecommend .candidate-state-bought{color:#4f7f68!important}
+.app.app-ready #tradeRecommend .candidate-state-rejected{color:#8f2f2f!important}
+
+/* Holdings */
+.app.app-ready #holdingsV2 .holding-kpis,
+.app.app-ready #records .record-summary-grid,
+.app.app-ready #novel .writing-summary-grid,
+.app.app-ready #topics .consistency-summary-grid{
+  display:grid!important;
+  grid-template-columns:repeat(4,minmax(0,1fr))!important;
+  gap:8px!important;
+  margin-bottom:10px!important;
+}
+.app.app-ready #records .record-summary-grid,
+.app.app-ready #topics .consistency-summary-grid{
+  grid-template-columns:repeat(5,minmax(0,1fr))!important;
+}
+.app.app-ready :is(
+ #holdingsV2 .holding-kpi,
+ #records .record-summary-card,
+ #novel .writing-summary-card,
+ #topics .consistency-summary-card
+){
+  min-height:76px!important;
+  padding:10px 12px!important;
+}
+.app.app-ready :is(
+ #holdingsV2 .holding-kpi,
+ #records .record-summary-card,
+ #novel .writing-summary-card,
+ #topics .consistency-summary-card
+) span{
+  display:block!important;
+  color:#68716d!important;
+  font-size:8.5px!important;
+}
+.app.app-ready :is(
+ #holdingsV2 .holding-kpi,
+ #records .record-summary-card,
+ #novel .writing-summary-card,
+ #topics .consistency-summary-card
+) strong{
+  display:block!important;
+  margin-top:4px!important;
+  color:#111514!important;
+  font-size:18px!important;
+  line-height:1.15!important;
+}
+.app.app-ready :is(
+ #holdingsV2 .holding-kpi,
+ #records .record-summary-card,
+ #novel .writing-summary-card,
+ #topics .consistency-summary-card
+) small{
+  display:block!important;
+  margin-top:3px!important;
+  color:#8a938e!important;
+  font-size:7.5px!important;
+}
+.app.app-ready #holdingsV2 .holding-main-grid{
+  display:grid!important;
+  grid-template-columns:minmax(0,1.35fr) minmax(330px,.65fr)!important;
+  gap:10px!important;
+  margin-bottom:10px!important;
+}
+.app.app-ready #holdingsV2 .holding-chart-panel,
+.app.app-ready #holdingsV2 .holding-next-panel,
+.app.app-ready #holdingsV2 .holding-detail-panel{
+  padding:13px!important;
+}
+.app.app-ready #holdingsV2 .holding-next-list{
+  display:grid!important;
+  gap:6px!important;
+}
+.app.app-ready #holdingsV2 .holding-next-row{
+  min-height:48px!important;
+  padding:7px 8px!important;
+  display:grid!important;
+  grid-template-columns:minmax(0,1fr) auto!important;
+  align-items:center!important;
+  gap:8px!important;
+  border:1px solid var(--cn-line-soft)!important;
+  border-radius:8px!important;
+  background:#fff!important;
+}
+.app.app-ready #holdingsV2 .holding-next-row>div:last-child{text-align:right!important}
+.app.app-ready #holdingsV2 .holding-next-row b{font-size:9px!important;color:#111514!important}
+.app.app-ready #holdingsV2 .holding-next-row small,
+.app.app-ready #holdingsV2 .holding-next-row span{
+  display:block!important;font-size:7.5px!important;color:#737e78!important;margin-top:2px!important;
+}
+.app.app-ready #holdingsV2 .holding-next-row strong{
+  display:block!important;font-size:8px!important;color:#2c3530!important;
+}
+
+/* Trade plan */
+.app.app-ready #trades .trade-summary-grid{
+  display:grid!important;
+  grid-template-columns:repeat(4,minmax(0,1fr))!important;
+  gap:8px!important;
+  margin-bottom:8px!important;
+}
+.app.app-ready #trades .trade-summary-card{
+  min-height:70px!important;
+  padding:9px 11px!important;
+}
+.app.app-ready #trades .trade-summary-card span{display:block!important;color:#68716d!important;font-size:8px!important}
+.app.app-ready #trades .trade-summary-card strong{display:block!important;color:#111514!important;font-size:18px!important;margin-top:3px!important}
+.app.app-ready #trades .trade-summary-card small{display:block!important;color:#8a938e!important;font-size:7.5px!important;margin-top:2px!important}
+.app.app-ready #trades .trade-tabs{margin:0 0 8px!important}
+.app.app-ready #trades .trade-plan-table{
+  border:1px solid var(--cn-line-strong)!important;
+  border-radius:10px!important;
+  overflow:hidden!important;
+}
+.app.app-ready #trades .trade-plan-table-head,
+.app.app-ready #trades .trade-plan-table-row{
+  display:grid!important;
+  grid-template-columns:minmax(125px,.8fr) minmax(150px,1fr) 70px 80px minmax(145px,1fr) 90px 170px!important;
+  gap:8px!important;
+  align-items:center!important;
+}
+.app.app-ready #trades .trade-plan-table-head{
+  min-height:34px!important;
+  padding:0 10px!important;
+  background:#f1f3f2!important;
+  color:#111514!important;
+  font-size:8px!important;
+  font-weight:800!important;
+}
+.app.app-ready #trades .trade-plan-table-row{
+  min-height:52px!important;
+  padding:6px 10px!important;
+  border-top:1px solid var(--cn-line-soft)!important;
+  background:#fff!important;
+  color:#28312c!important;
+  font-size:8.5px!important;
+}
+.app.app-ready #trades .trade-plan-table-row.due{background:#fbf8ef!important}
+.app.app-ready #trades .trade-plan-table-row.overdue{background:#fbf2f1!important}
+.app.app-ready #trades .trade-plan-table-row b{display:block!important;color:#111514!important;font-size:9px!important}
+.app.app-ready #trades .trade-plan-table-row small{display:block!important;color:#7b8580!important;font-size:7.5px!important;margin-top:2px!important}
+.app.app-ready #trades .trade-table-actions{
+  display:flex!important;align-items:center!important;justify-content:flex-end!important;gap:6px!important;white-space:nowrap!important;
+}
+.app.app-ready #trades .unholding-grid{
+  display:grid!important;
+  grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  gap:7px!important;
+}
+.app.app-ready #trades .unholding-row{
+  min-height:58px!important;
+  padding:8px 10px!important;
+  display:grid!important;
+  grid-template-columns:minmax(0,1fr) 90px 130px!important;
+  gap:10px!important;
+  align-items:center!important;
+  border:1px solid var(--cn-line-soft)!important;
+  border-radius:8px!important;
+  background:#fff!important;
+}
+.app.app-ready #trades .unholding-row b{font-size:9px!important;color:#111514!important}
+.app.app-ready #trades .unholding-row small{display:block!important;font-size:7.5px!important;color:#7b8580!important;margin-top:2px!important}
+.app.app-ready #trades .unholding-row>div:nth-child(2) span{display:block!important;color:#7b8580!important;font-size:7.5px!important}
+.app.app-ready #trades .trade-settings-layout{
+  display:grid!important;
+  grid-template-columns:minmax(0,1.05fr) minmax(320px,.95fr)!important;
+  gap:10px!important;
+}
+
+/* Records */
+.app.app-ready #records .record-main-panel{
+  padding:12px!important;
+}
+.app.app-ready #records .record-main-panel .panel-head{
+  margin-bottom:8px!important;
+}
+.app.app-ready #records .event{
+  border:1px solid var(--cn-line-soft)!important;
+  background:#fff!important;
+}
+.app.app-ready #records .event:hover{
+  transform:translateY(-1px)!important;
+  box-shadow:0 5px 12px rgba(45,55,49,.05)!important;
+}
+
+/* Writing */
+.app.app-ready #novel .writing-summary-grid{
+  margin-bottom:10px!important;
+}
+.app.app-ready #novel .writing-summary-card strong{
+  font-size:14px!important;
+}
+.app.app-ready #novel .daily-doc-layout{
+  grid-template-columns:170px minmax(0,1fr) 320px!important;
+}
+.app.app-ready #novel .editor-card{
+  min-height:0!important;
+}
+.app.app-ready #novel .rich-editor{
+  min-height:420px!important;
+}
+.app.app-ready #novel .speech-panel,
+.app.app-ready #novel .memory-panel{
+  min-height:520px!important;
+}
+
+/* France 70 */
+.app.app-ready #france70chat .fr70-stats{
+  grid-template-columns:repeat(3,minmax(0,1fr))!important;
+  margin-bottom:10px!important;
+}
+.app.app-ready #france70chat .fr70-layout{
+  grid-template-columns:minmax(0,1.05fr) minmax(380px,.95fr)!important;
+}
+.app.app-ready #france70chat .fr70-card{
+  margin-top:10px!important;
+}
+.app.app-ready #france70chat .fr70-card .eyebrow{
+  color:#8a681e!important;
+}
+.app.app-ready #france70chat .fr70-chat{
+  min-height:240px!important;
+  max-height:420px!important;
+  overflow:auto!important;
+}
+
+/* Consistency */
+.app.app-ready #topics .consistency-layout{
+  display:grid!important;
+  grid-template-columns:minmax(0,1.2fr) minmax(360px,.8fr)!important;
+  gap:10px!important;
+}
+.app.app-ready #topics .consistency-layout>.panel{
+  padding:13px!important;
+}
+.app.app-ready #topics .check-box{
+  margin-top:8px!important;
+}
+.app.app-ready #topics .topic-summary-list{
+  display:grid!important;
+  gap:6px!important;
+}
+.app.app-ready #topics .topic-summary-row{
+  min-height:38px!important;
+  padding:7px 9px!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:space-between!important;
+  border:1px solid var(--cn-line-soft)!important;
+  border-radius:8px!important;
+  background:#fff!important;
+}
+.app.app-ready #topics .topic-summary-row span{
+  color:#3d4842!important;
+  font-size:9px!important;
+}
+.app.app-ready #topics .topic-summary-row b{
+  color:#111514!important;
+  font-size:10px!important;
+}
+
+/* Responsive fallbacks */
+@media(max-width:1400px) and (min-width:901px){
+  .app.app-ready #groups .balanced-groups-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  .app.app-ready #tradeRecommend .trade-candidate-head,
+  .app.app-ready #tradeRecommend .trade-candidate-row{
+    grid-template-columns:minmax(160px,1.2fr) 60px 50px 100px minmax(100px,.8fr) 80px 130px!important;
+  }
+  .app.app-ready #trades .trade-plan-table-head,
+  .app.app-ready #trades .trade-plan-table-row{
+    grid-template-columns:110px 130px 60px 70px 130px 80px 150px!important;
+  }
+}
+@media(max-width:1100px){
+  .app.app-ready #tradeRecommend .trade-recommend-top,
+  .app.app-ready #holdingsV2 .holding-main-grid,
+  .app.app-ready #trades .trade-settings-layout,
+  .app.app-ready #topics .consistency-layout{
+    grid-template-columns:1fr!important;
+  }
+  .app.app-ready #tradeRecommend .trade-candidate-table,
+  .app.app-ready #trades .trade-plan-table{
+    overflow-x:auto!important;
+  }
+}

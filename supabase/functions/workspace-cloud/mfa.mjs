@@ -1,0 +1,10 @@
+const encoder=new TextEncoder();
+const alphabet='ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
+export function secret(){const bytes=crypto.getRandomValues(new Uint8Array(20));let bits=0,value=0,out='';for(const b of bytes){value=(value<<8)|b;bits+=8;while(bits>=5){bits-=5;out+=alphabet[(value>>>bits)&31]}}return out}
+function decode(s){let bits=0,value=0,out=[];for(const c of s){const n=alphabet.indexOf(c);if(n<0)throw new Error('Invalid seed');value=(value<<5)|n;bits+=5;if(bits>=8){bits-=8;out.push((value>>>bits)&255)}}return new Uint8Array(out)}
+export async function codeAt(seed,step){const key=await crypto.subtle.importKey('raw',decode(seed),{name:'HMAC',hash:'SHA-1'},false,['sign']);const counter=new Uint8Array(8);new DataView(counter.buffer).setBigUint64(0,BigInt(step));const hash=new Uint8Array(await crypto.subtle.sign('HMAC',key,counter));const offset=hash.at(-1)&15;const number=((hash[offset]&127)<<24)|(hash[offset+1]<<16)|(hash[offset+2]<<8)|hash[offset+3];return String(number%1000000).padStart(6,'0')}
+export async function verify(seed,code,lastStep=-1,now=Date.now()){if(!/^\d{6}$/.test(code))return null;const step=Math.floor(now/30000);for(const delta of [0,-1,1]){const candidate=step+delta;if(candidate>lastStep&&await codeAt(seed,candidate)===code)return candidate}return null}
+const to64=b=>btoa(String.fromCharCode(...b));const from64=s=>Uint8Array.from(atob(s),c=>c.charCodeAt(0));
+async function key(material){return crypto.subtle.importKey('raw',await crypto.subtle.digest('SHA-256',encoder.encode('chennan-mfa-seed-v1:'+material)),{name:'AES-GCM'},false,['encrypt','decrypt'])}
+export async function seal(seed,material){const iv=crypto.getRandomValues(new Uint8Array(12));const data=new Uint8Array(await crypto.subtle.encrypt({name:'AES-GCM',iv},await key(material),encoder.encode(seed)));return 'v1:'+to64(iv)+':'+to64(data)}
+export async function open(value,material){const [version,iv,data]=String(value).split(':');if(version!=='v1')throw new Error('Invalid encrypted seed');return new TextDecoder().decode(await crypto.subtle.decrypt({name:'AES-GCM',iv:from64(iv)},await key(material),from64(data)))}
