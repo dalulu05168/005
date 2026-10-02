@@ -5,17 +5,49 @@
 const $=(s,r=document)=>r.querySelector(s);
 const $$=(s,r=document)=>Array.from(r.querySelectorAll(s));
 
+const LEGACY_VISUAL_STYLE_IDS=[
+  'chennanOverviewFinalDesign',
+  'chennanUnifiedWorkspaceDesign',
+  'chennanDesktopRectification20261003',
+  'chennanFinalPolish20261003',
+  'chennanPeoplePageTight20261003',
+  'chennanPeopleFinalClean20261003',
+  'chennanBalancedGroupsPage20261003',
+  'chennanPeoplePagination20261003',
+  'chennanBalancedGroupsNoAvatar20261003',
+  'chennanGroupsHoverFinal20261003',
+  'peopleDetailStyles',
+  'simStyles',
+  'tradeExtraStyles',
+  'dailyDocStyles'
+];
+
+function purgeLegacyVisualStyles(){
+  LEGACY_VISUAL_STYLE_IDS.forEach(id=>document.getElementById(id)?.remove());
+}
+
 function ensureStylesheetLast(){
-  let link=$('#chennanDesignSystemStyles');
+  let link=$('#chennanDesignSystemStyles')||document.querySelector('link[href*="design-system.css"]');
   if(!link){
     link=document.createElement('link');
-    link.id='chennanDesignSystemStyles';
     link.rel='stylesheet';
-    link.href='./design-system.css?v=20261003-unified-2';
   }
+  link.id='chennanDesignSystemStyles';
+  link.href='./design-system.css?v=20261003-product-design-final-1';
   document.head.appendChild(link);
 }
+purgeLegacyVisualStyles();
 ensureStylesheetLast();
+
+new MutationObserver(records=>{
+  let touched=false;
+  records.forEach(r=>r.addedNodes.forEach(node=>{
+    if(node?.nodeType===1&&node.tagName==='STYLE'&&LEGACY_VISUAL_STYLE_IDS.includes(node.id)){
+      node.remove();touched=true;
+    }
+  }));
+  if(touched)ensureStylesheetLast();
+}).observe(document.head,{childList:true});
 
 const NAV_ICONS={
   overview:'<path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10.5V20h13v-9.5"/><path d="M9.5 20v-6h5v6"/>',
@@ -31,7 +63,7 @@ const NAV_ICONS={
 };
 
 function svgIcon(inner){
-  return '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">'+inner+'</svg>';
+  return '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">'+inner+'</svg>';
 }
 function normalizeNavIcons(){
   document.querySelectorAll('.sidebar .nav button[data-page]').forEach(btn=>{
@@ -183,6 +215,8 @@ function normalizeSurfaceRoles(root=document){
 }
 
 function normalizeAll(root=document){
+  purgeLegacyVisualStyles();
+  ensureStylesheetLast();
   normalizeNavIcons();
   tagSections();
   normalizeButtons(root);
