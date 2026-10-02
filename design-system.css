@@ -2018,3 +2018,564 @@ dialog.growth-notice{
     overflow-x:auto!important;
   }
 }
+
+
+/* ===== PRODUCT DESIGN FINAL AUTHORITY 2026-10-03 =====
+   唯一视觉真源：已确认的“投资者人物总览 / 人物库”。
+   此段必须位于文件末尾，不允许业务脚本再次注入页面级 CSS。 */
+:root{
+  --pd-bg:#eef1f2;
+  --pd-surface:#fbfcfb;
+  --pd-surface-2:#f6f8f7;
+  --pd-line:#d7dcd8;
+  --pd-line-soft:#e5e8e5;
+  --pd-ink:#111514;
+  --pd-muted:#68716d;
+  --pd-gold:#c4932f;
+  --pd-gold-soft:#f7e8b9;
+  --pd-blue:#214f82;
+  --pd-red:#8f2f2f;
+  --pd-green:#4f7f68;
+  --pd-shadow:0 7px 20px rgba(49,59,53,.045);
+  --pd-radius-lg:15px;
+  --pd-radius-md:11px;
+  --pd-radius-sm:8px;
+}
+
+/* ----- global frame ----- */
+html,body{background:var(--pd-bg)!important;color:var(--pd-ink)!important}
+body{overflow:hidden!important}
+html body .app.app-ready{
+  background:linear-gradient(135deg,#edf0f1 0%,#f3f5f4 100%)!important;
+  color:var(--pd-ink)!important;
+}
+@media(min-width:901px){
+  html body .app.app-ready>.sidebar{
+    position:fixed!important;
+    left:12px!important;top:10px!important;bottom:10px!important;
+    width:194px!important;height:auto!important;
+    padding:14px 11px 13px!important;
+    border:1px solid rgba(215,220,216,.98)!important;
+    border-radius:20px!important;
+    background:rgba(251,252,251,.97)!important;
+    box-shadow:var(--pd-shadow)!important;
+    overflow:hidden!important;
+  }
+  html body .app.app-ready>.main{
+    position:fixed!important;
+    left:218px!important;right:10px!important;top:10px!important;bottom:10px!important;
+    width:auto!important;height:auto!important;min-height:0!important;
+    margin:0!important;padding:0!important;
+    overflow:hidden!important;background:transparent!important;
+  }
+  html body .app.app-ready>.main>.section{
+    height:100%!important;min-height:0!important;
+    overflow:auto!important;padding-right:2px!important;
+    scrollbar-width:thin;
+  }
+}
+html body .app.app-ready>.sidebar .brand{
+  height:82px!important;min-height:82px!important;margin:0 0 7px!important;
+  display:grid!important;place-items:center!important;
+  background:transparent!important;border:0!important;box-shadow:none!important;
+}
+html body .app.app-ready .cn-electric-logo{
+  position:relative!important;width:142px!important;height:66px!important;
+  display:grid!important;place-items:center!important;overflow:visible!important;
+}
+html body .app.app-ready .cn-brush-logo-text{
+  position:relative!important;z-index:2!important;
+  color:#ae781e!important;
+  font-family:"STKaiti","KaiTi","Kaiti SC","Noto Serif SC",serif!important;
+  font-size:34px!important;font-weight:800!important;letter-spacing:.04em!important;
+  text-shadow:0 2px 0 rgba(255,255,255,.9),0 0 12px rgba(196,147,47,.16)!important;
+}
+html body .app.app-ready .cn-electric-logo:before,
+html body .app.app-ready .cn-electric-logo:after{
+  content:""!important;position:absolute!important;inset:8px 4px!important;
+  border-radius:50%!important;pointer-events:none!important;
+}
+html body .app.app-ready .cn-electric-logo:before{
+  border-top:2px solid rgba(77,181,255,.72)!important;
+  border-right:2px solid rgba(77,181,255,.36)!important;
+  filter:drop-shadow(0 0 5px rgba(62,168,255,.5))!important;
+  transform:rotate(-8deg)!important;
+}
+html body .app.app-ready .cn-electric-logo:after{
+  inset:13px 11px!important;
+  border-left:2px solid rgba(108,203,255,.6)!important;
+  border-bottom:2px solid rgba(108,203,255,.28)!important;
+  transform:rotate(7deg)!important;
+}
+html body .app.app-ready .cn-current{display:none!important}
+
+html body .app.app-ready>.sidebar .nav{
+  height:calc(100% - 89px)!important;margin:0!important;
+  display:flex!important;flex-direction:column!important;justify-content:space-between!important;
+  gap:0!important;overflow:hidden!important;
+}
+html body .app.app-ready>.sidebar .nav button{
+  flex:0 0 45px!important;height:45px!important;min-height:45px!important;
+  width:100%!important;margin:0!important;padding:0 10px!important;
+  display:grid!important;grid-template-columns:27px minmax(0,1fr)!important;
+  align-items:center!important;gap:9px!important;
+  border:0!important;border-radius:9px!important;
+  background:transparent!important;color:#202623!important;
+  box-shadow:none!important;transform:none!important;
+  font:650 13px/1 system-ui,-apple-system,"Segoe UI","Microsoft YaHei",sans-serif!important;
+}
+html body .app.app-ready>.sidebar .nav button i{
+  width:26px!important;height:26px!important;display:grid!important;place-items:center!important;
+  margin:0!important;background:transparent!important;border:0!important;color:#202623!important;
+  font-style:normal!important;overflow:visible!important;
+}
+html body .app.app-ready>.sidebar .nav button i svg{
+  width:18px!important;height:18px!important;display:block!important;
+  fill:none!important;stroke:currentColor!important;stroke-width:1.8!important;
+  stroke-linecap:round!important;stroke-linejoin:round!important;
+}
+html body .app.app-ready>.sidebar .nav button span{
+  color:inherit!important;font-size:13px!important;font-weight:650!important;white-space:nowrap!important;
+}
+html body .app.app-ready>.sidebar .nav button:hover{background:#f6f3eb!important;color:#43371d!important}
+html body .app.app-ready>.sidebar .nav button.active{
+  background:linear-gradient(90deg,#f8edce,#e8c56f)!important;
+  color:#171a18!important;
+  box-shadow:inset 0 0 0 1px rgba(181,133,28,.14)!important;
+}
+html body .app.app-ready>.sidebar #logoutBtn{
+  background:#faf8f4!important;color:#6a594b!important;
+}
+
+/* ----- shared header / cards ----- */
+html body .app.app-ready .section>.topbar,
+html body .app.app-ready .cn-secondary-page .detail-head{
+  min-height:92px!important;height:92px!important;max-height:92px!important;
+  margin:0 0 10px!important;padding:13px 20px!important;
+  display:flex!important;align-items:center!important;justify-content:space-between!important;gap:18px!important;
+  border:1px solid var(--pd-line)!important;border-radius:var(--pd-radius-lg)!important;
+  background:#fbfcfb!important;background-image:none!important;
+  box-shadow:var(--pd-shadow)!important;
+}
+html body .app.app-ready .eyebrow{
+  color:#9c6e18!important;font-size:9px!important;font-weight:800!important;letter-spacing:.16em!important;
+}
+html body .app.app-ready .page-title{
+  margin:3px 0 4px!important;color:#0d100f!important;
+  font-size:28px!important;line-height:1.08!important;font-weight:820!important;letter-spacing:-.025em!important;
+}
+html body .app.app-ready .sub{margin:0!important;color:var(--pd-muted)!important;font-size:11px!important;line-height:1.45!important}
+html body .app.app-ready :is(.card,.panel,.detail-card,.detail-kpi,.offer-stat,.batch-card,.holding-batch,.fr70-card,.fr70-stat,.check-box,.trade-item,.profile-row,.candidate-card,.holding-person-card,.doc-item,.event,.balanced-group-card){
+  border:1px solid var(--pd-line)!important;border-radius:var(--pd-radius-md)!important;
+  background:var(--pd-surface)!important;background-image:none!important;
+  box-shadow:var(--pd-shadow)!important;color:var(--pd-ink)!important;
+}
+html body .app.app-ready :is(.section>.card,.section>.panel,.detail-card,.balanced-group-card,.fr70-card,.editor-card,.memory-panel,.speech-panel):hover{
+  transform:none!important;filter:none!important;
+}
+@media(hover:hover) and (pointer:fine){
+  html body .app.app-ready :is(.profile-row,.candidate-card,.holding-person-card,.balanced-member,.trade-item,.doc-item,.event,.trade-plan-row,.holding-next-row):hover{
+    transform:translateY(-1px)!important;border-color:#c9d0cc!important;box-shadow:0 5px 13px rgba(45,55,49,.055)!important;
+  }
+}
+html body .app.app-ready .panel-head{
+  min-height:30px!important;margin:0 0 10px!important;
+  display:flex!important;align-items:center!important;justify-content:space-between!important;gap:10px!important;
+}
+html body .app.app-ready .panel-head h2{margin:0!important;color:#151a17!important;font-size:15px!important;font-weight:760!important}
+html body .app.app-ready .panel-head h2:before{content:"◆";margin-right:7px;color:var(--pd-gold)!important;font-size:8px!important}
+html body .app.app-ready .muted{color:var(--pd-muted)!important}
+
+/* ----- buttons / form controls ----- */
+html body .app.app-ready .btn{
+  min-height:40px!important;padding:8px 14px!important;border-radius:9px!important;
+  font-size:11px!important;font-weight:720!important;box-shadow:none!important;
+}
+html body .app.app-ready .btn.primary{
+  color:#211b0c!important;background:linear-gradient(135deg,#d9b04e,#c3912e)!important;border:1px solid #b98624!important;
+}
+html body .app.app-ready .btn.ghost{color:#25302b!important;background:#fff!important;border:1px solid var(--pd-line)!important}
+html body .app.app-ready .btn.danger{color:var(--pd-red)!important;background:#fbf2f1!important;border:1px solid #e4cfcc!important}
+html body .app.app-ready .btn.small{min-height:31px!important;padding:5px 10px!important;font-size:9px!important}
+html body .app.app-ready .link-btn{
+  color:var(--pd-blue)!important;background:transparent!important;border:0!important;
+  padding:2px 3px!important;font-size:9px!important;font-weight:720!important;
+}
+html body .app.app-ready .link-btn.danger,
+html body .app.app-ready .delete-person{color:var(--pd-red)!important}
+html body .app.app-ready :is(.input,.select,textarea,input:not([type=checkbox]):not([type=radio]),select){
+  min-height:40px!important;border:1px solid var(--pd-line)!important;border-radius:9px!important;
+  background:#fff!important;color:#171c19!important;box-shadow:none!important;outline:0!important;
+  font-size:11px!important;
+}
+html body .app.app-ready :is(.input,.select,textarea,input,select):focus{
+  border-color:#c8ad70!important;box-shadow:0 0 0 3px rgba(196,147,47,.09)!important;
+}
+
+/* ----- portrait sprite restored from the retired theme layer ----- */
+html body .app.app-ready .person-portrait{
+  display:block!important;width:100%!important;height:100%!important;border-radius:inherit!important;
+  background-image:url('./assets/people/avatar-atlas.webp')!important;
+  background-size:1000% 700%!important;
+  background-position:var(--portrait-x) var(--portrait-y)!important;
+  background-repeat:no-repeat!important;object-fit:cover!important;
+}
+html body .app.app-ready :is(.table-avatar,.detail-avatar,.trade-candidate-avatar,.gender-avatar){
+  overflow:hidden!important;background:#eef1ef!important;padding:0!important;
+}
+
+/* ===== OVERVIEW: mother page ===== */
+html body .app.app-ready #overview .overview-titlebar{position:relative!important;overflow:hidden!important}
+html body .app.app-ready #overview .overview-title-row{
+  display:flex!important;align-items:center!important;gap:16px!important;margin-top:3px!important;min-width:0!important;
+}
+html body .app.app-ready #overview .overview-title-divider{width:1px!important;height:26px!important;background:#89908c!important;flex:0 0 auto!important}
+html body .app.app-ready #overview .overview-summary-inline{color:#5e6863!important;font-size:11px!important;white-space:nowrap!important}
+html body .app.app-ready #overview .overview-seed-source{display:none!important}
+html body .app.app-ready #overview .dashboard{
+  display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:10px!important;margin:0 0 10px!important;
+}
+html body .app.app-ready #overview .metric{
+  position:relative!important;min-height:112px!important;padding:14px 34px 14px 88px!important;
+  display:flex!important;align-items:center!important;
+}
+html body .app.app-ready #overview .overview-metric-icon{
+  position:absolute!important;left:20px!important;top:50%!important;transform:translateY(-50%)!important;
+  width:52px!important;height:52px!important;border-radius:50%!important;display:grid!important;place-items:center!important;
+  background:#faefcf!important;color:#b27b19!important;font-size:20px!important;
+}
+html body .app.app-ready #overview .overview-metric-icon.muted-icon{background:#eef1ef!important;color:#58615d!important}
+html body .app.app-ready #overview .overview-metric-content{display:block!important;min-width:0!important}
+html body .app.app-ready #overview .metric .label{display:block!important;color:#303733!important;font-size:11px!important}
+html body .app.app-ready #overview .metric strong{display:block!important;margin:6px 0 5px!important;color:#090c0a!important;font-size:30px!important;line-height:1!important}
+html body .app.app-ready #overview .overview-metric-arrow{position:absolute!important;right:15px!important;top:50%!important;transform:translateY(-50%)!important;color:#b17a16!important;font-size:20px!important}
+html body .app.app-ready #overview .grid{gap:10px!important}
+html body .app.app-ready #overview .overview-events-table{display:grid!important}
+html body .app.app-ready #overview .overview-event-head,
+html body .app.app-ready #overview .overview-event-row{
+  display:grid!important;grid-template-columns:92px 160px minmax(0,1fr) 76px!important;gap:8px!important;align-items:center!important;
+}
+html body .app.app-ready #overview .overview-event-head{
+  min-height:30px!important;padding:0 8px!important;border-bottom:1px solid var(--pd-line)!important;color:#6b756f!important;font-size:8px!important;font-weight:760!important;
+}
+html body .app.app-ready #overview .overview-event-row{min-height:42px!important;padding:5px 8px!important;border-bottom:1px solid var(--pd-line-soft)!important;font-size:9px!important}
+html body .app.app-ready #overview .overview-group-grid{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:7px!important}
+html body .app.app-ready #overview .overview-group-card{
+  min-height:56px!important;padding:8px!important;display:grid!important;grid-template-columns:34px minmax(0,1fr) auto!important;gap:8px!important;align-items:center!important;
+  border:1px solid var(--pd-line-soft)!important;border-radius:8px!important;background:#fff!important;
+}
+html body .app.app-ready #overview .overview-group-avatar{width:32px!important;height:32px!important;border-radius:50%!important;display:grid!important;place-items:center!important;background:#f9ecc6!important;color:#ae781d!important}
+html body .app.app-ready #overview .overview-group-card b{font-size:9px!important;color:#181d1a!important}
+html body .app.app-ready #overview .overview-group-card small,
+html body .app.app-ready #overview .overview-group-card p{font-size:7.5px!important;color:#747e78!important}
+html body .app.app-ready #overview .overview-group-total{
+  grid-column:1/-1!important;min-height:52px!important;padding:8px 10px!important;
+  display:grid!important;grid-template-columns:32px 45px minmax(0,1fr) auto!important;gap:8px!important;align-items:center!important;
+  border:1px solid var(--pd-line-soft)!important;border-radius:8px!important;background:#f7f9f8!important;
+}
+html body .app.app-ready #overview #tradeOverview{
+  display:grid!important;grid-template-columns:minmax(0,1.35fr) minmax(320px,.65fr)!important;gap:10px!important;margin-top:10px!important;
+}
+
+/* ===== PEOPLE: second mother page ===== */
+html body .app.app-ready #people>.card.panel{padding:11px 12px!important}
+html body .app.app-ready #people .toolbar{
+  display:grid!important;grid-template-columns:minmax(260px,1.25fr) minmax(170px,.8fr) minmax(170px,.8fr) minmax(170px,.8fr)!important;
+  gap:8px!important;margin-bottom:5px!important;
+}
+html body .app.app-ready #people #peopleCount{margin:0 0 5px!important;color:#66716b!important;font-size:9px!important}
+html body .app.app-ready #people .people-table-wrap{
+  width:100%!important;overflow:hidden!important;border:1px solid var(--pd-line)!important;border-radius:9px!important;background:#fff!important;
+}
+html body .app.app-ready #people .people-data-table{width:100%!important;min-width:0!important;table-layout:fixed!important;border-collapse:collapse!important}
+html body .app.app-ready #people .people-data-table thead th{
+  height:29px!important;padding:5px 7px!important;background:#f1f3f2!important;color:#050606!important;
+  border-bottom:1px solid #cfd5d1!important;font-size:8.5px!important;font-weight:800!important;
+}
+html body .app.app-ready #people .people-data-table tbody td{
+  height:32px!important;padding:4px 7px!important;color:#151a17!important;border-bottom:1px solid var(--pd-line-soft)!important;font-size:8.5px!important;
+}
+html body .app.app-ready #people .people-data-table tbody tr:hover td{background:#f7f9fa!important}
+html body .app.app-ready #people .table-person{display:flex!important;align-items:center!important;gap:7px!important}
+html body .app.app-ready #people .table-avatar{width:26px!important;height:26px!important;min-width:26px!important;border-radius:50%!important}
+html body .app.app-ready #people .table-name{display:block!important;color:#050606!important;font-size:9.5px!important;font-weight:760!important}
+html body .app.app-ready #people .person-category{display:inline-flex!important;margin-left:4px!important;padding:1px 4px!important;border-radius:4px!important;background:#f5edd6!important;color:#6c5520!important;font-size:7px!important}
+html body .app.app-ready #people .people-actions{display:flex!important;align-items:center!important;justify-content:space-between!important;gap:4px!important;white-space:nowrap!important}
+html body .app.app-ready #people .people-pagination{height:31px!important;margin-top:6px!important;display:flex!important;justify-content:center!important;align-items:center!important;gap:6px!important}
+html body .app.app-ready #people .people-page-btn{
+  width:29px!important;height:27px!important;padding:0!important;border:1px solid var(--pd-line)!important;border-radius:7px!important;background:#fff!important;color:#26302c!important;font-size:10px!important;font-weight:700!important;
+}
+html body .app.app-ready #people .people-page-btn.active{background:#252a27!important;color:#fff!important;border-color:#252a27!important}
+
+/* ===== PERSON DETAIL ===== */
+html body .app.app-ready #personDetailPage .detail-head{align-items:center!important}
+html body .app.app-ready #personDetailPage .detail-identity{display:flex!important;align-items:center!important;gap:14px!important}
+html body .app.app-ready #personDetailPage .detail-avatar{
+  width:64px!important;height:64px!important;min-width:64px!important;border-radius:14px!important;
+  border:1px solid var(--pd-line)!important;background:#eef1ef!important;
+}
+html body .app.app-ready #personDetailPage .detail-kpis{
+  display:grid!important;grid-template-columns:repeat(6,minmax(0,1fr))!important;gap:9px!important;margin-bottom:10px!important;
+}
+html body .app.app-ready #personDetailPage .detail-kpi{min-height:82px!important;padding:11px 12px!important}
+html body .app.app-ready #personDetailPage .detail-kpi span{display:block!important;color:#74807a!important;font-size:9px!important}
+html body .app.app-ready #personDetailPage .detail-kpi strong{display:block!important;margin-top:6px!important;color:#101412!important;font-size:18px!important}
+html body .app.app-ready #personDetailPage .detail-columns{
+  display:grid!important;grid-template-columns:minmax(0,1.1fr) minmax(350px,.9fr)!important;gap:10px!important;margin-bottom:10px!important;
+}
+html body .app.app-ready #personDetailPage .detail-card{padding:14px!important}
+html body .app.app-ready #personDetailPage .detail-list{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:8px!important}
+html body .app.app-ready #personDetailPage .detail-line{min-height:58px!important;padding:8px 9px!important;border:1px solid var(--pd-line-soft)!important;border-radius:8px!important;background:#fafbfa!important}
+html body .app.app-ready #personDetailPage .detail-line span{display:block!important;color:#74807a!important;font-size:8.5px!important}
+html body .app.app-ready #personDetailPage .detail-line b{display:block!important;margin-top:3px!important;color:#171c19!important;font-size:10px!important}
+html body .app.app-ready #personDetailPage .journey{display:grid!important;gap:2px!important}
+html body .app.app-ready #personDetailPage .journey-item{display:grid!important;grid-template-columns:95px 16px minmax(0,1fr)!important;gap:9px!important;min-height:56px!important}
+html body .app.app-ready #personDetailPage .journey-date{padding-top:3px!important;text-align:right!important;color:#73807a!important;font-size:9px!important}
+html body .app.app-ready #personDetailPage .journey-rail{position:relative!important}
+html body .app.app-ready #personDetailPage .journey-rail:before{content:""!important;position:absolute!important;left:4px!important;top:5px!important;width:7px!important;height:7px!important;border-radius:50%!important;background:#4f79d6!important}
+html body .app.app-ready #personDetailPage .journey-rail:after{content:""!important;position:absolute!important;left:7px!important;top:16px!important;bottom:0!important;width:1px!important;background:#dce1de!important}
+html body .app.app-ready #personDetailPage .journey-item:last-child .journey-rail:after{display:none!important}
+html body .app.app-ready #personDetailPage .journey-body b{display:block!important;color:#171c19!important;font-size:10px!important}
+html body .app.app-ready #personDetailPage .journey-body small{display:block!important;margin-top:2px!important;color:#77827c!important;font-size:8.5px!important}
+html body .app.app-ready #personDetailPage .detail-bottom-grid{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:10px!important;margin-bottom:10px!important}
+html body .app.app-ready #personDetailPage .detail-bottom-card{min-height:190px!important;height:100%!important}
+html body .app.app-ready #personDetailPage .detail-compact-list{display:grid!important;gap:6px!important}
+html body .app.app-ready #personDetailPage .detail-compact-row{min-height:46px!important;padding:7px 8px!important;display:grid!important;grid-template-columns:minmax(0,1fr) auto!important;gap:8px!important;align-items:center!important;border:1px solid var(--pd-line-soft)!important;border-radius:7px!important;background:#fff!important}
+html body .app.app-ready #personDetailPage .detail-compact-row b{display:block!important;color:#171c19!important;font-size:9px!important}
+html body .app.app-ready #personDetailPage .detail-compact-row small{display:block!important;margin-top:2px!important;color:#77827c!important;font-size:7.5px!important}
+html body .app.app-ready #personDetailPage .detail-holdings-table{margin-bottom:0!important}
+
+/* ===== GROUPS ===== */
+html body .app.app-ready #groups .balanced-groups-panel{padding:12px!important}
+html body .app.app-ready #groups .balanced-groups-grid{
+  display:grid!important;grid-template-columns:repeat(5,minmax(0,1fr))!important;grid-template-rows:repeat(2,minmax(0,1fr))!important;
+  gap:9px!important;
+}
+html body .app.app-ready #groups .balanced-group-card{
+  min-width:0!important;min-height:0!important;height:100%!important;padding:10px!important;
+  display:flex!important;flex-direction:column!important;gap:6px!important;
+}
+html body .app.app-ready #groups .balanced-group-head{display:flex!important;align-items:flex-start!important;justify-content:space-between!important;gap:6px!important}
+html body .app.app-ready #groups .balanced-group-head small{display:block!important;color:#7b8580!important;font-size:7.5px!important;letter-spacing:.12em!important}
+html body .app.app-ready #groups .balanced-group-head h3{margin:2px 0 0!important;color:#151a17!important;font-size:12px!important}
+html body .app.app-ready #groups .balanced-group-total{min-width:40px!important;height:24px!important;padding:0 7px!important;display:grid!important;place-items:center!important;border:1px solid var(--pd-line)!important;border-radius:999px!important;background:#f4f6f4!important;color:#3e4742!important;font-size:8px!important;font-weight:760!important}
+html body .app.app-ready #groups .balanced-composition{display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:4px!important}
+html body .app.app-ready #groups .balanced-composition span{min-height:25px!important;padding:4px 2px!important;display:grid!important;place-items:center!important;border:1px solid var(--pd-line-soft)!important;border-radius:6px!important;background:#f7f8f7!important;color:#626c66!important;font-size:7.5px!important}
+html body .app.app-ready #groups .balanced-member-head,
+html body .app.app-ready #groups .balanced-member{
+  display:grid!important;grid-template-columns:38px minmax(0,1fr) 34px 36px!important;gap:5px!important;align-items:center!important;
+}
+html body .app.app-ready #groups .balanced-member-head{min-height:17px!important;padding:0 6px!important;color:#7b8580!important;font-size:7px!important}
+html body .app.app-ready #groups .balanced-members{display:grid!important;grid-template-columns:1fr!important;gap:3px!important;flex:1 1 auto!important}
+html body .app.app-ready #groups .balanced-member{min-height:27px!important;height:27px!important;padding:0 6px!important;border:1px solid var(--pd-line-soft)!important;border-radius:6px!important;background:#fff!important}
+html body .app.app-ready #groups .balanced-member-code{color:#151a17!important;font-size:7.5px!important;font-weight:760!important}
+html body .app.app-ready #groups .balanced-member-name{min-width:0!important;overflow:hidden!important;text-overflow:ellipsis!important;white-space:nowrap!important;color:#202624!important;font-size:7.7px!important;font-weight:680!important}
+html body .app.app-ready #groups .balanced-member-type{color:#67716c!important;font-size:7px!important}
+html body .app.app-ready #groups .balanced-member-vip{justify-self:end!important;color:#765b20!important;font-size:7px!important}
+html body .app.app-ready #groups .balanced-member-avatar,
+html body .app.app-ready #groups .balanced-member .person-portrait{display:none!important}
+html body .app.app-ready #groups .balanced-group-actions{margin-top:auto!important;display:grid!important;grid-template-columns:1fr 1fr!important;gap:5px!important}
+html body .app.app-ready #groups .balanced-group-actions .btn{width:100%!important;min-height:29px!important;height:29px!important}
+
+/* ===== PERSON TRANSACTIONS ===== */
+html body .app.app-ready #tradeRecommend .trade-recommend-top{
+  display:grid!important;grid-template-columns:minmax(0,.92fr) minmax(0,1.08fr)!important;gap:10px!important;margin-bottom:10px!important;
+}
+html body .app.app-ready #tradeRecommend :is(.trade-plan-panel,.trade-current-panel,.trade-recommend-people){padding:14px!important}
+html body .app.app-ready #tradeRecommend .trade-plan-list{display:grid!important;gap:7px!important}
+html body .app.app-ready #tradeRecommend .trade-plan-row{
+  min-height:66px!important;padding:9px 10px!important;display:grid!important;grid-template-columns:minmax(0,1fr) auto!important;gap:10px!important;align-items:center!important;
+  border:1px solid var(--pd-line-soft)!important;border-radius:8px!important;background:#fff!important;
+}
+html body .app.app-ready #tradeRecommend .trade-plan-row.active{background:#fbf8ef!important;border-color:#d8c790!important}
+html body .app.app-ready #tradeRecommend .trade-plan-title{display:flex!important;align-items:center!important;gap:7px!important}
+html body .app.app-ready #tradeRecommend .trade-plan-title b{color:#111514!important;font-size:11px!important}
+html body .app.app-ready #tradeRecommend .trade-plan-title span{color:#39433e!important;font-size:9px!important;font-weight:650!important}
+html body .app.app-ready #tradeRecommend .trade-plan-meta{display:flex!important;flex-wrap:wrap!important;gap:4px 8px!important;margin-top:5px!important}
+html body .app.app-ready #tradeRecommend .trade-plan-meta span{color:#6e7872!important;font-size:7.5px!important}
+html body .app.app-ready #tradeRecommend .trade-plan-actions{display:flex!important;gap:6px!important}
+html body .app.app-ready #tradeRecommend .trade-current-title{display:flex!important;gap:8px!important;align-items:baseline!important;margin-bottom:9px!important}
+html body .app.app-ready #tradeRecommend .trade-current-title b{color:#111514!important;font-size:17px!important}
+html body .app.app-ready #tradeRecommend .trade-current-title span{color:#49544e!important;font-size:10px!important}
+html body .app.app-ready #tradeRecommend .offer-grid{display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:7px!important}
+html body .app.app-ready #tradeRecommend .offer-stat{min-height:65px!important;padding:8px 9px!important}
+html body .app.app-ready #tradeRecommend .offer-stat span{display:block!important;color:#758079!important;font-size:7.5px!important}
+html body .app.app-ready #tradeRecommend .offer-stat b{display:block!important;margin-top:4px!important;color:#111514!important;font-size:11px!important}
+html body .app.app-ready #tradeRecommend .trade-recommend-head-actions{display:flex!important;align-items:center!important;gap:6px!important;flex-wrap:wrap!important}
+html body .app.app-ready #tradeRecommend .trade-summary-chip{min-height:27px!important;padding:4px 8px!important;display:inline-flex!important;align-items:center!important;border:1px solid var(--pd-line-soft)!important;border-radius:999px!important;background:#f7f8f7!important;color:#58635d!important;font-size:7.5px!important}
+html body .app.app-ready #tradeRecommend .trade-candidate-table{display:grid!important;border:1px solid var(--pd-line)!important;border-radius:9px!important;overflow:hidden!important}
+html body .app.app-ready #tradeRecommend .trade-candidate-head,
+html body .app.app-ready #tradeRecommend .trade-candidate-row{
+  display:grid!important;grid-template-columns:minmax(180px,1.4fr) 70px 58px 110px minmax(115px,.9fr) 90px 150px!important;gap:8px!important;align-items:center!important;
+}
+html body .app.app-ready #tradeRecommend .trade-candidate-head{min-height:32px!important;padding:0 9px!important;background:#f1f3f2!important;color:#101412!important;font-size:7.5px!important;font-weight:800!important}
+html body .app.app-ready #tradeRecommend .trade-candidate-row{min-height:52px!important;padding:6px 9px!important;border-top:1px solid var(--pd-line-soft)!important;background:#fff!important;color:#27302c!important;font-size:8px!important}
+html body .app.app-ready #tradeRecommend .trade-candidate-person{display:grid!important;grid-template-columns:32px minmax(0,1fr)!important;gap:7px!important;align-items:center!important}
+html body .app.app-ready #tradeRecommend .trade-candidate-avatar{width:30px!important;height:30px!important;border-radius:50%!important}
+html body .app.app-ready #tradeRecommend .trade-candidate-actions{display:flex!important;justify-content:flex-end!important;gap:5px!important}
+
+/* ===== HOLDINGS ===== */
+html body .app.app-ready #holdingsV2 .holding-kpis,
+html body .app.app-ready #records .record-summary-grid,
+html body .app.app-ready #novel .writing-summary-grid,
+html body .app.app-ready #topics .consistency-summary-grid{
+  display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:9px!important;margin-bottom:10px!important;
+}
+html body .app.app-ready #records .record-summary-grid,
+html body .app.app-ready #topics .consistency-summary-grid{grid-template-columns:repeat(5,minmax(0,1fr))!important}
+html body .app.app-ready :is(#holdingsV2 .holding-kpi,#records .record-summary-card,#novel .writing-summary-card,#topics .consistency-summary-card){
+  min-height:76px!important;padding:10px 12px!important;
+}
+html body .app.app-ready :is(#holdingsV2 .holding-kpi,#records .record-summary-card,#novel .writing-summary-card,#topics .consistency-summary-card)>span{
+  display:block!important;color:#6e7973!important;font-size:8px!important;
+}
+html body .app.app-ready :is(#holdingsV2 .holding-kpi,#records .record-summary-card,#novel .writing-summary-card,#topics .consistency-summary-card)>strong{
+  display:block!important;margin-top:4px!important;color:#111514!important;font-size:17px!important;line-height:1.15!important;
+}
+html body .app.app-ready :is(#holdingsV2 .holding-kpi,#records .record-summary-card,#novel .writing-summary-card,#topics .consistency-summary-card)>small{
+  display:block!important;margin-top:3px!important;color:#89928d!important;font-size:7px!important;
+}
+html body .app.app-ready #holdingsV2 .holding-main-grid{display:grid!important;grid-template-columns:minmax(0,1.35fr) minmax(330px,.65fr)!important;gap:10px!important;margin-bottom:10px!important}
+html body .app.app-ready #holdingsV2 :is(.holding-chart-panel,.holding-next-panel,.holding-detail-panel){padding:13px!important}
+html body .app.app-ready #holdingsV2 .hold-chart{
+  min-height:250px!important;padding:18px 14px 12px!important;display:flex!important;align-items:flex-end!important;gap:16px!important;
+  border:1px solid var(--pd-line)!important;border-radius:9px!important;background:#fff!important;overflow-x:auto!important;
+}
+html body .app.app-ready #holdingsV2 .hold-bar-wrap{flex:0 0 84px!important;display:flex!important;flex-direction:column!important;align-items:center!important}
+html body .app.app-ready #holdingsV2 .hold-bar{width:46px!important;border-radius:5px 5px 0 0!important;background:#c89a37!important}
+html body .app.app-ready #holdingsV2 .hold-bar.ready{background:#6e9a82!important}
+html body .app.app-ready #holdingsV2 .hold-bar.soon{background:#d89048!important}
+html body .app.app-ready #holdingsV2 .holding-next-list{display:grid!important;gap:6px!important}
+html body .app.app-ready #holdingsV2 .holding-next-row{min-height:47px!important;padding:7px 8px!important;display:grid!important;grid-template-columns:minmax(0,1fr) auto!important;gap:8px!important;align-items:center!important;border:1px solid var(--pd-line-soft)!important;border-radius:7px!important;background:#fff!important}
+
+/* ===== TRADING PLAN ===== */
+html body .app.app-ready #trades .trade-summary-grid{display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:9px!important;margin-bottom:8px!important}
+html body .app.app-ready #trades .trade-summary-card{min-height:72px!important;padding:9px 11px!important}
+html body .app.app-ready #trades .trade-summary-card span{display:block!important;color:#6d7771!important;font-size:8px!important}
+html body .app.app-ready #trades .trade-summary-card strong{display:block!important;margin-top:4px!important;color:#111514!important;font-size:17px!important}
+html body .app.app-ready #trades .trade-summary-card small{display:block!important;margin-top:2px!important;color:#89928d!important;font-size:7px!important}
+html body .app.app-ready #trades .trade-tabs{display:flex!important;gap:6px!important;margin:0 0 8px!important}
+html body .app.app-ready #trades .trade-tab{min-height:37px!important;padding:0 13px!important;border:1px solid var(--pd-line)!important;border-radius:8px!important;background:#fff!important;color:#5a655f!important;font-size:10px!important}
+html body .app.app-ready #trades .trade-tab.active{background:#252a27!important;color:#fff!important;border-color:#252a27!important}
+html body .app.app-ready #trades .trade-plan-table{border:1px solid var(--pd-line)!important;border-radius:9px!important;overflow:hidden!important}
+html body .app.app-ready #trades .trade-plan-table-head,
+html body .app.app-ready #trades .trade-plan-table-row{display:grid!important;grid-template-columns:minmax(120px,.8fr) minmax(150px,1fr) 70px 80px minmax(140px,1fr) 90px 165px!important;gap:8px!important;align-items:center!important}
+html body .app.app-ready #trades .trade-plan-table-head{min-height:32px!important;padding:0 9px!important;background:#f1f3f2!important;color:#101412!important;font-size:7.5px!important;font-weight:800!important}
+html body .app.app-ready #trades .trade-plan-table-row{min-height:50px!important;padding:6px 9px!important;border-top:1px solid var(--pd-line-soft)!important;background:#fff!important;color:#28312c!important;font-size:8px!important}
+html body .app.app-ready #trades .trade-table-actions{display:flex!important;align-items:center!important;justify-content:flex-end!important;gap:5px!important;white-space:nowrap!important}
+
+/* ===== RECORDS ===== */
+html body .app.app-ready #records .record-main-panel{padding:13px!important}
+html body .app.app-ready #records .toolbar{display:grid!important;grid-template-columns:210px 210px minmax(260px,1fr)!important;gap:8px!important;margin-bottom:10px!important}
+html body .app.app-ready #records .timeline{display:grid!important;gap:7px!important}
+html body .app.app-ready #records .timeline-item{display:grid!important;grid-template-columns:88px 14px minmax(0,1fr)!important;gap:8px!important}
+html body .app.app-ready #records .event{padding:9px 10px!important}
+html body .app.app-ready #records .event-title{font-size:10px!important;font-weight:760!important}
+html body .app.app-ready #records .event p{font-size:9px!important;line-height:1.55!important}
+
+/* ===== WRITING ===== */
+html body .app.app-ready #novel .writing-summary-grid{margin-bottom:10px!important}
+html body .app.app-ready #novel .writing-summary-card strong{font-size:13px!important}
+html body .app.app-ready #novel .daily-doc-layout{display:grid!important;grid-template-columns:190px minmax(0,1fr) 320px!important;gap:10px!important;align-items:stretch!important}
+html body .app.app-ready #novel :is(.speech-panel,.editor-card,.memory-panel){min-width:0!important;padding:12px!important}
+html body .app.app-ready #novel .speech-panel{max-height:650px!important;overflow:auto!important}
+html body .app.app-ready #novel .speech-head{display:flex!important;justify-content:space-between!important;align-items:center!important;padding:2px 2px 8px!important;border-bottom:1px solid var(--pd-line-soft)!important;font-size:9px!important}
+html body .app.app-ready #novel .speech-row{width:100%!important;min-height:34px!important;padding:5px 5px!important;display:grid!important;grid-template-columns:34px minmax(0,1fr) auto!important;gap:5px!important;align-items:center!important;border-radius:6px!important;color:#59655f!important;font-size:8px!important}
+html body .app.app-ready #novel .speech-row:hover,
+html body .app.app-ready #novel .speech-row.active{background:#f2f5f3!important;color:#26312b!important}
+html body .app.app-ready #novel .daily-tabs-wrap{display:flex!important;justify-content:space-between!important;gap:8px!important;align-items:center!important;margin-bottom:8px!important}
+html body .app.app-ready #novel .daily-tabs{display:flex!important;gap:5px!important;overflow:auto!important}
+html body .app.app-ready #novel .daily-tab{min-height:31px!important;padding:5px 8px!important;border:1px solid var(--pd-line)!important;border-radius:7px!important;background:#fff!important;color:#6b756f!important;font-size:8px!important;white-space:nowrap!important}
+html body .app.app-ready #novel .daily-tab.active{background:#f4f6f5!important;color:#2d3832!important;border-color:#c9d0cc!important}
+html body .app.app-ready #novel .rich-title-row{display:flex!important;align-items:center!important;gap:8px!important;margin-bottom:7px!important}
+html body .app.app-ready #novel .rich-title-row .input{flex:1!important}
+html body .app.app-ready #novel .word-toolbar{display:flex!important;gap:4px!important;align-items:center!important;flex-wrap:wrap!important;padding:6px!important;border:1px solid var(--pd-line)!important;border-radius:8px 8px 0 0!important;background:#f6f8f7!important}
+html body .app.app-ready #novel .word-toolbar button{min-height:27px!important;padding:4px 6px!important;border:1px solid var(--pd-line-soft)!important;border-radius:5px!important;background:#fff!important;color:#53605a!important;font-size:8px!important}
+html body .app.app-ready #novel .word-toolbar span{width:1px!important;height:18px!important;background:#dce1de!important}
+html body .app.app-ready #novel .rich-editor{min-height:420px!important;padding:18px 20px!important;border:1px solid var(--pd-line)!important;border-top:0!important;border-radius:0 0 8px 8px!important;background:#fff!important;color:#151a17!important;font-size:12px!important;line-height:1.8!important;outline:0!important}
+html body .app.app-ready #novel .editor-foot{display:flex!important;justify-content:space-between!important;padding-top:6px!important;color:#8a938e!important;font-size:8px!important}
+html body .app.app-ready #novel .memory-timeline{display:grid!important;gap:6px!important;margin-top:9px!important;max-height:430px!important;overflow:auto!important}
+html body .app.app-ready #novel .memory-row{padding:7px 8px!important;border-left:2px solid #c9a75b!important;background:#fafbfa!important}
+html body .app.app-ready #novel .memory-row b{display:block!important;font-size:9px!important}
+html body .app.app-ready #novel .memory-row small{display:block!important;color:#89928d!important;font-size:7.5px!important}
+
+/* ===== FRANCE 70 ===== */
+html body .app.app-ready #france70chat .fr70-note{margin:0 0 10px!important}
+html body .app.app-ready #france70chat .fr70-stats{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:10px!important;margin-bottom:10px!important}
+html body .app.app-ready #france70chat .fr70-stat{min-height:82px!important;padding:12px!important}
+html body .app.app-ready #france70chat .fr70-layout{display:grid!important;grid-template-columns:minmax(0,1.05fr) minmax(390px,.95fr)!important;gap:10px!important}
+html body .app.app-ready #france70chat .fr70-card{padding:13px!important}
+html body .app.app-ready #france70chat .fr70-seg{display:flex!important;padding:3px!important;border:1px solid var(--pd-line)!important;border-radius:8px!important;background:#f5f7f6!important}
+html body .app.app-ready #france70chat .fr70-seg button{min-height:30px!important;padding:0 12px!important;border:0!important;border-radius:6px!important;background:transparent!important;color:#65706a!important;font-size:9px!important}
+html body .app.app-ready #france70chat .fr70-seg button.active{background:#fff!important;color:#72561b!important;box-shadow:0 1px 4px rgba(40,48,44,.08)!important}
+html body .app.app-ready #france70chat :is(.fr70-textarea,.fr70-prompt,.fr70-output){width:100%!important;border:1px solid var(--pd-line)!important;border-radius:8px!important;background:#fff!important;color:#171c19!important}
+html body .app.app-ready #france70chat .fr70-chat{min-height:230px!important;max-height:390px!important;overflow:auto!important}
+
+/* ===== CONSISTENCY ===== */
+html body .app.app-ready #topics .consistency-layout{display:grid!important;grid-template-columns:minmax(0,1.2fr) minmax(350px,.8fr)!important;gap:10px!important}
+html body .app.app-ready #topics .consistency-layout>.panel{padding:13px!important}
+html body .app.app-ready #topics .check-box{margin-top:8px!important;padding:10px!important;background:#fafbfa!important}
+html body .app.app-ready #topics .topic-summary-list{display:grid!important;gap:6px!important}
+html body .app.app-ready #topics .topic-summary-row{min-height:38px!important;padding:7px 9px!important;display:flex!important;justify-content:space-between!important;align-items:center!important;border:1px solid var(--pd-line-soft)!important;border-radius:7px!important;background:#fff!important}
+
+/* ----- empty states ----- */
+html body .app.app-ready .empty[data-ui-empty="true"]:not(td){
+  min-height:110px!important;padding:18px!important;
+  display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:center!important;gap:4px!important;
+  border:1px dashed #d8ded9!important;border-radius:9px!important;background:#fafbfa!important;color:#7d8782!important;
+}
+html body .app.app-ready .cn-empty-icon{width:28px!important;height:28px!important;display:grid!important;place-items:center!important;border-radius:50%!important;background:#eef1ef!important;color:#68746e!important}
+html body .app.app-ready .cn-empty-title{color:#3d4742!important;font-size:9px!important;font-weight:760!important}
+html body .app.app-ready .cn-empty-desc{color:#858f8a!important;font-size:8px!important;text-align:center!important}
+
+/* ----- tables ----- */
+html body .app.app-ready [data-ui-table="standard"]{width:100%!important;border-collapse:collapse!important}
+html body .app.app-ready [data-ui-table="standard"] th{background:#f1f3f2!important;color:#050606!important;border-bottom:1px solid #cfd5d1!important;font-size:8px!important;font-weight:800!important}
+html body .app.app-ready [data-ui-table="standard"] td{color:#151a17!important;border-bottom:1px solid var(--pd-line-soft)!important;font-size:8.5px!important}
+
+/* ----- desktop 16:9 containment ----- */
+@media(min-width:1180px) and (min-aspect-ratio:4/3){
+  html body .app.app-ready #overview.active,
+  html body .app.app-ready #people.active,
+  html body .app.app-ready #groups.active{overflow:hidden!important}
+  html body .app.app-ready #people.active{display:flex!important;flex-direction:column!important}
+  html body .app.app-ready #people>.topbar{flex:0 0 92px!important}
+  html body .app.app-ready #people>.card.panel{flex:1 1 auto!important;min-height:0!important;display:flex!important;flex-direction:column!important;overflow:hidden!important}
+  html body .app.app-ready #people #peopleList{flex:1 1 auto!important;min-height:0!important;display:flex!important;flex-direction:column!important}
+  html body .app.app-ready #people .people-table-wrap{flex:1 1 auto!important;min-height:0!important}
+  html body .app.app-ready #groups .balanced-groups-panel{height:calc(100% - 102px)!important;min-height:0!important;overflow:hidden!important}
+  html body .app.app-ready #groups .balanced-groups-grid{height:calc(100% - 38px)!important}
+}
+
+/* ----- responsive fallback ----- */
+@media(max-width:1400px) and (min-width:901px){
+  html body .app.app-ready #groups .balanced-groups-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;grid-template-rows:auto!important}
+  html body .app.app-ready #groups.active{overflow:auto!important}
+  html body .app.app-ready #tradeRecommend .trade-candidate-table,
+  html body .app.app-ready #trades .trade-plan-table{overflow-x:auto!important}
+}
+@media(max-width:1100px){
+  html body .app.app-ready #tradeRecommend .trade-recommend-top,
+  html body .app.app-ready #holdingsV2 .holding-main-grid,
+  html body .app.app-ready #topics .consistency-layout,
+  html body .app.app-ready #france70chat .fr70-layout,
+  html body .app.app-ready #personDetailPage .detail-columns{grid-template-columns:1fr!important}
+  html body .app.app-ready #novel .daily-doc-layout{grid-template-columns:150px minmax(0,1fr)!important}
+  html body .app.app-ready #novel .memory-panel{grid-column:1/-1!important}
+}
+@media(max-width:900px){
+  body{overflow:auto!important}
+  html body .app.app-ready>.main{position:relative!important;inset:auto!important;width:auto!important;height:auto!important;margin:0!important;padding:8px!important}
+  html body .app.app-ready .section>.topbar,
+  html body .app.app-ready .cn-secondary-page .detail-head{height:auto!important;max-height:none!important;flex-direction:column!important;align-items:flex-start!important}
+  html body .app.app-ready #people .toolbar,
+  html body .app.app-ready #records .toolbar{grid-template-columns:1fr!important}
+  html body .app.app-ready #personDetailPage .detail-kpis,
+  html body .app.app-ready #holdingsV2 .holding-kpis,
+  html body .app.app-ready #trades .trade-summary-grid,
+  html body .app.app-ready #records .record-summary-grid,
+  html body .app.app-ready #novel .writing-summary-grid,
+  html body .app.app-ready #topics .consistency-summary-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  html body .app.app-ready #personDetailPage .detail-bottom-grid{grid-template-columns:1fr!important}
+  html body .app.app-ready #novel .daily-doc-layout{grid-template-columns:1fr!important}
+}
