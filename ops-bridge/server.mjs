@@ -8,7 +8,13 @@ const ADMIN_USER=String(process.env.OPS_ADMIN_USER||'admin');
 const ADMIN_PASSWORD=String(process.env.OPS_ADMIN_PASSWORD||'');
 const SESSION_SECRET=String(process.env.OPS_SESSION_SECRET||'');
 const AGENT_KEY=String(process.env.NUVEXA_AGENT_KEY||'');
-const ALLOWED_ORIGIN=String(process.env.OPS_ALLOWED_ORIGIN||'https://ops.sasakic.cc').replace(/\/+$/,'');
+const ALLOWED_ORIGINS=new Set(
+  String(process.env.OPS_ALLOWED_ORIGIN||'https://ops.sasakic.cc')
+    .split(',')
+    .map(x=>x.trim().replace(/\/+$/,''))
+    .filter(Boolean)
+    .concat(['https://ops.sasakic.cc','https://chennan-005.vercel.app'])
+);
 const STATE_KEY='nuvexa:cloud:state:v3';
 const LOCK_KEY='nuvexa:cloud:lock:v3';
 const MAX_BODY=4*1024*1024;
@@ -56,8 +62,8 @@ function userAuth(req){return verifyToken(bearer(req))}
 function agentAuth(req){const key=String(req.headers['x-nuvexa-agent-key']||'');return Boolean(key&&key===AGENT_KEY)}
 
 function cors(req,res){
-  const origin=String(req.headers.origin||'');
-  if(origin===ALLOWED_ORIGIN)res.setHeader('Access-Control-Allow-Origin',origin);
+  const origin=String(req.headers.origin||'').replace(/\/+$/,'');
+  if(ALLOWED_ORIGINS.has(origin))res.setHeader('Access-Control-Allow-Origin',origin);
   res.setHeader('Vary','Origin');
   res.setHeader('Access-Control-Allow-Headers','Content-Type, Authorization, X-Nuvexa-Agent-Key');
   res.setHeader('Access-Control-Allow-Methods','GET,POST,PUT,PATCH,OPTIONS');
