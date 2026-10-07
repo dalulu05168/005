@@ -68,8 +68,9 @@ async function body(req){
 }
 async function getJson(key){const value=await redis.get(key);if(!value)return null;try{return JSON.parse(value)}catch{return null}}
 async function setJson(key,value){await redis.set(key,JSON.stringify(value))}
+async function getStoredPolicy(){return await getJson(POLICY_KEY)}
 async function getPolicy(){
-  return await getJson(POLICY_KEY)||{enabled:false,groupId:'',groupName:'',revision:0,updatedAt:null};
+  return await getStoredPolicy()||{enabled:false,groupId:'',groupName:'',revision:0,updatedAt:null};
 }
 function normalizePolicy(value={},previous={}){
   const groupId=String(value.groupId??previous.groupId??'').trim();
@@ -131,7 +132,7 @@ const server=createServer(async(req,res)=>{
 
     if(url.pathname==='/v1/executor/config'&&req.method==='GET'){
       if(!agentAuth(req))return send(res,401,{error:'AGENT_AUTH_REQUIRED'});
-      return send(res,200,{groupPolicy:await getPolicy(),serverTime:new Date().toISOString()});
+      return send(res,200,{groupPolicy:await getStoredPolicy(),serverTime:new Date().toISOString()});
     }
     if(url.pathname==='/v1/executor/heartbeat'&&req.method==='POST'){
       if(!agentAuth(req))return send(res,401,{error:'AGENT_AUTH_REQUIRED'});
