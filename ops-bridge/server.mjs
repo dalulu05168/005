@@ -212,8 +212,12 @@ function selectSender(state,task){
     return {blocked:true,reason:'PROFESSOR_BACKUP_UNAVAILABLE',account:backup||null};
   }
   const backups=accounts.filter(a=>a.kind==='AUX_BACKUP'&&a.slot==='BACKUP').sort((a,b)=>(a.backupOrder||999)-(b.backupOrder||999));
-  const backup=backups.find(isAccountOnline);
-  if(backup)return {account:backup,backup:true,replaces:primary.id};
+  for(const backup of backups){
+    if(isAccountOnline(backup))return {account:backup,backup:true,replaces:primary.id};
+    if(backup.status!=='CONFIRMED_UNAVAILABLE'){
+      return {blocked:true,reason:'AWAITING_AUX_BACKUP_CONFIRMATION',account:backup};
+    }
+  }
   return {blocked:true,reason:'AUX_BACKUP_POOL_UNAVAILABLE'};
 }
 function parseTelegram(input){
@@ -498,6 +502,56 @@ const server=createServer(async(req,res)=>{
       if(!agentAuth(req))return send(res,401,{error:'AGENT_AUTH_REQUIRED'});
       return send(res,200,await handleLease());
     }
+    if(url.pathname==='/v1/worker/authorize'&&req.method==='POST'){
+      if(!agentAuth(req))return send(res,401,{error:'AGENT_AUTH_REQUIRED'});
+      const input=await body(req);
+      return await withLock(async()=>{
+        const state=await getState();
+        const leaseId=safeString(input.leaseId,120);
+        let task=null,target=null;
+        for(const t of state.tasks){
+          const hit=(t.targets||[]).find(x=>x.leaseId===leaseId);
+          if(hit){task=t;target=hit;break}
+        }
+        if(!task||!target)return send(res,404,{error:'LEASE_NOT_FOUND'});
+        if(target.status!=='SENDING')return send(res,409,{error:'LEASE_NOT_ACTIVE',status:target.status});
+        if(target.leaseUntil&&Date.parse(target.leaseUntil)<=Date.now()){
+          target.status='VERIFYING';
+          target.error='LEASE_EXPIRED_RESULT_UNKNOWN';
+          await setState(state);
+          return send(res,409,{authorized:false,error:'RESULT_MUST_BE_VERIFIED'});
+        }
+        if(!state.settings.globalPublishEnabled){
+          target.status='WAITING';
+          target.leaseId=null;target.leaseUntil=null;target.notBefore=null;
+          target.error='GLOBAL_PUBLISH_DISABLED';
+          task.status=deriveTaskStatus(task);
+          await setState(state);
+          return send(res,200,{authorized:false,reason:'GLOBAL_PUBLISH_DISABLED'});
+        }
+        const group=state.groups.find(g=>g.id===target.groupId);
+        if(!group||group.enabled===false){
+          target.status='SKIPPED_DISABLED';
+          target.leaseId=null;target.leaseUntil=null;
+          target.error='GROUP_DISABLED_BEFORE_SEND';
+          task.status=deriveTaskStatus(task);
+          reconcile(state);
+          await setState(state);
+          return send(res,200,{authorized:false,reason:'GROUP_DISABLED'});
+        }
+        const sender=state.accounts.find(a=>a.id===target.senderAccountId);
+        if(!sender||sender.status!=='ONLINE'){
+          target.status='WAITING';
+          target.leaseId=null;target.leaseUntil=null;target.notBefore=null;
+          target.error='SENDER_NOT_ONLINE_BEFORE_SEND';
+          task.status=deriveTaskStatus(task);
+          await setState(state);
+          return send(res,200,{authorized:false,reason:'SENDER_NOT_ONLINE'});
+        }
+        return send(res,200,{authorized:true,leaseId,targetId:target.id,groupId:target.groupId,senderAccountId:target.senderAccountId});
+      });
+    }
+
     if(url.pathname==='/v1/worker/account-status'&&req.method==='POST'){
       if(!agentAuth(req))return send(res,401,{error:'AGENT_AUTH_REQUIRED'});
       const input=await body(req);
