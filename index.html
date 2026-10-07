@@ -1,209 +1,76 @@
 <!doctype html>
 <html lang="zh-CN">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>辰南撰写 · 创作工作台</title>
-
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="dark">
+<title>Nuvexa Pro · Ops</title>
 <style>
-:root{--ink:#172236;--muted:#6c788c;--line:#e2e8f0;--paper:#fff;--bg:#f3f6fa;--blue:#3568f4;--blue-weak:#edf2ff;--green:#118461;--green-weak:#e6f7f0;--amber:#b96b08;--amber-weak:#fff5df;--red:#bd4b52;--red-weak:#fff0f0;--violet:#6941c6;--violet-weak:#f4f0ff;--shadow:0 12px 30px rgba(31,52,86,.06);--radius:16px}
-*{box-sizing:border-box}html{background:var(--bg)}body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif}button,input,select,textarea{font:inherit}button{cursor:pointer;border:0}.app{display:flex;min-height:100vh}.sidebar{width:236px;background:linear-gradient(180deg,#15243d 0%,#172b49 100%);color:#dce6f7;padding:24px 16px;position:fixed;inset:0 auto 0 0;z-index:5}.brand{display:flex;gap:11px;align-items:center;margin:0 10px 32px}.brand-mark{width:40px;height:40px;border-radius:12px;background:linear-gradient(135deg,#7694ff,#2f5be7);display:grid;place-items:center;color:#fff;font-size:19px;font-weight:800;box-shadow:0 8px 18px rgba(39,82,214,.25)}.brand b{display:block;color:#fff;font-size:15px}.brand small{color:#9cafce;font-size:11px}.nav{display:grid;gap:6px}.nav button{background:transparent;color:#aebdd5;text-align:left;padding:12px 13px;border-radius:11px;display:flex;gap:11px;align-items:center}.nav button.active,.nav button:hover{background:#253b61;color:#fff}.nav i{font-style:normal;font-size:17px;width:20px;text-align:center}.side-note{position:absolute;bottom:26px;left:26px;right:24px;color:#8093b2;font-size:12px}.main{margin-left:236px;width:calc(100% - 236px);min-height:100vh;padding:28px 34px 48px}.section{max-width:1580px;margin:0 auto;display:none}.section.active{display:block}.topbar{display:flex;justify-content:space-between;align-items:center;gap:18px;margin-bottom:23px}.eyebrow{color:var(--blue);font-weight:800;font-size:11px;letter-spacing:.1em}.page-title{font-size:27px;line-height:1.2;margin:6px 0 4px;letter-spacing:-.035em}.sub{color:var(--muted);margin:0}.actions,.toolbar,.button-row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.btn{padding:10px 16px;border-radius:10px;font-weight:750;transition:.2s}.btn.primary{background:var(--blue);color:white;box-shadow:0 6px 15px rgba(56,103,244,.22)}.btn.primary:hover{background:#2c56db}.btn.ghost{background:#fff;color:var(--ink);border:1px solid var(--line)}.btn.danger{background:var(--red-weak);color:var(--red)}.btn.small{padding:7px 10px;font-size:12px}.card{background:var(--paper);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow)}.dashboard{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin-bottom:18px}.metric{padding:17px 19px;min-height:108px}.metric .label{color:var(--muted);font-size:12px}.metric strong{font-size:30px;line-height:1.1;display:block;margin:7px 0 4px}.metric .trend{color:var(--green);font-size:12px}.grid{display:grid;grid-template-columns:minmax(0,1.28fr) minmax(330px,.72fr);gap:18px}.panel{padding:20px}.panel-head{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:16px}.panel h2{font-size:16px;margin:0}.panel h3{font-size:14px;margin:0}.muted{color:var(--muted)}.input,.select,textarea{width:100%;border:1px solid var(--line);border-radius:10px;background:#fff;padding:10px 12px;color:var(--ink);outline:none}.input:focus,.select:focus,textarea:focus{border-color:#8fa7ff;box-shadow:0 0 0 3px #eef2ff}.search{max-width:300px}.empty{text-align:center;padding:38px 10px;color:var(--muted)}.notice{padding:11px 13px;border-radius:11px;background:var(--blue-weak);color:#445b9b;font-size:12px;margin-bottom:14px}.notice.warn{background:var(--amber-weak);color:#8a5b0a}.notice.success{background:var(--green-weak);color:#18664f}.profile-list{display:grid;gap:10px}.profile-row{display:flex;align-items:center;gap:12px;padding:12px;border:1px solid var(--line);border-radius:13px;transition:.2s}.profile-row:hover{border-color:#b9c8ff;background:#f8faff}.avatar{width:42px;height:42px;border-radius:14px;background:#e4e9ff;color:#3656ba;display:grid;place-items:center;font-weight:800;flex:0 0 auto}.profile-row .person{flex:1;min-width:0}.person b{display:block}.person small{color:var(--muted);display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.count,.tag,.status{font-size:11px;color:#596579;background:#f2f4f8;padding:3px 8px;border-radius:20px;white-space:nowrap}.status.good{background:var(--green-weak);color:var(--green)}.status.vip{background:var(--violet-weak);color:var(--violet)}.status.warn{background:var(--amber-weak);color:var(--amber)}.link-btn{color:var(--blue);background:transparent;font-weight:700;font-size:12px}.link-btn.danger{color:var(--red)}.sort-badge{font-size:11px;color:var(--green);background:var(--green-weak);padding:3px 8px;border-radius:20px}.timeline{display:grid;gap:12px}.timeline-item{display:grid;grid-template-columns:82px 16px 1fr;gap:11px}.date{color:var(--muted);font-size:12px;padding-top:11px;text-align:right}.dotline{position:relative}.dotline:before{content:"";position:absolute;top:15px;left:4px;width:8px;height:8px;border-radius:50%;background:var(--blue);box-shadow:0 0 0 4px #e9edff}.dotline:after{content:"";position:absolute;top:27px;bottom:-18px;left:7px;width:2px;background:#e5e9f1}.timeline-item:last-child .dotline:after{display:none}.event{border:1px solid var(--line);border-radius:13px;padding:12px 14px;background:#fff}.event-head{display:flex;justify-content:space-between;gap:10px;align-items:start}.event-title{font-weight:750}.type{font-size:11px;padding:3px 7px;border-radius:20px;background:var(--blue-weak);color:var(--blue);white-space:nowrap}.type.talk{background:var(--green-weak);color:var(--green)}.event p{margin:5px 0;color:#4f5b6d}.tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}.novel-layout{display:grid;grid-template-columns:250px minmax(0,1fr);gap:18px}.doc-list{display:grid;gap:8px}.doc-item{padding:11px 12px;border:1px solid var(--line);border-radius:11px;background:#fff;text-align:left}.doc-item.active{border-color:#9eb1ff;background:var(--blue-weak)}.doc-item b{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.doc-item small{color:var(--muted)}.editor-toolbar{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:12px}.editor{min-height:420px;resize:vertical;line-height:1.8;font-size:15px}.shortcut{padding:10px 12px;border:1px dashed #b9c8ff;background:#f8faff;color:#4f65a5;border-radius:10px;font-size:12px;margin-top:10px}.check-box{padding:13px;border-radius:12px;border:1px solid var(--line);background:#fafbfe;margin-top:12px}.check-box h3{margin:0 0 4px;font-size:14px}.check-box ul{margin:6px 0 0 18px;padding:0}.check-box li{margin:3px 0}.modal-wrap{display:none;position:fixed;inset:0;background:rgba(12,21,39,.4);z-index:10;align-items:center;justify-content:center;padding:20px}.modal-wrap.show{display:flex}.modal{background:#fff;border-radius:18px;width:min(820px,100%);max-height:90vh;overflow:auto;padding:24px;box-shadow:0 22px 60px rgba(16,28,52,.25)}.modal h2{margin:0 0 18px;font-size:19px}.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:13px}.field{display:grid;gap:6px}.field.full{grid-column:1/-1}.field label{font-size:12px;font-weight:700;color:#526078}.modal-foot{display:flex;justify-content:flex-end;gap:10px;margin-top:21px}.toast{position:fixed;right:22px;bottom:22px;background:#18212f;color:#fff;padding:11px 16px;border-radius:10px;opacity:0;transform:translateY(8px);pointer-events:none;transition:.25s;z-index:20}.toast.show{opacity:1;transform:none}.group-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}.group-card{padding:16px;border:1px solid var(--line);border-radius:14px;background:#fff}.group-card button{background:transparent;color:inherit;text-align:left;width:100%;padding:0}.group-card strong{display:block;font-size:25px;margin:7px 0 2px}.group-card small{color:var(--muted)}.custom-groups{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}.custom-group{padding:16px}.custom-group h3{margin:0 0 4px}.custom-group .leader{color:var(--muted);font-size:12px}.custom-group .members-preview{color:#4f5b6d;margin-top:10px;min-height:42px}.member-picker{border:1px solid var(--line);border-radius:12px;max-height:330px;overflow:auto;padding:8px}.member-option{display:flex;gap:9px;align-items:flex-start;padding:8px;border-radius:9px}.member-option:hover{background:#f6f8fc}.member-option input{margin-top:4px}.profile-detail{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:12px 0}.detail-box{background:#f8fafc;border:1px solid var(--line);border-radius:10px;padding:10px}.detail-box span{display:block;color:var(--muted);font-size:11px}.detail-box b{display:block;margin-top:2px}.section-label{grid-column:1/-1;margin-top:5px;font-weight:800;color:#41506a;border-bottom:1px solid var(--line);padding-bottom:5px}.table-wrap{overflow:auto}.mini-table{width:100%;border-collapse:collapse}.mini-table th,.mini-table td{text-align:left;padding:9px 10px;border-bottom:1px solid var(--line);white-space:nowrap}.mini-table th{font-size:11px;color:var(--muted);font-weight:800}.toolbar .select{max-width:190px}
-@media(min-width:1500px){.main{padding-left:42px;padding-right:42px}.panel{padding:22px}}@media(max-width:1100px){.sidebar{width:74px;padding:20px 10px}.brand{margin:0 6px 28px}.brand>div:last-child,.nav span,.side-note{display:none}.brand-mark{width:42px}.main{margin-left:74px;width:calc(100% - 74px);padding:26px 22px 50px}.grid,.novel-layout{grid-template-columns:1fr}.group-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.custom-groups{grid-template-columns:1fr 1fr}.section{max-width:none}}@media(max-width:700px){.main{padding:20px 14px}.topbar{align-items:flex-start;gap:15px;flex-direction:column}.page-title{font-size:24px}.actions{width:100%}.actions .btn{flex:1}.dashboard,.group-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.custom-groups{grid-template-columns:1fr}.metric{padding:14px;min-height:96px}.metric strong{font-size:24px}.toolbar{align-items:stretch}.toolbar .input,.toolbar .select{max-width:none}.profile-row{align-items:flex-start;flex-wrap:wrap}.profile-row .person{min-width:calc(100% - 60px)}.timeline-item{grid-template-columns:65px 13px 1fr;gap:7px}.form-grid,.profile-detail{grid-template-columns:1fr}.field.full,.section-label{grid-column:auto}.panel{padding:16px}.event-head{display:block}.event-head .type{display:inline-block;margin-top:6px}}
+:root{--bg:#0e0d12;--panel:#18171d;--panel2:#201f26;--line:#2b2932;--text:#f5f6f8;--muted:#84838e;--green:#00e676;--amber:#e7b34b;--red:#ff6068;--blue:#76a0ff}
+*{box-sizing:border-box}html,body{margin:0;height:100%;background:var(--bg);color:var(--text);font-family:Inter,"Microsoft YaHei UI","Segoe UI",sans-serif}
+body{overflow:hidden}.shell{display:grid;grid-template-columns:78px 1fr;height:100vh}.side{background:#141319;border-right:1px solid #25232b;padding:14px 10px;display:flex;flex-direction:column;gap:10px}
+.logo{width:42px;height:42px;border-radius:14px;margin:0 auto 8px;display:grid;place-items:center;background:#0e2a1c;border:1px solid #1b5637;color:var(--green);font-weight:900}
+.nav{display:flex;flex-direction:column;gap:8px;overflow:auto;padding:2px}.nav button{height:46px;border-radius:13px;border:1px solid #27252d;background:#19181f;color:#777681;cursor:pointer;font-size:17px;transition:.16s}.nav button:hover{transform:translateY(-1px);border-color:#3a3742;color:#d9d9de}.nav button.active{background:var(--green);border-color:var(--green);color:#07150d;box-shadow:0 8px 22px rgba(0,230,118,.18)}
+.main{min-width:0}.top{height:70px;border-bottom:1px solid #24222a;background:#111016;display:flex;align-items:center;justify-content:space-between;padding:0 20px}.top h1{font-size:20px;margin:0}.badges{display:flex;gap:8px;align-items:center}.badge{font-size:11px;border:1px solid #33313a;padding:7px 10px;border-radius:999px;background:#19181f;color:#a6a5ae}.badge.off{color:#ff7a81;border-color:#522d33;background:#25191d}.badge.ok{color:var(--green);border-color:#20543a;background:#10241a}
+.content{height:calc(100vh - 70px);overflow:auto;padding:14px 16px 18px}.notice{border:1px solid #4b3c23;background:#231e14;color:#d8c28a;border-radius:14px;padding:11px 14px;font-size:11px;margin-bottom:12px}.pagehead{display:flex;justify-content:space-between;gap:16px;align-items:end;margin-bottom:12px}.pagehead h2{margin:0;font-size:27px;letter-spacing:-.04em}.pagehead p{margin:5px 0 0;color:var(--muted);font-size:11px}.actions{display:flex;gap:8px}.btn{border:1px solid #34313b;background:#222129;color:#c8c8cf;border-radius:10px;padding:9px 12px;font-size:10px}.btn.primary{background:var(--green);border-color:var(--green);color:#07150d;font-weight:800}.btn[disabled]{opacity:.42;cursor:not-allowed}
+.cards{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;margin-bottom:12px}.metric{background:linear-gradient(145deg,#19181f,#15141a);border:1px solid #29272f;border-radius:16px;padding:13px 14px}.metric label{font-size:10px;color:#7d7c87}.metric strong{display:block;margin-top:7px;font-size:24px}.metric small{display:block;margin-top:3px;color:#65646f;font-size:9px}.grid2{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(320px,.75fr);gap:12px}.grid22{display:grid;grid-template-columns:1fr 1fr;gap:12px}.panel{background:linear-gradient(155deg,#1a1920,#17161d);border:1px solid #29272f;border-radius:18px;overflow:hidden}.panel h3{font-size:13px;margin:0}.ph{padding:13px 15px;border-bottom:1px solid #27252d;display:flex;justify-content:space-between;align-items:center}.ph small{color:#777783;font-size:9px}.pb{padding:14px}.table{width:100%;border-collapse:collapse;font-size:10px}.table th{background:#201f26;color:#7d7c87;text-align:left;padding:9px;border-bottom:1px solid #2d2b34}.table td{padding:9px;border-bottom:1px solid #24232a;color:#d6d6db}.empty{padding:36px 18px;text-align:center;color:#787782;font-size:11px}.empty b{display:block;color:#d9d9de;font-size:13px;margin-bottom:6px}.tag{display:inline-block;border-radius:999px;padding:4px 8px;border:1px solid #34313b;background:#26242c;color:#b7b6bf;font-size:9px}.tag.ok{background:#10271c;border-color:#1b5a39;color:var(--green)}.tag.warn{background:#2a2417;border-color:#5f4c23;color:var(--amber)}.tag.bad{background:#2c191d;border-color:#5c2b32;color:#ff737a}.route{display:grid;gap:7px}.step{display:grid;grid-template-columns:34px 1fr;gap:10px;padding:9px 10px;background:#15141a;border:1px solid #2a2831;border-radius:12px}.step i{font-style:normal;width:30px;height:30px;border-radius:9px;background:#10271c;color:var(--green);display:grid;place-items:center;font-weight:800;font-size:9px}.step b{font-size:10px}.step small{display:block;color:#777680;margin-top:3px;font-size:8px}.route .arrow{text-align:center;color:#55535d;font-size:11px}.auxgrid{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:7px}.aux{padding:9px;border-radius:12px;border:1px solid #2b2932;background:#15141a}.aux strong{font-size:12px;color:var(--green)}.aux span{float:right;font-size:9px;color:#85848f}.aux small{display:block;margin-top:7px;color:#696873;font-size:8px}.footerline{margin-top:12px;color:#62616b;font-size:9px;text-align:right}
+@media(max-width:1300px){.cards{grid-template-columns:repeat(3,1fr)}.auxgrid{grid-template-columns:repeat(5,1fr)}}@media(max-width:980px){.shell{grid-template-columns:64px 1fr}.grid2,.grid22{grid-template-columns:1fr}.auxgrid{grid-template-columns:repeat(4,1fr)}}
 </style>
-
-
-
-<style>.app:not(.app-ready){visibility:hidden}.auth-root{position:fixed;inset:0;z-index:9999;display:grid;place-items:center;background:#f7f9fc}.auth-root.hidden{display:none!important}</style>
-<link rel="preload" as="image" href="./assets/login/landscape.webp" type="image/webp">
-<link rel="stylesheet" href="./intro.css?v=20261001-reliable-1">
-<link rel="stylesheet" href="./france70-chat.css?v=20261002-reference-1">
-<link rel="stylesheet" href="./design-system.css?v=20261003-product-design-final-1" id="chennanDesignSystemStyles">
-<link rel="preload" href="./data/france70-v6.1.json" as="fetch" crossorigin="anonymous">
-<script src="./theme-system.js?v=20261002-final-ui-2"></script>
 </head>
 <body>
-<div class="app app-lock">
-<aside class="sidebar">
-  <div class="brand"><div class="brand-mark">辰</div><div><b>辰南</b><small>人物与交易工作台</small></div></div>
-  <nav class="nav">
-    <button class="active" data-page="overview"><i>⌂</i><span>总览</span></button>
-    <button data-page="people"><i>◎</i><span>人物库</span></button>
-    <button data-page="groups"><i>◫</i><span>分组管理</span></button>
-    <button data-page="records"><i>▤</i><span>重要事件</span></button>
-    <button data-page="novel"><i>✎</i><span>小说文档</span></button>
-    <button data-page="france70chat"><i>✦</i><span>France 70 群聊</span></button>
-    <button data-page="topics"><i>◌</i><span>主题检查</span></button>
-  </nav>
-  <div class="side-note">70 位人物为全量虚构测试数据<br>修改内容保存在当前浏览器</div>
-</aside>
+<div class="shell">
+<aside class="side"><div class="logo">N</div><div id="nav" class="nav"></div></aside>
 <main class="main">
-<section id="overview" class="section active">
-  <div class="topbar"><div><div class="eyebrow">INVESTOR WORKSPACE</div><h1 class="page-title">投资者人物总览</h1><p class="sub">70 人基础画像 + 动态系统分组 + 自定义小组规划。</p></div>
-  <div class="actions"><button class="btn ghost" id="exportBtn">导出全部数据</button><button class="btn primary" id="quickAdd">＋ 新增重要记录</button></div></div>
-  <div id="seedNotice" class="notice success">正在载入默认人物数据…</div>
-  <div class="dashboard" id="metrics"></div>
-  <div class="grid"><div class="card panel"><div class="panel-head"><h2>最近重要事件 / 发言</h2><button class="link-btn" data-go="records">查看全部 →</button></div><div id="recentTimeline" class="timeline"></div></div>
-  <div class="card panel"><div class="panel-head"><h2>系统分组概览</h2><button class="link-btn" data-go="groups">管理分组 →</button></div><div id="groupOverview"></div></div></div>
-</section>
-
-<section id="people" class="section">
-  <div class="topbar"><div><div class="eyebrow">INVESTOR DIRECTORY</div><h1 class="page-title">人物库</h1><p class="sub">查看、筛选、编辑、增加或删除人物。系统分组会随人物属性自动更新。</p></div>
-  <div class="actions"><button class="btn ghost" id="importBtn">导入 JSON / CSV</button><input id="fileInput" type="file" accept=".csv,.json,application/json,text/csv" hidden><button class="btn primary" id="addPerson">＋ 新增人物</button></div></div>
-  <div class="notice">支持完整画像 JSON（顶层含 <b>people</b>）和人物数组。修改人物的性别、新老客户、VIP、开户或入群状态后，系统分组立即重算。</div>
-  <div class="card panel"><div class="toolbar">
-    <input class="input search" id="personSearch" placeholder="搜索编号、姓名、城市、职业、标签…" />
-    <select class="select" id="systemGroupFilter"></select>
-    <select class="select" id="customGroupFilter"></select>
-    <select class="select" id="personSort"><option value="id">按编号升序</option><option value="name">按姓名</option><option value="enthusiasm">按股票热情降序</option><option value="assets">按可投资资产降序</option></select>
-  </div><div id="peopleCount" class="muted" style="margin:10px 0 12px"></div><div id="peopleList" class="profile-list"></div></div>
-</section>
-
-<section id="groups" class="section">
-  <div class="topbar"><div><div class="eyebrow">BALANCED GROUPS</div><h1 class="page-title">分组管理</h1><p class="sub">70 位人物固定平均分为 10 组，每组 7 人；男女与新老客户比例均衡，小组名称可随时修改。</p></div></div>
-  <div class="card panel balanced-groups-panel"><div class="panel-head"><h2>10 个均衡小组</h2><span id="customGroupCount" class="muted"></span></div><div id="systemGroups" hidden></div><div id="customGroups" class="custom-groups balanced-groups-grid"></div></div>
-</section>
-
-<section id="records" class="section">
-  <div class="topbar"><div><div class="eyebrow">PERSON RECORDS</div><h1 class="page-title">人物记录</h1><p class="sub">统一查看重要事件、发言记录、联系记录与人物历史，并支持搜索、筛选和详情查看。</p></div><button class="btn primary" id="addRecord">＋ 新增人物记录</button></div>
-  <div id="recordSummary" class="record-summary-grid"></div>
-  <div class="card panel record-main-panel"><div class="panel-head"><div><h2>记录时间线</h2><p class="muted">一致性检查仅作辅助，不替代人工判断。</p></div></div><div class="toolbar"><select class="select" id="recordPerson"><option value="all">全部人物</option></select><select class="select" id="recordType"><option value="all">全部类型</option><option value="重要事件">重要事件</option><option value="发言记录">发言记录</option><option value="联系记录">联系记录</option></select><input class="input search" id="recordSearch" placeholder="搜索标题、内容或主题…" /></div><div id="allTimeline" class="timeline"></div></div>
-</section>
-
-
-<section id="novel" class="section">
-  <div class="topbar"><div><div class="eyebrow">NOVEL DOCUMENTS</div><h1 class="page-title">小说文档</h1><p class="sub">输入“人物编号 + 空格 + 发言内容”并回车，自动插入人物署名。</p></div><button class="btn primary" id="newDoc">＋ 新建文档</button></div>
-  <div class="novel-layout"><div class="card panel"><div class="panel-head"><h2>文档列表</h2><button class="link-btn" id="renameDoc">重命名</button></div><div id="docList" class="doc-list"></div></div><div class="card panel"><div class="editor-toolbar"><input class="input" id="docTitle" placeholder="文档标题" style="max-width:360px"><div class="button-row"><button class="btn ghost small" id="saveDoc">保存文档</button><button class="btn ghost small" id="insertPerson">插入人物</button></div></div><textarea id="editor" class="editor" placeholder="开始写作…"></textarea><div class="shortcut">快捷人物插入：输入 <b>人物编号 + 空格 + 发言内容</b> 后按回车。</div><div id="docStatus" class="muted" style="font-size:12px;margin-top:8px"></div></div></div>
-</section>
-
-
-<section id="france70chat" class="section">
-  <div class="topbar">
-    <div>
-      <div class="eyebrow">FRANCE 70 · FREE CHAT & MEMORY</div>
-      <h1 class="page-title">France 70 群聊与长期记忆</h1>
-      <p class="sub">70位虚构法国人物 · v6.1 Voice DNA · 作者正史 · 关系网 · 动态记忆。网页不调用额外付费 AI API。</p>
-    </div>
-    <div class="actions">
-      <span class="status good">✓ 0 额外 API 费用</span>
-      <button class="btn ghost" type="button" id="fr70Export">导出群聊记忆</button>
-    </div>
-  </div>
-
-  <div id="fr70LoadStatus" class="notice">正在读取 v6.1 角色库…</div>
-
-  <div class="fr70-stats">
-    <div class="fr70-stat"><span>历史会话</span><b id="fr70SessionCount">0</b></div>
-    <div class="fr70-stat"><span>动态记忆事件</span><b id="fr70MemoryCount">0</b></div>
-    <div class="fr70-stat"><span>已有记忆人物</span><b id="fr70PeopleMem">0</b></div>
-  </div>
-
-  <div class="card panel" style="margin-bottom:18px">
-    <div class="panel-head">
-      <h2>免费工作流</h2>
-      <span class="muted">一个入口 · 一个记忆源 · 一个 v6.1 主档</span>
-    </div>
-    <div class="check-box">
-      <b>① 输入助理 / 教授内容</b>：系统先从70人中筛选真正有理由参与的人。<br>
-      <b>② 生成并复制提示词</b>：把人物人设、关系、Canon、近期记忆一并交给 ChatGPT。<br>
-      <b>③ 粘贴 JSON 回来</b>：先做问句比例、分号、重复话术等 QA，再写入本轮历史和人物动态记忆。
-    </div>
-  </div>
-
-  <div class="fr70-layout">
-    <div>
-      <div class="card fr70-card">
-        <div class="fr70-row between">
-          <div>
-            <div class="eyebrow">STEP 1</div>
-            <h2 style="margin:3px 0 0">输入助理 / 教授内容</h2>
-          </div>
-          <div class="fr70-seg">
-            <button type="button" id="fr70KindAssistant" class="active">助理</button>
-            <button type="button" id="fr70KindProfessor">教授</button>
-          </div>
-        </div>
-        <textarea id="fr70Source" class="fr70-textarea" placeholder="粘贴今天助理或教授的发言…"></textarea>
-        <div class="fr70-options">
-          <div class="field">
-            <label>候选人物数量</label>
-            <select id="fr70Count" class="select">
-              <option value="10">10 人</option>
-              <option value="15">15 人</option>
-              <option value="20" selected>20 人</option>
-            </select>
-          </div>
-          <label class="fr70-check"><input id="fr70Reuse" type="checkbox"> 优先延续上一轮人物，但仍允许根据话题调整</label>
-        </div>
-        <div class="button-row" style="margin-top:13px">
-          <button class="btn primary" type="button" id="fr70Build">生成提示词</button>
-          <button class="btn ghost" type="button" id="fr70Copy">复制给 ChatGPT</button>
-        </div>
-        <div id="fr70Selected" class="fr70-selected"></div>
-        <div id="fr70PromptStatus" class="muted" style="font-size:11px;margin-top:8px"></div>
-      </div>
-
-      <div class="card fr70-card" style="margin-top:18px">
-        <div class="eyebrow">STEP 2</div>
-        <h2 style="margin:3px 0 10px">复制提示词到 ChatGPT</h2>
-        <textarea id="fr70Prompt" class="fr70-prompt" readonly placeholder="点击“生成提示词”后，这里会包含所选人物 v6.1 人设、关系网和动态记忆。"></textarea>
-        <div class="fr70-note">提示词已写入真实性规则：直接问句目标约25%–35%，牵引不能等于人人提问，也不能强迫观望者和质疑者统一结论。</div>
-      </div>
-
-      <div class="card fr70-card" style="margin-top:18px">
-        <div class="eyebrow">STEP 3</div>
-        <h2 style="margin:3px 0 10px">粘贴 ChatGPT 返回的 JSON</h2>
-        <textarea id="fr70Result" class="fr70-output" placeholder='粘贴 {"messages":[...],"memory_events":[...]}'></textarea>
-        <div class="button-row" style="margin-top:12px">
-          <button class="btn primary" type="button" id="fr70Import">检查并导入群聊</button>
-        </div>
-        <div id="fr70Qa" class="fr70-qa"></div>
-      </div>
-    </div>
-
-    <div>
-      <div class="card fr70-card">
-        <div class="panel-head"><h2>本轮群聊预览</h2><span class="muted">只显示实际开口的人</span></div>
-        <div id="fr70Chat" class="fr70-chat"><div class="empty">还没有导入群聊结果</div></div>
-      </div>
-
-      <div class="card fr70-card" style="margin-top:18px">
-        <div class="panel-head"><h2>历史会话</h2><span class="muted">最近 60 轮</span></div>
-        <div id="fr70History" class="fr70-history"><div class="empty">暂无历史会话</div></div>
-      </div>
-
-      <div class="card fr70-card" style="margin-top:18px">
-        <div class="panel-head"><h2>人物动态记忆</h2><span class="muted">15天 / 90天 / 长期分层</span></div>
-        <div id="fr70MemoryList" class="fr70-memory-list"><div class="empty">暂无动态记忆</div></div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<section id="topics" class="section">
-  <div class="topbar"><div><div class="eyebrow">CONSISTENCY CHECK</div><h1 class="page-title">一致性检查</h1><p class="sub">汇总人物分类、均衡分组、主题标签和数据规则，帮助检查长期内容的一致性。</p></div></div>
-  <div id="consistencySummary" class="consistency-summary-grid"></div>
-  <div class="consistency-layout">
-    <div class="card panel"><div class="panel-head"><h2>基础数据规则</h2><span class="muted">自动校验</span></div><div class="check-box"><h3>人物分类</h3><ul><li>新男 / 新女 / 老男 / 老女由客户关系与性别动态计算。</li><li>VIP、开户、入群、持仓和参与次数均来自人物当前真实字段与业务记录。</li></ul></div><div class="check-box"><h3>固定均衡小组</h3><ul><li>70 位人物固定分为 10 组，每组 7 人；当前结构为每组老女 1、新女 2、老男 2、新男 2。</li><li>成员由系统保持均衡，小组名称允许修改；人物资料变化后系统会重新校验分组。</li></ul></div></div>
-    <div class="card panel"><div class="panel-head"><h2>主题标签汇总</h2><span class="muted">人物记录来源</span></div><div id="allTopics"></div></div>
-  </div>
-</section>
-</main></div>
-
-<div class="modal-wrap" id="modal"><div class="modal"><h2 id="modalTitle">新增</h2><form id="modalForm"></form></div></div>
-<div class="toast" id="toast"></div>
-
-<script src="./login-scene.js?v=20261001-reliable-1"></script>
-<script src="./auth.js?v=20261002-no-mfa-1"></script>
-<script src="./workspace-core.js?v=20261003-module-rebuild-5"></script>
-<script src="./cloud-sync.js?v=20261003-unified-2"></script>
-<script src="./trade-dashboard.js?v=20261003-module-rebuild-3"></script>
-<script src="./people-detail.js?v=20261003-unified-2"></script>
-<script src="./trading-simulator.js?v=20261003-module-rebuild-3"></script>
-<script src="./character-memory.js?v=20261001-reliable-1"></script>
-<script src="./france70-chat.js?v=20261003-detail-2"></script>
-<script src="./document-workspace.js?v=20261003-module-rebuild-2"></script>
-<script src="./security-ui.js?v=20261002-no-mfa-1"></script>
-<script src="./offline-register.js?v=20261001-reliable-1"></script>\n<script src="./overview-final.js?v=20261003-unified-2"></script>
-<script src="./design-system.js?v=20261003-product-design-final-1"></script>
+<header class="top"><h1>Nuvexa Pro · 自动走群运营中心</h1><div class="badges"><span class="badge">v0.2.6</span><span class="badge off">本地执行端离线</span></div></header>
+<section id="content" class="content"></section>
+</main>
+</div>
+<script>
+const pages=[
+['dashboard','⌂','运营总览'],['accounts','◉','账户连接'],['monitor','◎','群组人员监控'],['groups','▦','群组中心'],
+['customers','♙','客户中心'],['messages','✉','消息中心'],['telegram','➤','Telegram 消息'],['batchJoin','＋','批量进群'],
+['batchSend','⇢','批量发送'],['queue','≡','发送队列'],['automation','⚙','自动化营销'],['risks','!','风险中心'],
+['analytics','▥','数据分析'],['system','⋯','系统设置']
+];
+const names=Object.fromEntries(pages.map(x=>[x[0],x[2]]));
+const nav=document.getElementById('nav'),content=document.getElementById('content');
+pages.forEach(([id,ico,name])=>{const b=document.createElement('button');b.textContent=ico;b.title=name;b.onclick=()=>go(id);b.dataset.id=id;nav.appendChild(b)});
+const metric=(a,b,c)=>'<div class="metric"><label>'+a+'</label><strong>'+b+'</strong><small>'+c+'</small></div>';
+const head=(t,d,a='')=>'<div class="pagehead"><div><h2>'+t+'</h2><p>'+d+'</p></div><div class="actions">'+a+'</div></div>';
+const offline='<div class="notice">云端验收模式：当前尚未连接 Windows 本地执行端。页面只用于检查 UI、布局和导航；所有账号、群组、Telegram、WhatsApp 数据均保持空值，所有真实写操作已禁用，不会生成演示数据或伪造成功状态。</div>';
+const panel=(t,s,body)=>'<section class="panel"><div class="ph"><div><h3>'+t+'</h3><small>'+s+'</small></div></div>'+body+'</section>';
+const empty=(t,d)=>'<div class="empty"><b>'+t+'</b>'+d+'</div>';
+function dashboard(){
+let aux='';for(let i=1;i<=18;i++)aux+='<div class="aux"><strong>#'+String(i).padStart(2,'0')+'</strong><span>'+(i%2?'男':'女')+'</span><small>未连接 · 等待本地 Session</small></div>';
+return offline+head('运营总览','60 个辅助号、助理/教授、群组监控与消息路由统一指挥台','<button class="btn primary" disabled>全员待命</button>')+
+'<div class="cards">'+metric('在线辅助号','0 / 60','本地执行端未连接')+metric('助理 / 教授','0 / 2','等待 Session')+metric('监控群组','0','真实数据尚未同步')+metric('今日转发','0','无模拟任务')+metric('失败任务','0','无伪造状态')+'</div>'+
+'<div class="grid2">'+panel('辅助号队伍','01–60 唯一编号 + 男女标记','<div class="pb"><div class="auxgrid">'+aux+'</div></div>')+
+panel('Telegram → WhatsApp 路由','编号+性别与助理/教授规则共用真实发送链路','<div class="pb"><div class="route"><div class="step"><i>01</i><div><b>Telegram 来源群</b><small>读取真实消息后进入匹配</small></div></div><div class="arrow">↓</div><div class="step"><i>02</i><div><b>角色 / 编号 + 性别匹配</b><small>无匹配时不创建任务</small></div></div><div class="arrow">↓</div><div class="step"><i>03</i><div><b>对应 WhatsApp Session</b><small>离线保持 WAITING，不假成功</small></div></div><div class="arrow">↓</div><div class="step"><i>04</i><div><b>目标 WhatsApp 群</b><small>真实 ACK 后才记 SUCCESS</small></div></div></div></div>')+'</div>'+
+'<div class="grid22" style="margin-top:12px">'+panel('发送任务','等待 / 处理中 / 成功 / 失败',empty('暂无真实任务','本地执行端接入后同步任务队列。'))+panel('最近群组事件','JOIN / LEAVE / Presence',empty('暂无真实事件','首次快照只建立基线；记录保留 15 天。'))+'</div>';
+}
+function generic(id){
+const titles={
+accounts:['账户连接','助理、教授与 60 个辅助号 Session 管理'],
+monitor:['群组人员监控','进群、退群及可见在线状态；不可获取时显示“未知”'],
+groups:['群组中心','真实群组规模、成员变化和运营统计'],
+customers:['客户中心','客户资料、阶段与跟进状态'],
+messages:['消息中心','真实对话与发送记录'],
+telegram:['Telegram 消息','教授 / 助理角色与辅助号编号+性别路由'],
+batchJoin:['批量进群','仅助理 / 教授商业账号执行，失败不记成功'],
+batchSend:['批量发送','辅助号真实 Session 执行，离线即阻断'],
+queue:['发送队列','WAITING / PROCESSING / SUCCESS / FAILED'],
+automation:['自动化营销','真实触发器与执行记录'],
+risks:['风险中心','登录、发送、群组和账号风险'],
+analytics:['数据分析','客户、任务和业务账号真实统计'],
+system:['系统设置','许可证、备份、安全与本地执行端状态']
+};
+const [t,d]=titles[id]||[names[id]||id,''];
+return offline+head(t,d,'<button class="btn" disabled>需要本地执行端</button>')+
+'<div class="cards">'+metric('状态','未连接','Cloud shell')+metric('真实记录','0','不生成演示数据')+metric('待处理','0','无本地任务')+metric('异常','0','暂无真实来源')+metric('同步时间','—','等待执行端')+'</div>'+
+panel(t+'数据','连接 Windows 执行端后显示真实数据','<table class="table"><thead><tr><th>项目</th><th>状态</th><th>来源</th><th>更新时间</th></tr></thead><tbody><tr><td>本地执行端</td><td><span class="tag bad">离线</span></td><td>Windows</td><td>—</td></tr><tr><td>WhatsApp Session</td><td><span class="tag warn">未知</span></td><td>本地</td><td>—</td></tr><tr><td>Telegram 路由</td><td><span class="tag warn">未同步</span></td><td>本地配置</td><td>—</td></tr></tbody></table>');
+}
+function go(id){document.querySelectorAll('.nav button').forEach(b=>b.classList.toggle('active',b.dataset.id===id));content.innerHTML=id==='dashboard'?dashboard():generic(id);location.hash=id}
+const start=(location.hash||'#dashboard').slice(1);go(names[start]?start:'dashboard');
+</script>
 </body>
 </html>
