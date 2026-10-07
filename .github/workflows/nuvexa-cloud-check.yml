@@ -1,0 +1,52 @@
+name: Nuvexa Cloud Check
+
+on:
+  push:
+    branches:
+      - deploy/nuvexa-ops-v026
+    paths:
+      - 'ops-bridge/**'
+      - 'index.html'
+      - '.github/workflows/nuvexa-cloud-check.yml'
+  workflow_dispatch:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Check API syntax
+        run: node --check ops-bridge/server.mjs
+      - name: Check Cloud Edition markers
+        run: |
+          node - <<'NODE'
+          const fs=require('fs');
+          const api=fs.readFileSync('ops-bridge/server.mjs','utf8');
+          const ui=fs.readFileSync('index.html','utf8');
+          const requiredApi=[
+            "version:'0.3.0'",
+            "'/v1/collector/telegram/ingest'",
+            "'/v1/worker/lease'",
+            "'/v1/worker/ack'",
+            "'/v1/groups'",
+            "'/v1/settings'"
+          ];
+          const requiredUi=[
+            'Nuvexa Pro v0.3.0',
+            'Telegram 信息采集器',
+            '严格顺序队列',
+            '助理2号',
+            '教授2号',
+            '普通替补03',
+            '同角色跨群',
+            '同角色同群多条'
+          ];
+          for(const s of requiredApi) if(!api.includes(s)) throw new Error('API marker missing: '+s);
+          for(const s of requiredUi) if(!ui.includes(s)) throw new Error('UI marker missing: '+s);
+          console.log('Nuvexa Cloud v0.3 static checks passed');
+          NODE
