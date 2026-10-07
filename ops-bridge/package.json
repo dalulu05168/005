@@ -1,7 +1,7 @@
 {
   "name": "nuvexa-ops-bridge",
   "private": true,
-  "version": "0.2.7",
+  "version": "0.3.0",
   "type": "module",
   "scripts": {
     "start": "node server.mjs"
