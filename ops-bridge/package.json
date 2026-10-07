@@ -1,0 +1,12 @@
+{
+  "name": "nuvexa-ops-bridge",
+  "private": true,
+  "version": "0.2.7",
+  "type": "module",
+  "scripts": {
+    "start": "node server.mjs"
+  },
+  "dependencies": {
+    "redis": "^5.8.2"
+  }
+}
