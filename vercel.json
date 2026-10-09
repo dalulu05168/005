@@ -1,5 +1,5 @@
 {
   "framework": null,
-  "buildCommand": "npm run build:static",
-  "outputDirectory": "dist/pages"
+  "buildCommand": "node scripts/build-cloud.cjs",
+  "outputDirectory": "dist/cloud"
 }
