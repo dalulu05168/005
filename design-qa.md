@@ -1,3 +1,15 @@
+# Nuvexa Cloud UI · 2026-10-10 · Typography and hover correction
+
+User rules: all UI typography must be pure black (#000000); cards and buttons lift on pointer hover; keep fixed 16:9 without page scrolling. The user's annotated dashboard and group screenshots supersede the previous muted-type styling.
+
+Changed index.html only for runtime: black typography including placeholders and status labels; explicit three-row metric layout with number/description inside each card; full-height equal group panels; 3px card/panel lift with shadow and 2px enabled control lift. Reduced-motion preference removes motion. Existing API and business handlers preserved.
+
+Browser evidence: outputs/nuvexa-black-hover-dashboard.png and outputs/nuvexa-black-hover-groups.png, local fixture data, 1440×810. Computed typography sample rgb(0,0,0), zero non-black text samples in dashboard; hovered card transform matrix(1,0,0,1,0,-3), shadow rgba(22,60,53,.12) 0 12px 28px. Card description bottom remains 19.5px inside its border. Both group panels 518px tall, no internal overflow, bottom 767.75px (764.75px while hovered), inside app bottom 786px. Document 1440×810; console errors none. Post-fix screenshots inspected; card/content alignment and group boundaries corrected. Test fixture is outside production build.
+
+final result: passed
+
+---
+
 # Nuvexa Cloud UI · 2026-10-10
 
 Scope: screenshot-inspired Nuvexa UI update; the older report below concerns a separate legacy application and does not apply to this build.
