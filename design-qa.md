@@ -1,3 +1,36 @@
+# Nuvexa Cloud UI · 2026-10-10
+
+Scope: screenshot-inspired Nuvexa UI update; the older report below concerns a separate legacy application and does not apply to this build.
+
+Source visual truth: C:/Users/mrmal/AppData/Local/Temp/codex-clipboard-ee0548ca-1639-4083-b34e-e16bc8731d76.png (1504 × 1128).
+Implementation: outputs/nuvexa-ui-preview-1440.png (1440 × 810 CSS pixels, browser screenshot at density 1).
+Full comparison: outputs/nuvexa-ui-comparison.png. Focused card/tab/filter comparison: outputs/nuvexa-ui-comparison-detail.png.
+Source is a 4:3 presentation canvas. The user explicitly requested a 16:9 fixed viewport. Comparisons normalize each image to 880 px width, preserving each aspect ratio; no exact viewport equivalence is claimed.
+
+State: authenticated local fixture dashboard, clearly marked as local test data. Fixture server is outside the Git repository and not part of the build. Actual authenticated production behavior is not verified by these fixture checks.
+
+Findings and iteration history:
+- P2 initial queue rule and footer exceeded the fixed content area. Reduced card height to 120px, queue cell minimum to 41px, and metric bottom gap to 20px. Post-fix screenshot shows rule and pagination inside the white frame; at 1440×810 the rule bottom was 760.95px and frame bottom 786px.
+- P2 original vertically stacked group settings would exceed the viewport. Split visible content into group/interval and publishing/routing tabs; retained all fields and handlers. Both tabs were visually inspected after correction.
+- P1 initial local script generation had a selector escaping error. Corrected selectors, reloaded, and verified clean browser error logs before review.
+- Draft changes previously disappeared on refresh/add operations. Pause polling while editing, preserve drafts across local operations, and keep group/interval saves independent. Browser checked group name and 2.5-second interval survived saving the other section.
+
+Required fidelity surfaces:
+- Typography: Segoe UI/Inter/system Chinese fallbacks, medium-weight headings, small muted labels; appropriate to existing Chinese application. Reference Latin content intentionally replaced by Nuvexa content.
+- Layout: narrow 64px navigation, 68px header, four equal overview cards, underlined tabs, filter controls and table. 1440×810 base frame scales uniformly. Screenshot and DOM bounds inspected at 1440×810, 1920×1080, and 1366×768; document bounds equal viewport and visible controls fit the frame after resize settles.
+- Colors: white surfaces, fine gray borders, cyan-gray background, teal selected states. Restrained warm warnings and semantic red/green remain.
+- Assets: official Tabler outline icons embedded with MIT license. Existing Nuvexa wordmark retained. Stock-company logos, sparklines, and personal portrait intentionally omitted because this is a forwarding operations product with no stock-market data or portrait requirement.
+- Copy: existing Nuvexa purpose and strict forwarding/fallback constraints retained. Removed unverified introductory claim that all cloud workers already execute. No fake production data added.
+
+Primary interactions tested in local fixture: navigation; all four dashboard tabs; task filtering/search/no-match; task pagination; account pagination and edit/save; group pagination and edit/save; independent interval saving; publishing/routing tab. No real WhatsApp or Telegram sends made. Real cloud worker and valid production login remain outside UI QA.
+Console errors: none in final local browser tab. Syntax check and isolated production build passed; output contains only index.html and release.json. Blank password field verified; fixture markers absent from production source.
+
+Follow-up polish: P3 exact font rendering varies with OS-installed fonts. Intentional changes in content and aspect ratio are user requirements, not fidelity defects.
+
+final result: passed
+
+---
+
 # 辰南系统 UI 统一验收
 
 ## 2026-10-03 当前统一 UI 验收基线
