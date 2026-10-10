@@ -1,7 +1,7 @@
 import { createServer } from 'node:http';
 import { createHmac, randomUUID, timingSafeEqual } from 'node:crypto';
 import { createClient } from 'redis';
-import { normalizeTelegramUpdate, textWithoutRole, translateRomanian } from './telegram-collector.mjs';
+import { normalizeTelegramUpdate, textWithoutRole, extractPreparedText } from './telegram-collector.mjs';
 
 const PORT=Number(process.env.PORT||10000);
 const REDIS_URL=String(process.env.REDIS_URL||'').trim();
@@ -22,8 +22,6 @@ const TELEGRAM_BOT_TOKEN=String(process.env.TELEGRAM_BOT_TOKEN||'').trim();
 const TELEGRAM_WEBHOOK_SECRET=String(process.env.TELEGRAM_WEBHOOK_SECRET||'').trim();
 const TELEGRAM_SOURCE_CHAT_IDS=new Set(String(process.env.TELEGRAM_SOURCE_CHAT_IDS||'').split(',').map(x=>x.trim()).filter(Boolean));
 const TELEGRAM_AUTO_WEBHOOK=process.env.TELEGRAM_AUTO_WEBHOOK==='true';
-const DEEPL_AUTH_KEY=String(process.env.DEEPL_AUTH_KEY||'').trim();
-const DEEPL_API_ENDPOINT=String(process.env.DEEPL_API_ENDPOINT||'https://api-free.deepl.com/v2/translate').trim();
 const TELEGRAM_CONFIGURED=Boolean(TELEGRAM_BOT_TOKEN&&TELEGRAM_WEBHOOK_SECRET&&TELEGRAM_SOURCE_CHAT_IDS.size);
 
 const MAX_BODY=4*1024*1024;
@@ -263,10 +261,7 @@ function parseTelegram(input){
     }
   }
   let romanian=safeString(input.romanianText,10000);
-  if(!romanian){
-    const m=raw.match(/罗马尼亚(?:语|文字)?\s*[:：]\s*([\s\S]+)$/i);
-    if(m)romanian=safeString(m[1],10000);
-  }
+  if(!romanian)romanian=safeString(extractPreparedText(raw),10000);
   const mediaRef=safeString(input.mediaRef||input.imageUrl,2000);
   if(!role)return {ok:false,error:'ROLE_NOT_RECOGNIZED'};
   if(role==='AUXILIARY'&&!auxCode)return {ok:false,error:'AUX_CODE_REQUIRED'};
@@ -514,17 +509,23 @@ const server=createServer(async(req,res)=>{
       const update=await body(req);
       const input=normalizeTelegramUpdate(update,TELEGRAM_SOURCE_CHAT_IDS);
       if(!input)return send(res,200,{ok:true,ignored:true});
-      // Image ingestion goes first, before translation; the image is never read by translation.
-      let imageResult=null;
-      if(input.mediaRef)imageResult=await ingestTelegramCollectorInput(input);
+      // Legacy Telegram input is optional. Shared ingest works without Telegram.
+      // Use the prepared lower section verbatim. No translation API is called.
       const hasRole=/^\s*(助理|教授|辅助(?:号)?\s*[0-9]{1,3})(?=\s|[:：]|$)/m.test(input.text);
-      const messageText=textWithoutRole(input.text);
-      if(!hasRole||!messageText){
-        return send(res,200,{ok:true,photo:imageResult?.status||null,textQueued:false});
+      if(!hasRole){
+        if(!input.mediaRef)return send(res,200,{ok:true,ignored:true});
+        const pending=await ingestTelegramCollectorInput(input);
+        return send(res,200,{ok:true,photo:pending?.status||null,textQueued:false});
       }
-      const translated=await translateRomanian(input.text,{key:DEEPL_AUTH_KEY,endpoint:DEEPL_API_ENDPOINT});
-      const textResult=await ingestTelegramCollectorInput({...input,romanianText:translated});
-      return send(res,200,{ok:true,photo:Boolean(input.mediaRef),textQueued:Boolean(textResult?.taskIds?.length||textResult?.duplicate)});
+      const prepared=extractPreparedText(input.text);
+      if(!prepared&&!input.mediaRef){
+        return send(res,200,{ok:true,textQueued:false,reason:'PRETRANSLATED_SECTION_MISSING'});
+      }
+      const result=await ingestTelegramCollectorInput({...input,romanianText:prepared});
+      return send(res,200,{ok:true,hasImage:Boolean(input.mediaRef),
+        textQueued:Boolean(prepared&&(result?.taskIds?.length||result?.duplicate)),
+        awaitingPreparedText:Boolean(!prepared),
+        messageCount:result?.messageCount||0});
     }
     if(url.pathname==='/v1/worker/media'&&req.method==='GET'){
       if(!agentAuth(req))return send(res,401,{error:'AGENT_AUTH_REQUIRED'});
@@ -586,7 +587,7 @@ const server=createServer(async(req,res)=>{
       return send(res,200,{ok:true,collector:state.collector});
     }
 
-    if(url.pathname==='/v1/collector/telegram/ingest'&&req.method==='POST'){
+    if((url.pathname==='/v1/collector/telegram/ingest'||url.pathname==='/v1/collector/ingest')&&req.method==='POST'){
       if(!agentAuth(req))return send(res,401,{error:'AGENT_AUTH_REQUIRED'});
       const input=await body(req);
       const parsed=parseTelegram(input);
