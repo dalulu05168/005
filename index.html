@@ -21,8 +21,8 @@ button,input,select{font:inherit}button{cursor:pointer}button:disabled{opacity:.
 .login-shell{display:grid;grid-template-columns:1.1fr .9fr}.login-brand{display:flex;flex-direction:column;padding:54px 60px;background:#f8fbfa;border-right:1px solid var(--line)}.login-brand .logo{display:flex;align-items:center;gap:12px;font-size:18px;font-weight:600}.login-brand .logo-mark{font-size:24px}.login-brand .logo-mark:before{content:'N'}.version{font-size:9px;color:#8c9a94;border:1px solid #e0e9e4;border-radius:4px;padding:4px 7px;letter-spacing:.5px}.hero{margin:auto 0}.eyebrow{font-size:11px;letter-spacing:2px;color:var(--green);text-transform:uppercase}.hero h1{font-size:54px;font-weight:500;line-height:1.13;letter-spacing:-2px;margin:22px 0}.hero p{font-size:13px;line-height:1.9;color:#8b9790;max-width:460px}.route-mini{display:flex;align-items:center;flex-wrap:wrap;gap:8px;max-width:470px;margin-top:28px}.route-mini .node{font-size:10px;border:1px solid #e1ebe5;padding:9px 12px;border-radius:5px;background:#fff}.route-mini .arrow{color:#a5b9ae}.login-side{display:flex;align-items:center;justify-content:center;padding:60px}.login-card{width:100%;max-width:360px}.login-card h2{font-size:27px;font-weight:500;margin:0 0 12px}.login-card>p{font-size:11px;color:var(--muted);margin:0 0 35px}.login-card .field{margin:20px 0}.login-card input{padding:13px}.primary{border:0;border-radius:6px;background:var(--green);color:#fff;width:100%;padding:13px;margin-top:12px;font-size:12px}.primary:hover{background:#056e63}.login-error{height:28px;padding-top:10px;font-size:11px;color:var(--red)}.login-status{display:flex;justify-content:space-between;font-size:10px;color:var(--muted);padding-top:18px;margin-top:12px;border-top:1px solid var(--line)}
 /* Nuvexa presentation rules: black typography, aligned cards, raised hover. */
 :root{--text:#000;--muted:#000}
-#viewport,#viewport *,.toast{color:#000!important}
-#viewport input::placeholder{color:#000;opacity:1}
+#appView,#appView *,.toast{color:#000!important}
+#appView input::placeholder{color:#000;opacity:1}
 .metric{height:128px;padding:14px 18px;display:grid;grid-template-rows:31px 34px 16px;row-gap:4px;align-content:center}
 .metric-heading{line-height:20px;padding-right:76px}
 .metric strong{margin:0;line-height:34px;align-self:center}
@@ -37,6 +37,104 @@ button,input,select{font:inherit}button{cursor:pointer}button:disabled{opacity:.
 .btn,.primary,.filters button,.pager button,.nav button,.workspace-tabs button,.logout{transition:transform .18s ease,box-shadow .18s ease,background .18s ease}
 .btn:hover:not(:disabled),.primary:hover:not(:disabled),.filters button:hover,.pager button:hover:not(:disabled),.nav button:hover,.workspace-tabs button:hover,.logout:hover{transform:translateY(-2px);box-shadow:0 5px 12px rgba(22,60,53,.1)}
 @media(prefers-reduced-motion:reduce){.metric,.panel,.login-card,button{transition:none!important}.metric:hover,.panel:hover,.login-card:hover,button:hover{transform:none!important}}
+
+/* Cloud Edition sign-in — responsive warm ivory design. App workspace stays 16:9. */
+body:has(#loginView:not(.hidden)){
+  background:radial-gradient(ellipse at 12% 12%,rgba(225,212,180,.25),transparent 42%),
+    radial-gradient(ellipse at 89% 84%,rgba(226,225,214,.5),transparent 46%),
+    linear-gradient(130deg,#fcfbf7 0%,#f5f2e9 48%,#f8f7f3 100%);
+}
+#viewport:has(#loginView:not(.hidden)){
+  position:fixed;inset:0;width:100%;height:100%;padding:clamp(16px,3vw,48px);
+  transform:none!important;display:flex;align-items:center;justify-content:center;
+}
+#loginView.login-shell{
+  width:min(1160px,100%);height:min(740px,calc(100dvh - 32px));min-height:0;
+  display:grid;grid-template-columns:minmax(0,1.12fr) minmax(0,.88fr);
+  border:1px solid #e7e0d2;border-radius:26px;
+  background:#fffdf9;box-shadow:0 32px 85px rgba(82,67,39,.1),0 8px 22px rgba(82,67,39,.05);
+  overflow:hidden;color:#29271f;
+}
+#loginView .login-brand{
+  position:relative;display:flex;flex-direction:column;min-width:0;
+  padding:clamp(30px,4vw,56px);
+  background:linear-gradient(146deg,#faf8f2 0%,#f1eddf 100%);
+  border-right:1px solid #e7dece;overflow:hidden;
+}
+#loginView .login-brand::after{
+  content:"";position:absolute;width:350px;height:350px;right:-165px;bottom:-180px;
+  border:1px solid rgba(167,137,75,.18);border-radius:50%;
+  box-shadow:0 0 0 48px rgba(174,144,83,.035),0 0 0 96px rgba(174,144,83,.028);
+  pointer-events:none;
+}
+#loginView .login-brand .logo{position:relative;z-index:1;display:flex;flex-wrap:wrap;gap:12px;align-items:center;color:#302b22;font-size:20px;font-weight:700;letter-spacing:.1px}
+#loginView .login-brand .logo-mark{width:47px;height:47px;display:grid;place-items:center;background:linear-gradient(135deg,#80642f,#b99755);border:1px solid rgba(124,94,41,.25);color:#fff;box-shadow:0 8px 20px rgba(141,107,47,.16);border-radius:14px;font-family:Georgia,serif;font-size:28px;letter-spacing:0}
+#loginView .version{font-size:10px;font-weight:700;letter-spacing:1.1px;color:#8c7342;background:#fffaf0;border:1px solid #e9dcc3;border-radius:100px;padding:7px 11px}
+#loginView .hero{position:relative;z-index:1;margin:auto 0}
+#loginView .eyebrow{color:#8e7442;font-size:11px;letter-spacing:2.1px;font-weight:700}
+#loginView .hero h1{font-size:clamp(34px,4vw,56px);font-weight:650;line-height:1.14;letter-spacing:-1.9px;color:#2f2a22;margin:25px 0}
+#loginView .hero p{font-size:14px;line-height:1.95;color:#716a60;max-width:445px}
+#loginView .route-mini{gap:8px;margin-top:30px}
+#loginView .route-mini .node{background:rgba(255,255,255,.75);border:1px solid #e4dac8;color:#6c593b;font-size:11px;border-radius:9px;padding:10px 11px}
+#loginView .route-mini .arrow{color:#ab8b58}
+#loginView .login-side{
+  min-width:0;display:flex;align-items:center;justify-content:center;
+  padding:clamp(26px,4vw,56px);background:linear-gradient(165deg,#fffefa,#fcfaf5);
+}
+#loginView .login-card{width:100%;max-width:390px;padding:30px 0;border:0;background:transparent;box-shadow:none}
+#loginView .login-card:hover{transform:none;box-shadow:none}
+#loginView .login-card h2{font-size:32px;line-height:1.2;font-weight:700;color:#2c2923;letter-spacing:-.9px;margin:0 0 12px}
+#loginView .login-card>p{font-size:13px;line-height:1.6;color:#80786b;margin:0 0 32px}
+#loginView .field{margin:0 0 19px}
+#loginView .field label{font-size:13px;font-weight:650;color:#554d3f;margin-bottom:10px}
+#loginView .field input{
+  height:52px;box-sizing:border-box;width:100%;padding:0 16px;
+  border-radius:11px;border:1px solid #e3dbcc;background:#fffefa;
+  font-size:15px;color:#302d28;box-shadow:0 2px 7px rgba(69,54,32,.02);
+  transition:border-color .2s,box-shadow .2s;
+}
+#loginView .field input::placeholder{color:#a29a8c;opacity:1}
+#loginView .field input:focus{border-color:#b39257;box-shadow:0 0 0 4px rgba(179,146,87,.12);outline:0}
+#loginView .primary{
+  height:53px;padding:0 18px;margin-top:6px;
+  background:linear-gradient(110deg,#876a35,#ae9054);border:1px solid #a68a55;
+  border-radius:11px;box-shadow:0 9px 20px rgba(136,105,50,.16);
+  color:#fff;font-size:15px;font-weight:700;letter-spacing:1px;
+}
+#loginView .primary:hover:not(:disabled){background:linear-gradient(110deg,#785d2e,#9b7f48);box-shadow:0 11px 24px rgba(136,105,50,.2);transform:translateY(-1px)}
+#loginView .primary:focus-visible{outline:3px solid #c9a86c;outline-offset:3px}
+#loginView .login-error{height:auto;min-height:33px;padding-top:12px;line-height:1.4;font-size:12px;color:#b34739}
+#loginView .login-status{display:flex;flex-wrap:wrap;gap:8px 18px;align-items:center;justify-content:space-between;padding-top:18px;margin-top:10px;border-top:1px solid #ebe5da;color:#797164;font-size:12px}
+#loginView .login-status b{font-weight:700}
+#loginView #loginCloud{color:#a17a3e}
+#loginView #cloudDataMode{color:#746b5c}
+@media(max-width:820px){
+  #viewport:has(#loginView:not(.hidden)){padding:14px;align-items:center}
+  #loginView.login-shell{width:min(550px,100%);height:auto;max-height:calc(100dvh - 28px);display:flex;flex-direction:column;border-radius:19px;overflow-y:auto}
+  #loginView .login-brand{padding:23px 24px 20px;flex:none;border-right:0;border-bottom:1px solid #e9e1d5;overflow:visible}
+  #loginView .login-brand::after{display:none}
+  #loginView .login-brand .logo{font-size:18px}
+  #loginView .login-brand .logo-mark{width:39px;height:39px;font-size:23px;border-radius:11px}
+  #loginView .hero{display:none}
+  #loginView .login-side{padding:12px 26px 22px;flex:none}
+  #loginView .login-card{padding:17px 0 0;max-width:none}
+  #loginView .login-card h2{font-size:27px}
+  #loginView .login-card>p{margin-bottom:25px;font-size:12px}
+  #loginView .field{margin-bottom:16px}
+  #loginView .field input{font-size:16px}
+  #loginView .login-status{font-size:11px}
+}
+@media(max-height:600px) and (min-width:821px){
+  #viewport:has(#loginView:not(.hidden)){padding:10px}
+  #loginView.login-shell{height:calc(100dvh - 20px);overflow:auto}
+  #loginView .login-brand{padding:24px}
+  #loginView .hero h1{font-size:34px;margin:12px 0}
+  #loginView .route-mini{margin-top:12px}
+  #loginView .login-side{padding:20px}
+  #loginView .login-card{padding:0}
+  #loginView .login-card>p{margin-bottom:16px}
+}
+
 </style>
 <!-- Tabler Icons license
 MIT License
@@ -69,7 +167,7 @@ SOFTWARE.
     <div class="logo"><span class="logo-mark"></span><span>Nuvexa Pro</span><span class="version">v0.3.0 CLOUD</span></div>
     <div class="hero"><div class="eyebrow">Cloud Forwarding Command Center</div><h1>Telegram →<br>WhatsApp Cloud</h1><p>图片与罗马尼亚语信息集中采集，按原始顺序逐群转发。角色专属替补与发送确认机制，让每一步都有据可查。</p><div class="route-mini"><span class="node">Telegram 信息采集器</span><span class="arrow">→</span><span class="node">严格顺序队列</span><span class="arrow">→</span><span class="node">WhatsApp Session</span><span class="arrow">→</span><span class="node">多个已开启群组</span></div></div>
   </div>
-  <div class="login-side"><form id="loginForm" class="login-card"><h2>进入 Cloud Edition</h2><p>所有控制从 admin.nuvexapro.com 完成。</p><div class="field"><label for="username">账号</label><input id="username" autocomplete="username" value="Chennan118" required></div><div class="field"><label for="password">密码</label><input id="password" type="password" autocomplete="current-password" required></div><button id="loginBtn" class="primary" type="submit">进入系统</button><div id="loginError" class="login-error"></div><div class="login-status"><span>Cloud API <b id="loginCloud">检测中</b></span><span>模式 <b>真实数据</b></span></div></form></div>
+  <div class="login-side"><form id="loginForm" class="login-card"><h2>欢迎回来</h2><p>登录 Nuvexa Pro Cloud Edition 管理中心</p><div class="field"><label for="username">账号</label><input id="username" name="username" autocomplete="username" placeholder="请输入管理员账号" spellcheck="false" required></div><div class="field"><label for="password">密码</label><input id="password" name="password" type="password" autocomplete="current-password" placeholder="请输入登录密码" required></div><button id="loginBtn" class="primary" type="submit">进入系统</button><div id="loginError" class="login-error"></div><div class="login-status"><span>Cloud API <b id="loginCloud">检测中</b></span><span>数据 <b id="cloudDataMode">等待云端同步</b></span></div></form></div>
 </section>
 <div id="appView" class="app hidden">
   <aside class="sidebar"><div class="logo"><span class="logo-mark"></span><span>Nuvexa Pro</span><span class="version">v0.3</span></div><nav class="nav"><button data-page="dashboard" class="active"><span class="ico"><!--
@@ -180,10 +278,10 @@ const time=v=>{if(!v)return '—';const d=new Date(v);return Number.isFinite(d.g
 const sec=ms=>(Number(ms||0)/1000).toFixed(Number(ms||0)%1000?1:0);
 function toast(msg,error=false){const el=$('#toast');el.textContent=msg;el.className='toast'+(error?' error':'');setTimeout(()=>el.classList.add('hidden'),3000)}
 async function api(path,opt={}){const headers={'content-type':'application/json',...(opt.headers||{})};if(state.token)headers.authorization='Bearer '+state.token;const r=await fetch(API+path,{...opt,headers});const j=await r.json().catch(()=>({}));if(r.status===401&&path!='/v1/auth/login'){logout();throw new Error('登录已失效')}if(!r.ok)throw new Error(j.error||('HTTP '+r.status));return j}
-async function cloudCheck(){try{const r=await fetch(API+'/v1/health',{cache:'no-store'});const j=await r.json();$('#loginCloud').textContent=r.ok?'已连接':'异常';$('#loginCloud').style.color=r.ok?'var(--green)':'var(--red)';return j}catch{$('#loginCloud').textContent='连接失败';$('#loginCloud').style.color='var(--red)'}}
+async function cloudCheck(){try{const r=await fetch(API+'/v1/health',{cache:'no-store',signal:AbortSignal.timeout(10000)});const j=await r.json().catch(()=>null);const online=r.ok&&j!==null;$('#loginCloud').textContent=online?'已连接':'服务不可用';$('#loginCloud').style.color=online?'#176c5d':'#b34739';$('#cloudDataMode').textContent=online?'实时接口':'未同步';return online?j:null}catch{$('#loginCloud').textContent='服务不可达';$('#loginCloud').style.color='#b34739';$('#cloudDataMode').textContent='未同步';return null}}
 function logout(){state.token='';sessionStorage.removeItem('nuvexa_ops_token');clearInterval(state.timer);state.timer=null;$('#appView').classList.add('hidden');$('#loginView').classList.remove('hidden')}
 function loginSuccess(token){state.token=token;sessionStorage.setItem('nuvexa_ops_token',token);$('#loginView').classList.add('hidden');$('#appView').classList.remove('hidden');setPage(location.hash.replace('#','')||'dashboard');refresh();clearInterval(state.timer);state.timer=setInterval(refresh,4000)}
-$('#loginForm').addEventListener('submit',async e=>{e.preventDefault();const btn=$('#loginBtn');btn.disabled=true;$('#loginError').textContent='';try{const j=await api('/v1/auth/login',{method:'POST',body:JSON.stringify({username:$('#username').value.trim(),password:$('#password').value})});loginSuccess(j.token)}catch(err){$('#loginError').textContent=err.message}finally{btn.disabled=false}});
+$('#loginForm').addEventListener('submit',async e=>{e.preventDefault();const btn=$('#loginBtn');btn.disabled=true;$('#loginError').textContent='';try{const j=await api('/v1/auth/login',{method:'POST',body:JSON.stringify({username:$('#username').value.trim(),password:$('#password').value})});loginSuccess(j.token)}catch(err){$('#loginError').textContent=err instanceof TypeError?'云端服务暂时不可用，请稍后重试。':(err.message||'登录失败，请稍后重试。')}finally{btn.disabled=false}});
 $('#logoutBtn').addEventListener('click',logout);$$('.nav button').forEach(b=>b.addEventListener('click',()=>setPage(b.dataset.page)));
 function setPage(page){if(page!==state.page){if(ui.dirty&&!confirm('有未保存的修改，确定离开当前页面？'))return;ui.dirty=false;ui.edited.clear();ui.intervalDraft=null;}if(!['dashboard','accounts','group'].includes(page))page='dashboard';state.page=page;location.hash=page;$$('.nav button').forEach(b=>b.classList.toggle('active',b.dataset.page===page));$('#topPageTitle').textContent={dashboard:'运营大屏',accounts:'账号管理',group:'群组与转发设置'}[page];render()}
 window.addEventListener('hashchange',()=>setPage(location.hash.replace('#','')));
