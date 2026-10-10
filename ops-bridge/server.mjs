@@ -216,7 +216,20 @@ function logicalSenderKey(task){
   if(task.role==='AUXILIARY')return 'AUXILIARY:'+safeString(task.auxCode,32);
   return task.role;
 }
-function isAccountOnline(a){return a?.status==='ONLINE'}
+const ACCOUNT_ALIVE_MS=120000;
+const QR_WORKER_KEY='nuvexa:wa:runtime:worker';
+const qrKey=id=>'nuvexa:wa:qr:'+id;
+const connectKey=id=>'nuvexa:wa:connect:'+id;
+function accountOnline(a){
+  const t=Date.parse(a?.lastHeartbeatAt||'');
+  return Boolean(a?.status==='ONLINE'&&Number.isFinite(t)&&Date.now()-t>=0&&Date.now()-t<=ACCOUNT_ALIVE_MS);
+}
+function accountPublic(a){
+  const {sessionId,meta,...publicAccount}=a;
+  return {...publicAccount,status:a.status==='ONLINE'&&!accountOnline(a)?'OFFLINE':a.status,
+    hasSession:Boolean(a.sessionId)};
+}
+function isAccountOnline(a){return accountOnline(a)}
 function selectSender(state,task){
   const accounts=state.accounts||[];
   let primary=null;
@@ -326,7 +339,7 @@ function summary(state){
   }
   const completed=counts.success+counts.failed;
   counts.successRate=completed?counts.success/completed*100:0;
-  counts.onlineAccounts=(state.accounts||[]).filter(a=>a.status==='ONLINE').length;
+  counts.onlineAccounts=(state.accounts||[]).filter(isAccountOnline).length;
   counts.totalAccounts=(state.accounts||[]).length;
   counts.enabledGroups=(state.groups||[]).filter(g=>g.enabled).length;
   counts.totalGroups=(state.groups||[]).length;
@@ -342,7 +355,7 @@ function publicState(state){
     updatedAt:state.updatedAt,
     settings:state.settings,
     collector:state.collector,
-    accounts:state.accounts,
+    accounts:state.accounts.map(accountPublic),
     groups:state.groups,
     tasks:(state.tasks||[]).slice(-200),
     queue:state.queue,
@@ -752,6 +765,79 @@ const server=createServer(async(req,res)=>{
         textRequiresInterval:Boolean(translatedText),targetCount:state.groups.filter(g=>g.enabled).length});
     }
 
+
+    /* QR is supplied by a real authenticated worker, never synthesized by the dashboard. */
+    if(url.pathname==='/v1/worker/accounts/heartbeat'&&req.method==='POST'){
+      if(!agentAuth(req))return send(res,401,{error:'AGENT_AUTH_REQUIRED'});
+      const input=await body(req);
+      const workerId=safeString(input.workerId,120);
+      if(!workerId)return send(res,400,{error:'WORKER_ID_REQUIRED'});
+      const updates=Array.isArray(input.accounts)?input.accounts.slice(0,200):[];
+      return await withLock(async()=>{
+        const state=await getState();const time=nowIso();let matched=0;
+        for(const report of updates){
+          const account=state.accounts.find(a=>a.id===safeString(report.accountId,120));
+          if(!account)continue;
+          const status=safeString(report.status,36);
+          if(!['ONLINE','OFFLINE','NEEDS_QR','VERIFYING','CONFIRMED_UNAVAILABLE'].includes(status))continue;
+          account.status=status;
+          account.phoneLast4=String(report.phoneLast4||'').replace(/\D/g,'').slice(-4);
+          account.lastHeartbeatAt=time;
+          account.sessionId=safeString(report.sessionId,160)||account.sessionId||'';
+          matched++;
+        }
+        await setState(state);
+        await redis.set(QR_WORKER_KEY,JSON.stringify({workerId,at:time}));
+        return send(res,200,{ok:true,matched,received:updates.length});
+      });
+    }
+    if(url.pathname==='/v1/worker/accounts/requests'&&req.method==='GET'){
+      if(!agentAuth(req))return send(res,401,{error:'AGENT_AUTH_REQUIRED'});
+      const state=await getState(),items=[];
+      for(const a of state.accounts){
+        const pending=await redis.get(connectKey(a.id));
+        if(pending)items.push({accountId:a.id,kind:a.kind,slot:a.slot,auxCode:a.auxCode});
+      }
+      return send(res,200,{items});
+    }
+    if(url.pathname==='/v1/worker/accounts/qr'&&req.method==='POST'){
+      if(!agentAuth(req))return send(res,401,{error:'AGENT_AUTH_REQUIRED'});
+      const input=await body(req),accountId=safeString(input.accountId,120);
+      if(!accountId||!await redis.get(connectKey(accountId)))return send(res,404,{error:'NO_PENDING_CONNECT_REQUEST'});
+      const qr=String(input.qrDataUrl||'');
+      if(!/^data:image\/png;base64,[A-Za-z0-9+/=]+$/.test(qr)||qr.length>100000)
+        return send(res,422,{error:'INVALID_QR_IMAGE'});
+      await redis.set(qrKey(accountId),qr,{EX:90});
+      return send(res,200,{ok:true,expiresIn:90});
+    }
+    if(url.pathname==='/v1/accounts/connect'&&req.method==='POST'){
+      if(!userAuth(req))return send(res,401,{error:'ADMIN_AUTH_REQUIRED'});
+      const input=await body(req),accountId=safeString(input.accountId,120);
+      const state=await getState(),account=state.accounts.find(a=>a.id===accountId);
+      if(!account)return send(res,404,{error:'ACCOUNT_NOT_FOUND'});
+      const status=await redis.get(QR_WORKER_KEY);
+      let alive=false;try{
+        const item=JSON.parse(status||'null'),last=Date.parse(item?.at||'');
+        alive=Number.isFinite(last)&&Date.now()-last<ACCOUNT_ALIVE_MS;
+      }catch{}
+      if(!alive)return send(res,503,{error:'WHATSAPP_CONNECTOR_OFFLINE',
+        message:'尚未连接真实 WhatsApp 扫码服务。请启动已授权的设备连接程序；不会生成虚假二维码。'});
+      await redis.del(qrKey(accountId));
+      await redis.set(connectKey(accountId),nowIso(),{EX:180});
+      return send(res,202,{status:'WAITING_FOR_REAL_QR',accountId});
+    }
+    if(url.pathname==='/v1/accounts/qr'&&req.method==='GET'){
+      if(!userAuth(req))return send(res,401,{error:'ADMIN_AUTH_REQUIRED'});
+      const accountId=safeString(url.searchParams.get('accountId'),120);
+      const state=await getState(),account=state.accounts.find(a=>a.id===accountId);
+      if(!account)return send(res,404,{error:'ACCOUNT_NOT_FOUND'});
+      if(accountOnline(account))return send(res,200,{status:'CONNECTED',phoneLast4:account.phoneLast4||''});
+      const qr=await redis.get(qrKey(accountId));
+      if(qr)return send(res,200,{status:'SCAN_READY',qrDataUrl:qr,expiresIn:90});
+      if(await redis.get(connectKey(accountId)))return send(res,200,{status:'WAITING_FOR_REAL_QR'});
+      return send(res,200,{status:account.status==='OFFLINE'?'OFFLINE':'NOT_CONNECTED'});
+    }
+
     if(url.pathname==='/v1/worker/lease'&&req.method==='POST'){
       if(!agentAuth(req))return send(res,401,{error:'AGENT_AUTH_REQUIRED'});
       return send(res,200,await handleLease());
@@ -917,13 +1003,23 @@ const server=createServer(async(req,res)=>{
     }
     if(url.pathname==='/v1/accounts'&&req.method==='GET'){
       const state=await getState();
-      return send(res,200,{items:state.accounts,summary:summary(state)});
+      return send(res,200,{items:state.accounts.map(accountPublic),summary:summary(state)});
     }
     if(url.pathname==='/v1/accounts'&&req.method==='PUT'){
       const input=await body(req);
       if(!Array.isArray(input.items))return send(res,400,{error:'items 必须是数组'});
       const state=await getState();
-      const items=input.items.slice(0,200).map(normalizeAccount);
+      const existing=new Map(state.accounts.map(a=>[a.id,a]));
+      const items=input.items.slice(0,200).map((value,i)=>{
+        const normalized=normalizeAccount(value,i),previous=existing.get(normalized.id);
+        return {...normalized,
+          status:previous?.status||'UNCONFIGURED',
+          phoneLast4:previous?.phoneLast4||'',
+          sessionId:previous?.sessionId||'',
+          lastHeartbeatAt:previous?.lastHeartbeatAt||null,
+          lastSentAt:previous?.lastSentAt||null
+        };
+      });
       const primaryAssistant=items.filter(a=>a.kind==='ASSISTANT'&&a.slot==='PRIMARY').length;
       const backupAssistant=items.filter(a=>a.kind==='ASSISTANT'&&a.slot==='BACKUP').length;
       const primaryProfessor=items.filter(a=>a.kind==='PROFESSOR'&&a.slot==='PRIMARY').length;
@@ -937,7 +1033,7 @@ const server=createServer(async(req,res)=>{
       }
       state.accounts=items;
       await setState(state);
-      return send(res,200,{items:state.accounts});
+      return send(res,200,{items:state.accounts.map(accountPublic)});
     }
     if(url.pathname==='/v1/groups'&&req.method==='GET'){
       const state=await getState();
