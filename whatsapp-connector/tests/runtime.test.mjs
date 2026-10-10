@@ -46,6 +46,7 @@ test('genuine WhatsApp QR is rendered and published only on matching pending acc
    connections.get('member-45').emit('ready');
    assert.equal(rt.snapshot()[0].status,'ONLINE');
    assert.equal(rt.snapshot()[0].phoneLast4,'6789');
+   await new Promise(resolve=>setTimeout(resolve,25));
    await rt.heartbeat();
    assert.ok(posts.find(x=>x.route==='/v1/worker/accounts/heartbeat').data.accounts[0].status==='ONLINE');
  }finally{await rt.stop()}
@@ -60,6 +61,7 @@ test('disconnection is immediately not online, then reconnect uses same account 
    assert.equal(rt.snapshot()[0].status,'ONLINE');
    c.emit('disconnected','INTERNET_DISCONNECT');
    assert.equal(rt.snapshot()[0].status,'OFFLINE');
+   await new Promise(resolve=>setTimeout(resolve,25));
    await rt.heartbeat();
    const h=posts.filter(x=>x.route.endsWith('/heartbeat')).at(-1);
    assert.equal(h.data.accounts[0].status,'OFFLINE');
