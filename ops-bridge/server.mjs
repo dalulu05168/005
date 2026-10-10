@@ -30,6 +30,19 @@ const TELEGRAM_CONFIGURED=Boolean(TELEGRAM_BOT_TOKEN&&TELEGRAM_WEBHOOK_SECRET&&T
 const MAX_BODY=4*1024*1024;
 const TERMINAL_TARGETS=new Set(['ACKED','SKIPPED_DISABLED','FAILED']);
 const TERMINAL_TASKS=new Set(['ACKED','FAILED','CANCELLED']);
+// Only a short-lived HMAC-free hash of source IDs is kept for duplicate prevention.
+// No completed message content, media references or send history survives in state.
+const COMPLETED_DEDUP_TTL_SECONDS=60*60;
+function completedTaskKey(sourceChatId,sourceMessageId,messageType){
+  return 'nuvexa:ops:dedup:v1:'+createHash('sha256')
+    .update(JSON.stringify([String(sourceChatId||''),String(sourceMessageId||''),String(messageType||'')]))
+    .digest('hex');
+}
+function removeFinishedTasks(state){
+  const finished=(state.tasks||[]).filter(t=>TERMINAL_TASKS.has(t.status));
+  state.tasks=(state.tasks||[]).filter(t=>!TERMINAL_TASKS.has(t.status));
+  return finished;
+}
 
 if(!REDIS_URL||!ADMIN_PASSWORD||!SESSION_SECRET||!AGENT_KEY){
   console.error('Missing required environment configuration');
@@ -184,6 +197,16 @@ async function getState(){
   }catch{return defaultState()}
 }
 async function setState(state){
+  // Retain pending/in-flight/VERIFYING tasks only. Completed tasks carry private
+  // content and are deleted immediately after each entire task reaches a terminal
+  // result, rather than persisting into historical dashboards.
+  const finished=removeFinishedTasks(state);
+  for(const task of finished){
+    if(task.sourceChatId&&task.sourceMessageId&&task.messageType){
+      await redis.set(completedTaskKey(task.sourceChatId,task.sourceMessageId,task.messageType),
+        '1',{EX:COMPLETED_DEDUP_TTL_SECONDS});
+    }
+  }
   state.updatedAt=nowIso();
   await redis.set(STATE_KEY,JSON.stringify(state));
   return state;
@@ -355,6 +378,17 @@ function parseTelegram(input){
   const common={role,auxCode,roleName,translatedRoleName,romanianText:romanian,mediaRef,raw};
   if(!romanian&&!mediaRef)return {ok:false,error:'ROMANIAN_TRANSLATION_REQUIRED',...common};
   return {ok:true,...common};
+}
+// A worker ACK is only proof of routing when it identifies the *actual*
+// WhatsApp sender, actual destination group and provider-acknowledged message.
+// The evidence is checked then discarded; the message ID is not persisted.
+function verifiedForwardReceipt(input,target){
+  const sender=safeString(input.actualSenderAccountId,120);
+  const group=safeString(input.actualGroupId,220);
+  const messageId=safeString(input.whatsAppMessageId,300);
+  const providerState=safeString(input.providerAck,40).toUpperCase();
+  return Boolean(messageId)&&sender===target.senderAccountId&&group===target.groupId
+    &&['ACK_SERVER','ACK_DEVICE','ACK_READ','ACK_PLAYED'].includes(providerState);
 }
 function enabledTargets(state){
   return (state.groups||[]).filter(g=>g.enabled).sort((a,b)=>a.order-b.order).map(g=>({
@@ -804,6 +838,10 @@ const server=createServer(async(req,res)=>{
       const imageMessageId=paired?.messageId||messageId;
       const knownImage=state.tasks.find(t=>t.sourceChatId===chatId&&t.sourceMessageId===imageMessageId&&t.messageType==='IMAGE');
       const knownText=state.tasks.find(t=>t.sourceChatId===chatId&&t.sourceMessageId===messageId&&t.messageType!=='IMAGE');
+      // Completed items were removed immediately. A one-hour hashed marker
+      // prevents Telegram redelivery from silently forwarding them twice.
+      const completedImage=imageMessageId?await redis.get(completedTaskKey(chatId,imageMessageId,'IMAGE')):null;
+      const completedText=messageId?await redis.get(completedTaskKey(chatId,messageId,'TEXT')):null;
       const targets=()=>enabledTargets(state);
       const taskIds=[];
       function queueItem(kind,sourceId,ref,romanian){
@@ -821,8 +859,8 @@ const server=createServer(async(req,res)=>{
         state.tasks.push(task);taskIds.push(task.id);
       }
       // The image is ready once its sending role is known. Translation does not delay it.
-      if(photoRef&&!knownImage)queueItem('IMAGE',imageMessageId,photoRef,'');
-      if(translatedText&&!knownText)queueItem('TEXT',messageId,'',translatedText);
+      if(photoRef&&!knownImage&&!completedImage)queueItem('IMAGE',imageMessageId,photoRef,'');
+      if(translatedText&&!knownText&&!completedText)queueItem('TEXT',messageId,'',translatedText);
       if(paired&&(!containsText||translatedText))state.pendingImages=state.pendingImages.filter(p=>p!==paired);
       if(!taskIds.length){
         await setState(state);
@@ -1154,7 +1192,13 @@ const server=createServer(async(req,res)=>{
         if(target.status!=='SENDING')return send(res,409,{error:'LEASE_NOT_ACTIVE',status:target.status});
         const result=safeString(input.result,64).toUpperCase();
         const account=state.accounts.find(a=>a.id===target.senderAccountId);
-        if(result==='ACKED'){
+        if(result==='ACKED'&&!verifiedForwardReceipt(input,target)){
+          // Never call "sent" successful solely because a worker reports ACKED.
+          // Preserve the in-flight payload for manual reconciliation; no blind retry.
+          target.status='VERIFYING';
+          target.error='FORWARD_RECEIPT_MISSING_OR_MISMATCHED';
+          target.leaseUntil=null;
+        }else if(result==='ACKED'){
           target.status='ACKED';
           target.ackedAt=nowIso();
           target.error=null;
@@ -1211,6 +1255,9 @@ const server=createServer(async(req,res)=>{
         if(!task||!target)return send(res,404,{error:'TARGET_NOT_FOUND'});
         if(target.status!=='VERIFYING')return send(res,409,{error:'TARGET_NOT_VERIFYING'});
         const resolution=safeString(input.resolution,32).toUpperCase();
+        if(resolution==='ACKED'&&!verifiedForwardReceipt(input,target)){
+          return send(res,409,{error:'FORWARD_RECEIPT_MISSING_OR_MISMATCHED'});
+        }
         if(resolution==='ACKED'){
           target.status='ACKED';target.ackedAt=nowIso();target.error=null;
           if(task.messageType!=='IMAGE')state.queue.lastAck={at:target.ackedAt,groupId:target.groupId,logicalSenderKey:logicalSenderKey(task),actualAccountId:target.senderAccountId};
