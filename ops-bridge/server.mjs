@@ -1,7 +1,7 @@
 import { createServer } from 'node:http';
 import { createHmac, randomUUID, timingSafeEqual } from 'node:crypto';
 import { createClient } from 'redis';
-import { normalizeTelegramUpdate, textWithoutRole, extractPreparedText } from './telegram-collector.mjs';
+import { normalizeTelegramUpdate, textWithoutRole, extractPreparedText, identifySourceRole } from './telegram-collector.mjs';
 
 const PORT=Number(process.env.PORT||10000);
 const REDIS_URL=String(process.env.REDIS_URL||'').trim();
@@ -249,24 +249,22 @@ function selectSender(state,task){
 }
 function parseTelegram(input){
   const raw=safeString(input.text??input.caption,12000);
+  const parsedSource=identifySourceRole(raw);
   const explicitRole=safeString(input.role,32).toUpperCase();
   let role='',auxCode=safeString(input.auxCode,32);
   if(['ASSISTANT','PROFESSOR','AUXILIARY'].includes(explicitRole))role=explicitRole;
-  if(!role){
-    const m=raw.match(/^\s*(助理|教授|辅助(?:号)?\s*([0-9]{1,3}))/m);
-    if(m){
-      if(m[1].startsWith('助理'))role='ASSISTANT';
-      else if(m[1].startsWith('教授'))role='PROFESSOR';
-      else {role='AUXILIARY';auxCode=safeString(m[2],32)}
-    }
-  }
+  else role=parsedSource?.role||'';
+  if(!auxCode)auxCode=parsedSource?.auxCode||'';
+  const roleName=safeString(input.roleName,120)||parsedSource?.roleName||role;
+  const translatedRoleName=safeString(input.translatedRoleName,120)||parsedSource?.translatedRoleName||'';
   let romanian=safeString(input.romanianText,10000);
   if(!romanian)romanian=safeString(extractPreparedText(raw),10000);
   const mediaRef=safeString(input.mediaRef||input.imageUrl,2000);
   if(!role)return {ok:false,error:'ROLE_NOT_RECOGNIZED'};
   if(role==='AUXILIARY'&&!auxCode)return {ok:false,error:'AUX_CODE_REQUIRED'};
-  if(!romanian&&!mediaRef)return {ok:false,error:'ROMANIAN_TRANSLATION_REQUIRED',role,auxCode,roleName:safeString(input.roleName,120)||((raw.match(/^\s*(助理|教授|辅助(?:号)?\s*[0-9]{1,3})/m)||[])[1]||'')};
-  return {ok:true,role,auxCode,romanianText:romanian,mediaRef,raw,roleName:safeString(input.roleName,120)||((raw.match(/^\s*(助理|教授|辅助(?:号)?\s*[0-9]{1,3})/m)||[])[1]||'')};
+  const common={role,auxCode,roleName,translatedRoleName,romanianText:romanian,mediaRef,raw};
+  if(!romanian&&!mediaRef)return {ok:false,error:'ROMANIAN_TRANSLATION_REQUIRED',...common};
+  return {ok:true,...common};
 }
 function enabledTargets(state){
   return (state.groups||[]).filter(g=>g.enabled).sort((a,b)=>a.order-b.order).map(g=>({
@@ -511,7 +509,7 @@ const server=createServer(async(req,res)=>{
       if(!input)return send(res,200,{ok:true,ignored:true});
       // Legacy Telegram input is optional. Shared ingest works without Telegram.
       // Use the prepared lower section verbatim. No translation API is called.
-      const hasRole=/^\s*(助理|教授|辅助(?:号)?\s*[0-9]{1,3})(?=\s|[:：]|$)/m.test(input.text);
+      const hasRole=Boolean(identifySourceRole(input.text));
       if(!hasRole){
         if(!input.mediaRef)return send(res,200,{ok:true,ignored:true});
         const pending=await ingestTelegramCollectorInput(input);
@@ -633,7 +631,7 @@ const server=createServer(async(req,res)=>{
       const paired=candidates[0]||null;
       const photoRef=media||paired?.media||'';
       const rawText=safeString(input.text??input.caption,12000);
-      const roleOnly=rawText.replace(/^\s*(助理|教授|辅助(?:号)?\s*[0-9]{1,3})\s*/m,'').trim()==='';
+      const roleOnly=textWithoutRole(rawText)==='';
       const containsText=Boolean(parsed.romanianText)||(!roleOnly&&Boolean(rawText));
       const translationUnsafe=Boolean(parsed.romanianText&&hasChinese(parsed.romanianText));
       const translatedText=translationUnsafe?'':parsed.romanianText;
@@ -653,7 +651,7 @@ const server=createServer(async(req,res)=>{
           sourceChatId:chatId,sourceMessageId:sourceId,
           sourceAt:input.sourceAt||now,createdAt:now,
           role:parsed.role,roleName:parsed.roleName||parsed.role,
-          translatedRoleName:safeString(input.translatedRoleName,120),
+          translatedRoleName:parsed.translatedRoleName,
           auxCode:parsed.auxCode||'',romanianText:romanian,mediaRef:ref,
           status:'WAITING',completedAt:null,targets:targets()
         };
