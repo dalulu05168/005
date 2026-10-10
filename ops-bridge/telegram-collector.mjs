@@ -33,22 +33,21 @@ export function containsForbiddenChinese(s) {
   return HAN_OR_CJK_PUNCTUATION.test(String(s??''));
 }
 
-export async function translateRomanian(raw,{key='',endpoint='https://api-free.deepl.com/v2/translate',request=fetch}={}){
-  const source=textWithoutRole(raw);
-  if(!source)return '';
-  if(!key){
-    if(containsForbiddenChinese(source))throw new Error('TRANSLATION_KEY_REQUIRED');
-    return source;
+/** Extract the supplied text from BELOW the Chinese original, without translating. */
+export function extractPreparedText(raw) {
+  const content=textWithoutRole(raw).replace(/\r\n?/g,'\n').trim();
+  if(!content)return '';
+  const lines=content.split('\n');
+  let finalOriginal=-1;
+  for(let i=0;i<lines.length;i++){
+    if(containsForbiddenChinese(lines[i]))finalOriginal=i;
   }
-  const response=await request(endpoint,{
-    method:'POST',
-    headers:{Authorization:'DeepL-Auth-Key '+key,'Content-Type':'application/json'},
-    body:JSON.stringify({text:[source],target_lang:'RO',preserve_formatting:true}),
-    signal:AbortSignal.timeout(14000),
-  });
-  if(!response.ok)throw new Error('TRANSLATION_HTTP_'+response.status);
-  const json=await response.json();
-  const translated=String(json?.translations?.[0]?.text??'').trim();
-  if(!translated||containsForbiddenChinese(translated))throw new Error('TRANSLATION_REJECTED_CHINESE');
-  return translated;
+  // If the original already contains no Chinese, preserve all of it.
+  // English is allowed, including when mixed into the already prepared Romanian.
+  const translated=lines.slice(finalOriginal+1)
+    .join('\n')
+    .replace(/^\s*(?:Română|Romana|Romanian|Traducere|Translation)\s*:\s*/i,'')
+    .trim();
+  // Never cut Chinese characters out of a mixed-language line and guess what remains.
+  return translated&&!containsForbiddenChinese(translated)?translated:'';
 }
