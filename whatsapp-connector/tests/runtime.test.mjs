@@ -33,6 +33,7 @@ test('reject path traversal in client profile ID; phone suffix extracted only af
 test('genuine WhatsApp QR is rendered and published only on matching pending account request',async()=>{
  const {rt,connections,posts,requests,getSaved}=harness();
  try{
+   rt.knownAccounts.add('member-45');
    await rt.openSession('member-45');
    await new Promise(setImmediate);
    assert.equal(posts.filter(x=>x.route.endsWith('/qr')).length,0);
@@ -52,6 +53,7 @@ test('genuine WhatsApp QR is rendered and published only on matching pending acc
 test('disconnection is immediately not online, then reconnect uses same account id',async()=>{
  const {rt,connections,posts,requests}=harness();
  try{
+   rt.knownAccounts.add('role-assistant-primary');
    await rt.openSession('role-assistant-primary');await new Promise(setImmediate);
    const c=connections.get('role-assistant-primary');
    c.emit('ready');
