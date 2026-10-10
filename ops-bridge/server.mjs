@@ -249,7 +249,7 @@ function parseTelegram(input){
   const mediaRef=safeString(input.mediaRef||input.imageUrl,2000);
   if(!role)return {ok:false,error:'ROLE_NOT_RECOGNIZED'};
   if(role==='AUXILIARY'&&!auxCode)return {ok:false,error:'AUX_CODE_REQUIRED'};
-  if(!romanian&&!mediaRef)return {ok:false,error:'ROMANIAN_TRANSLATION_REQUIRED',role,auxCode};
+  if(!romanian&&!mediaRef)return {ok:false,error:'ROMANIAN_TRANSLATION_REQUIRED',role,auxCode,roleName:safeString(input.roleName,120)||((raw.match(/^\s*(助理|教授|辅助(?:号)?\s*[0-9]{1,3})/m)||[])[1]||'')};
   return {ok:true,role,auxCode,romanianText:romanian,mediaRef,raw,roleName:safeString(input.roleName,120)||((raw.match(/^\s*(助理|教授|辅助(?:号)?\s*[0-9]{1,3})/m)||[])[1]||'')};
 }
 function enabledTargets(state){
