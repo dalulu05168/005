@@ -13,7 +13,7 @@ const ALLOWED_ORIGINS=new Set(
     .split(',')
     .map(x=>x.trim().replace(/\/+$/,''))
     .filter(Boolean)
-    .concat(['https://ops.sasakic.cc','https://chennan-005.vercel.app'])
+    .concat(['https://admin.nuvexapro.com','https://ops.sasakic.cc','https://chennan-005.vercel.app'])
 );
 const STATE_KEY='nuvexa:cloud:state:v3';
 const LOCK_KEY='nuvexa:cloud:lock:v3';
