@@ -533,7 +533,6 @@ const server=createServer(async(req,res)=>{
     }
     if(url.pathname==='/v1/worker/media'&&req.method==='GET'){
       if(!agentAuth(req))return send(res,401,{error:'AGENT_AUTH_REQUIRED'});
-      if(!TELEGRAM_BOT_TOKEN)return send(res,503,{error:'TELEGRAM_NOT_CONFIGURED'});
       const ref=String(url.searchParams.get('ref')||'');
       if(ref.startsWith('tgmsg:')){
         const item=await sourceManager.download(ref);
@@ -541,6 +540,7 @@ const server=createServer(async(req,res)=>{
         return res.end(item.bytes);
       }
       if(!/^tgfile:[A-Za-z0-9_-]{8,512}$/.test(ref))return send(res,400,{error:'INVALID_MEDIA_REF'});
+      if(!TELEGRAM_BOT_TOKEN)return send(res,503,{error:'TELEGRAM_NOT_CONFIGURED'});
       const fileId=ref.slice('tgfile:'.length);
       const meta=await fetch('https://api.telegram.org/bot'+TELEGRAM_BOT_TOKEN+'/getFile',{
         method:'POST',headers:{'Content-Type':'application/json'},
