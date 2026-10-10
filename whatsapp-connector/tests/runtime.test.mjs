@@ -33,7 +33,6 @@ test('reject path traversal in client profile ID; phone suffix extracted only af
 test('genuine WhatsApp QR is rendered and published only on matching pending account request',async()=>{
  const {rt,connections,posts,requests,getSaved}=harness();
  try{
-   rt.knownAccounts.add('member-45');
    await rt.openSession('member-45');
    await new Promise(setImmediate);
    assert.equal(posts.filter(x=>x.route.endsWith('/qr')).length,0);
