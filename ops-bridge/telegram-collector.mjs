@@ -9,18 +9,11 @@
 const HAN_OR_CJK_PUNCTUATION=/[\p{Script=Han}\u3000-\u303f\uff00-\uff65\ufe10-\ufe1f\ufe30-\ufe4f]/u;
 const HAN=/\p{Script=Han}/u;
 const LATIN=/\p{Script=Latin}/u;
-const MEMBER_HEADER=/^(0[1-9]|[1-6][0-9]|70)(老女|新女|老男|新男)：$/u;
+const MEMBER_HEADER=/^(0[1-9]|[1-9][0-9])(老女|新女|老男|新男)：$/u;
 const ROLE_HEADERS=new Map([
   ['助理：',{role:'ASSISTANT',roleName:'助理',translatedRoleName:'Asistent',auxCode:''}],
   ['教授：',{role:'PROFESSOR',roleName:'教授',translatedRoleName:'Profesor',auxCode:''}]
 ]);
-function canonicalMemberCategory(id){
-  if(id>=1&&id<=10)return '老女';
-  if(id>=11&&id<=30)return '新女';
-  if(id>=31&&id<=50)return '老男';
-  if(id>=51&&id<=70)return '新男';
-  return null;
-}
 function normalizedSource(raw){
   return String(raw??'').replace(/\r\n?/g,'\n').replace(/\n$/,'');
 }
@@ -31,8 +24,9 @@ export function identifySourceRole(raw){
   const match=header.match(MEMBER_HEADER);
   if(!match)return null;
   const id=Number(match[1]),category=match[2];
-  if(category!==canonicalMemberCategory(id))return null;
-  return {role:'AUXILIARY',roleName:match[1]+category,
+  // The configured identity is verified against the current account mapping by the backend.
+  // Category is deliberately NOT inferred from the numeric code.
+  return {role:'AUXILIARY',roleName:match[1]+category,identity:category,
     translatedRoleName:String(id)+(category.endsWith('男')?' M':' F'),auxCode:String(id)};
 }
 export function parseFixedTelegramMessage(raw){
