@@ -109,6 +109,7 @@ function defaultState(){
     accounts:[],
     groups:[],
     tasks:[],
+    pendingImages:[],
     queue:{
       paused:false,
       pauseReason:'',
@@ -135,6 +136,7 @@ async function getState(){
       accounts:Array.isArray(s.accounts)?s.accounts:[],
       groups:Array.isArray(s.groups)?s.groups:[],
       tasks:Array.isArray(s.tasks)?s.tasks:[],
+      pendingImages:Array.isArray(s.pendingImages)?s.pendingImages:[],
     };
   }catch{return defaultState()}
 }
@@ -247,8 +249,8 @@ function parseTelegram(input){
   const mediaRef=safeString(input.mediaRef||input.imageUrl,2000);
   if(!role)return {ok:false,error:'ROLE_NOT_RECOGNIZED'};
   if(role==='AUXILIARY'&&!auxCode)return {ok:false,error:'AUX_CODE_REQUIRED'};
-  if(!romanian&&!mediaRef)return {ok:false,error:'ROMANIAN_TEXT_OR_MEDIA_REQUIRED'};
-  return {ok:true,role,auxCode,romanianText:romanian,mediaRef,raw};
+  if(!romanian&&!mediaRef)return {ok:false,error:'ROMANIAN_TRANSLATION_REQUIRED',role,auxCode};
+  return {ok:true,role,auxCode,romanianText:romanian,mediaRef,raw,roleName:safeString(input.roleName,120)||((raw.match(/^\s*(助理|教授|辅助(?:号)?\s*[0-9]{1,3})/m)||[])[1]||'')};
 }
 function enabledTargets(state){
   return (state.groups||[]).filter(g=>g.enabled).sort((a,b)=>a.order-b.order).map(g=>({
@@ -332,6 +334,7 @@ function publicState(state){
   };
 }
 function intervalFor(state,task,target){
+  if(task.messageType==='IMAGE')return 0;
   const last=state.queue?.lastAck;
   if(!last||last.logicalSenderKey!==logicalSenderKey(task))return 0;
   const range=last.groupId===target.groupId?state.settings.sameGroupInterval:state.settings.crossGroupInterval;
@@ -412,6 +415,8 @@ async function handleLease(){
         auxCode:head.auxCode||'',
         romanianText:head.romanianText||'',
         mediaRef:head.mediaRef||'',
+        messageType:head.messageType||'TEXT',
+        roleName:head.roleName||'',
         sourceMessageId:head.sourceMessageId||'',
       },
       target:{id:target.id,groupId:target.groupId,groupName:target.groupName},
@@ -598,7 +603,7 @@ const server=createServer(async(req,res)=>{
           target.leaseUntil=null;
           if(account){account.lastSentAt=target.ackedAt;account.status='ONLINE'}
           const group=state.groups.find(g=>g.id===target.groupId);if(group)group.lastSentAt=target.ackedAt;
-          state.queue.lastAck={at:target.ackedAt,groupId:target.groupId,logicalSenderKey:logicalSenderKey(task),actualAccountId:target.senderAccountId};
+          if(task.messageType!=='IMAGE')state.queue.lastAck={at:target.ackedAt,groupId:target.groupId,logicalSenderKey:logicalSenderKey(task),actualAccountId:target.senderAccountId};
         }else if(result==='CONFIRMED_UNAVAILABLE'){
           target.status='WAITING';
           target.error='SENDER_CONFIRMED_UNAVAILABLE';
@@ -639,7 +644,7 @@ const server=createServer(async(req,res)=>{
         const resolution=safeString(input.resolution,32).toUpperCase();
         if(resolution==='ACKED'){
           target.status='ACKED';target.ackedAt=nowIso();target.error=null;
-          state.queue.lastAck={at:target.ackedAt,groupId:target.groupId,logicalSenderKey:logicalSenderKey(task),actualAccountId:target.senderAccountId};
+          if(task.messageType!=='IMAGE')state.queue.lastAck={at:target.ackedAt,groupId:target.groupId,logicalSenderKey:logicalSenderKey(task),actualAccountId:target.senderAccountId};
         }else if(resolution==='NOT_SENT'){
           target.status='WAITING';target.error='VERIFIED_NOT_SENT';target.leaseId=null;target.notBefore=null;
         }else return send(res,400,{error:'INVALID_RESOLUTION'});
