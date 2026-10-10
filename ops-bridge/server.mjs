@@ -1,6 +1,7 @@
 import { createServer } from 'node:http';
 import { createHmac, randomUUID, timingSafeEqual } from 'node:crypto';
 import { createClient } from 'redis';
+import { createTelegramSource } from './telegram-user-source.mjs';
 import { normalizeTelegramUpdate, textWithoutRole, extractPreparedText, identifySourceRole } from './telegram-collector.mjs';
 
 const PORT=Number(process.env.PORT||10000);
@@ -495,6 +496,11 @@ async function registerTelegramWebhook(){
   }catch(error){console.error('Telegram webhook registration unavailable:',error.message)}
 }
 
+const sourceManager=createTelegramSource({
+  redis,secret:SESSION_SECRET,ingest:ingestTelegramCollectorInput
+});
+function sourceAuth(req,res){if(userAuth(req))return true;send(res,401,{error:'ADMIN_AUTH_REQUIRED'});return false;}
+
 const server=createServer(async(req,res)=>{
   cors(req,res);
   if(req.method==='OPTIONS'){res.writeHead(204);return res.end()}
@@ -529,6 +535,11 @@ const server=createServer(async(req,res)=>{
       if(!agentAuth(req))return send(res,401,{error:'AGENT_AUTH_REQUIRED'});
       if(!TELEGRAM_BOT_TOKEN)return send(res,503,{error:'TELEGRAM_NOT_CONFIGURED'});
       const ref=String(url.searchParams.get('ref')||'');
+      if(ref.startsWith('tgmsg:')){
+        const item=await sourceManager.download(ref);
+        res.writeHead(200,{'Content-Type':item.contentType,'Content-Length':String(item.bytes.length),'Cache-Control':'private, no-store','X-Content-Type-Options':'nosniff'});
+        return res.end(item.bytes);
+      }
       if(!/^tgfile:[A-Za-z0-9_-]{8,512}$/.test(ref))return send(res,400,{error:'INVALID_MEDIA_REF'});
       const fileId=ref.slice('tgfile:'.length);
       const meta=await fetch('https://api.telegram.org/bot'+TELEGRAM_BOT_TOKEN+'/getFile',{
@@ -554,6 +565,57 @@ const server=createServer(async(req,res)=>{
         'X-Content-Type-Options':'nosniff'
       });
       return res.end(Buffer.from(array));
+    }
+
+
+    /* Login codes and 2FA passwords are never logged or persisted. */
+    if(url.pathname==='/v1/source/status'&&req.method==='GET'){
+      if(!sourceAuth(req,res))return;
+      return send(res,200,{source:sourceManager.status()});
+    }
+    if(url.pathname==='/v1/source/start'&&req.method==='POST'){
+      if(!sourceAuth(req,res))return;
+      const input=await body(req);
+      const result=await sourceManager.begin({
+        apiId:input.apiId,apiHash:input.apiHash,phone:input.phone
+      });
+      return send(res,200,result);
+    }
+    if(url.pathname==='/v1/source/code'&&req.method==='POST'){
+      if(!sourceAuth(req,res))return;
+      const input=await body(req);
+      return send(res,200,await sourceManager.verifyCode(input.code));
+    }
+    if(url.pathname==='/v1/source/password'&&req.method==='POST'){
+      if(!sourceAuth(req,res))return;
+      const input=await body(req);
+      return send(res,200,await sourceManager.verifyPassword(input.password));
+    }
+    if(url.pathname==='/v1/source/groups'&&req.method==='GET'){
+      if(!sourceAuth(req,res))return;
+      return send(res,200,{items:await sourceManager.listGroups()});
+    }
+    if(url.pathname==='/v1/source/select'&&req.method==='POST'){
+      if(!sourceAuth(req,res))return;
+      const input=await body(req);
+      if(input.enabled===true){
+        const state=await getState();
+        if(!(state.groups||[]).some(g=>g.enabled)){
+          return send(res,409,{error:'CONFIGURE_WHATSAPP_TARGET_GROUPS_FIRST'});
+        }
+        if(!(state.accounts||[]).some(a=>a.status==='ONLINE')){
+          return send(res,409,{error:'CONNECT_WHATSAPP_SENDER_FIRST'});
+        }
+      }
+      return send(res,200,{source:await sourceManager.choose({chatId:input.chatId,enabled:input.enabled})});
+    }
+    if(url.pathname==='/v1/source/pause'&&req.method==='POST'){
+      if(!sourceAuth(req,res))return;
+      return send(res,200,{source:await sourceManager.pause()});
+    }
+    if(url.pathname==='/v1/source/disconnect'&&req.method==='POST'){
+      if(!sourceAuth(req,res))return;
+      return send(res,200,{source:await sourceManager.disconnect()});
     }
 
     if(url.pathname==='/v1/health'&&req.method==='GET'){
@@ -917,4 +979,4 @@ const server=createServer(async(req,res)=>{
   }
 });
 
-server.listen(PORT,'0.0.0.0',()=>{console.log('Nuvexa Pro Cloud API v0.3.0 listening on '+PORT);void registerTelegramWebhook();});
+server.listen(PORT,'0.0.0.0',()=>{console.log('Nuvexa Pro Cloud API v0.3.0 listening on '+PORT);void sourceManager.restore().catch(()=>console.error('Telegram source restore unavailable'));void registerTelegramWebhook();});
