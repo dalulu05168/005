@@ -884,8 +884,26 @@ const server=createServer(async(req,res)=>{
           matched++;
         }
         await setState(state);
-        await redis.set(QR_WORKER_KEY,JSON.stringify({workerId,at:time}));
+        await redis.set(QR_WORKER_KEY,JSON.stringify({workerId,at:time,matched,received:updates.length,reportedOnline:updates.filter(x=>x.status==='ONLINE').length}));
         return send(res,200,{ok:true,matched,received:updates.length});
+      });
+    }
+    // Admin-visible connector diagnostics: real Worker report freshness, without secrets.
+    if(url.pathname==='/v1/worker/accounts/status'&&req.method==='GET'){
+      if(!userAuth(req))return send(res,401,{error:'ADMIN_AUTH_REQUIRED'});
+      let report=null;try{report=JSON.parse(await redis.get(QR_WORKER_KEY)||'null')}catch{}
+      const at=report?.at||null;
+      const ageMs=Date.parse(at||'');
+      const connected=Number.isFinite(ageMs)&&Date.now()-ageMs>=0&&Date.now()-ageMs<=ACCOUNT_ALIVE_MS;
+      const state=await getState();
+      return send(res,200,{
+        connected:Boolean(connected),
+        lastHeartbeatAt:at,
+        secondsSinceHeartbeat:Number.isFinite(ageMs)?Math.max(0,Math.floor((Date.now()-ageMs)/1000)):null,
+        matchedAccounts:Math.max(0,Number(report?.matched)||0),
+        reportedAccounts:Math.max(0,Number(report?.received)||0),
+        onlineAccounts:state.accounts.filter(isAccountOnline).length,
+        totalAccounts:state.accounts.length
       });
     }
     if(url.pathname==='/v1/worker/accounts/requests'&&req.method==='GET'){
