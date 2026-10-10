@@ -1326,6 +1326,14 @@ const server=createServer(async(req,res)=>{
       const existing=new Map(state.accounts.map(a=>[a.id,a]));
       const items=input.items.slice(0,200).map((value,i)=>{
         const normalized=normalizeAccount(value,i),previous=existing.get(normalized.id);
+        // When an existing account changes its primary code, retire the old
+        // primary code automatically rather than keeping a stale alias.
+        if(normalized.kind==='AUXILIARY'&&previous&&
+          String(Number(previous.auxCode||0))!==String(Number(normalized.auxCode||0))){
+          const oldCode=String(Number(previous.auxCode||0));
+          const newCode=String(Number(normalized.auxCode||0));
+          normalized.personaCodes=[...new Set(normalized.personaCodes.filter(c=>c!==oldCode).concat([newCode]))];
+        }
         return {...normalized,
           meta:previous?.meta||normalized.meta,
           personaCodes:normalized.personaCodes,
