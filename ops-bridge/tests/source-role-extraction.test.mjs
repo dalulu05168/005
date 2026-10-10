@@ -106,3 +106,10 @@ test('server rejects messages when no target WhatsApp groups are enabled',async(
   assert.ok(index>=0);
   assert.ok(backend.slice(index-220,index).includes("some(g=>g.enabled)"));
 });
+
+test('dispatch text is exactly the third line, with no Chinese and no role heading',async()=>{
+ const {readFile}=await import('node:fs/promises');
+ const backend=await readFile(new URL('../server.mjs',import.meta.url),'utf8');
+ assert.ok(backend.includes("outboundText:head.messageType==='IMAGE'?'':(head.romanianText||''),"));
+ assert.ok(!backend.includes("outboundText:head.messageType==='IMAGE'?'':outboundRoleName(head)+"));
+});
