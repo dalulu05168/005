@@ -3,6 +3,7 @@ import { readFile } from 'node:fs/promises';
 import { createHmac, createHash, randomBytes, randomUUID, timingSafeEqual } from 'node:crypto';
 import { createClient } from 'redis';
 import { createTelegramSource } from './telegram-user-source.mjs';
+import { zipStored } from './build-connector-zip.mjs';
 import { normalizeTelegramUpdate, textWithoutRole, extractPreparedText, identifySourceRole } from './telegram-collector.mjs';
 
 const PORT=Number(process.env.PORT||10000);
@@ -815,6 +816,26 @@ const server=createServer(async(req,res)=>{
     }
 
 
+
+
+    if(url.pathname==='/v1/download/whatsapp-connector.zip'&&req.method==='GET'){
+      if(!userAuth(req))return send(res,401,{error:'ADMIN_AUTH_REQUIRED'});
+      const folder=new URL('../whatsapp-connector/',import.meta.url);
+      const names=['README.md','START-WHATSAPP.cmd','package.json','connector.mjs','runtime.mjs'];
+      const entries=await Promise.all(names.map(async name=>({
+        name:'Nuvexa-WhatsApp-Connector/'+name,
+        bytes:await readFile(new URL(name,folder))
+      })));
+      const zip=zipStored(entries);
+      res.writeHead(200,{
+        'Content-Type':'application/zip',
+        'Content-Length':String(zip.byteLength),
+        'Content-Disposition':'attachment; filename="Nuvexa-WhatsApp-Connector.zip"',
+        'Cache-Control':'private, no-store',
+        'X-Content-Type-Options':'nosniff'
+      });
+      return res.end(zip);
+    }
 
     // A logged-in admin pairs the local Windows connector with a one-use short-
     // lived code. The worker receives a scoped token, NOT the global AGENT_KEY.
