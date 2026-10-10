@@ -991,9 +991,18 @@ const server=createServer(async(req,res)=>{
           excludeConfirmedNotSent(target,target.senderAccountId);
           target.leaseId=null;target.leaseUntil=null;target.notBefore=null;
         }else if(result==='FAILED'){
-          target.status='FAILED';
-          target.error=safeString(input.error,500)||'SEND_FAILED';
-          target.leaseUntil=null;
+          // A generic failure does not prove non-delivery. Never auto resend an
+          // ambiguous WhatsApp send; the worker must explicitly confirm no-send.
+          if(input.confirmedNotSent===true){
+            target.status='WAITING';
+            target.error=safeString(input.error,500)||'CONFIRMED_FAILED_BEFORE_SEND';
+            excludeConfirmedNotSent(target,target.senderAccountId);
+            target.leaseId=null;target.leaseUntil=null;target.notBefore=null;
+          }else{
+            target.status='VERIFYING';
+            target.error=safeString(input.error,500)||'FAILED_OUTCOME_UNCONFIRMED';
+            target.leaseUntil=null;
+          }
         }else{
           target.status='VERIFYING';
           target.error=safeString(input.error,500)||'RESULT_UNKNOWN';
