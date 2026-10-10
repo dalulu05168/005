@@ -278,14 +278,20 @@ function selectSender(state,task,target={}){
     personaCodes(a.personaCodes,a.auxCode).includes(roleId)
   ));
   const primary=candidates.find(a=>String(Number(a.auxCode||0))===roleId)||candidates[0]||null;
-  // Explicit shared assignment can take over before borrowing the common reserve pool.
-  const memberSender=candidates.find(available);
-  if(memberSender)return {account:memberSender,backup:memberSender.id!==primary?.id,replaces:memberSender.id===primary?.id?null:primary?.id||null};
-  // Reserved WhatsApp accounts are pooled by the whole 65-member roster, not 1-to-1.
+  // When a role has no dedicated primary, use a real sender explicitly assigned
+  // multiple persona IDs. Otherwise a failed dedicated sender borrows reserve 1 first.
+  if(!candidates.some(a=>String(Number(a.auxCode||0))===roleId)){
+    const assigned=candidates.find(available);
+    if(assigned)return {account:assigned,backup:false};
+  }
+  // Reserve 1 -> 2 -> 3 is a shared priority queue for every member.
   const reserves=accounts.filter(a=>a.kind==='AUX_BACKUP'&&a.slot==='BACKUP')
     .sort((a,b)=>(a.backupOrder||999)-(b.backupOrder||999));
   const standby=reserves.find(available);
   if(standby)return {account:standby,backup:true,replaces:primary?.id||null};
+  // A separately assigned sender is a last resort only after shared reserves.
+  const assigned=candidates.find(available);
+  if(assigned)return {account:assigned,backup:assigned.id!==primary?.id,replaces:primary?.id||null};
   return {blocked:true,reason:'ALL_MEMBER_SENDERS_AND_SHARED_RESERVES_OFFLINE',account:primary||null};
 }
 function excludeConfirmedNotSent(target,accountId){
