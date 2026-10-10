@@ -278,6 +278,7 @@ function selectSender(state,task,target={}){
     personaCodes(a.personaCodes,a.auxCode).includes(roleId)
   ));
   const primary=candidates.find(a=>String(Number(a.auxCode||0))===roleId)||candidates[0]||null;
+  if(available(primary))return {account:primary,backup:false};
   // When a role has no dedicated primary, use a real sender explicitly assigned
   // multiple persona IDs. Otherwise a failed dedicated sender borrows reserve 1 first.
   if(!candidates.some(a=>String(Number(a.auxCode||0))===roleId)){
