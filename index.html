@@ -664,8 +664,8 @@ $$('[data-filter]').forEach(b=>b.onclick=()=>{ui.filter=b.dataset.filter;ui.page
 $$('[data-task-page]').forEach(b=>b.onclick=()=>{ui.pages.tasks+=Number(b.dataset.taskPage);render()});
 $('#taskSearch')?.addEventListener('input',e=>{ui.search=e.target.value;ui.pages.tasks=0;$('#queueTable').innerHTML=queueTable(state.data||{});$$('[data-task-page]').forEach(b=>b.onclick=()=>{ui.pages.tasks+=Number(b.dataset.taskPage);render()})});
 $('[data-go-settings]')?.addEventListener('click',()=>setPage('group'));
-if(state.page==='accounts'||state.page==='group'){$('#pageHost input,#pageHost select').forEach(e=>e.addEventListener('input',()=>markDirty(state.page==='accounts'?'accounts':e.closest('#groupsHost')?'groups':'intervals')));applyListPagination(state.page==='accounts'?'accounts':'groups');if(state.page==='accounts'){$('.account-role-filter').forEach(b=>{b.classList.toggle('active',b.dataset.roleFilter===ui.accountFilter);b.onclick=()=>{ui.accountFilter=b.dataset.roleFilter;ui.pages.accounts=0;applyListPagination('accounts');$('.account-role-filter').forEach(x=>x.classList.toggle('active',x===b))}})}}
-if(state.page==='accounts'){$('.acc-connect').forEach(b=>b.onclick=()=>beginAccountConnect(b.dataset.connectId))}
+if(state.page==='accounts'||state.page==='group'){$$('#pageHost input,#pageHost select').forEach(e=>e.addEventListener('input',()=>markDirty(state.page==='accounts'?'accounts':e.closest('#groupsHost')?'groups':'intervals')));applyListPagination(state.page==='accounts'?'accounts':'groups');if(state.page==='accounts'){$$('.account-role-filter').forEach(b=>{b.classList.toggle('active',b.dataset.roleFilter===ui.accountFilter);b.onclick=()=>{ui.accountFilter=b.dataset.roleFilter;ui.pages.accounts=0;applyListPagination('accounts');$$('.account-role-filter').forEach(x=>x.classList.toggle('active',x===b))}})}}
+if(state.page==='accounts'){$$('.acc-connect').forEach(b=>b.onclick=()=>beginAccountConnect(b.dataset.connectId))}
 $('#waQrClose').onclick=stopWaQr;
 $('#waQrOverlay').onclick=e=>{if(e.target.id==='waQrOverlay')stopWaQr()};
 }
