@@ -7,10 +7,12 @@ ENV NODE_ENV=production \
 RUN apt-get update && apt-get install -y --no-install-recommends \
     chromium ca-certificates fonts-noto-color-emoji fonts-noto-cjk \
     && rm -rf /var/lib/apt/lists/*
+RUN groupadd --gid 10001 nuvexa && useradd --uid 10001 --gid 10001 --create-home --home-dir /home/nuvexa --shell /usr/sbin/nologin nuvexa
 WORKDIR /opt/nuvexa-wa
 COPY whatsapp-connector/package.json ./
 RUN npm install --omit=dev --no-audit --no-fund
 COPY whatsapp-connector/runtime.mjs ./runtime.mjs
 COPY whatsapp-connector/cloud.mjs ./cloud.mjs
+USER 10001:10001
 EXPOSE 10000
 CMD ["node","cloud.mjs"]
