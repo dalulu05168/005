@@ -800,6 +800,12 @@ const server=createServer(async(req,res)=>{
       state.collector.lastHeartbeatAt=now;
       state.collector.running=true;
       state.collector.status='RUNNING';
+      // No configured target means NO forwarding, never a fake ACKED task.
+      // This is enforced on every ingest route, including Telegram webhooks.
+      if(!(state.groups||[]).some(g=>g.enabled)){
+        await setState(state);
+        return send(res,409,{error:'NO_ENABLED_WHATSAPP_TARGET_GROUPS',queued:false});
+      }
       // A photo without a role is held for the next matching role message.
       // No image content analysis, OCR or translation is performed.
       if(media&&!String(input.text??input.caption??'').trim()){
