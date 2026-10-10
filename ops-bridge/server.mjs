@@ -38,7 +38,7 @@ const FORBIDDEN_OUTBOUND_CHINESE=/[\p{Script=Han}\u3000-\u303f\uff00-\uff65\ufe1
 const hasChinese=value=>FORBIDDEN_OUTBOUND_CHINESE.test(String(value??''));
 function outboundRoleName(task){
   const given=safeString(task.translatedRoleName||task.roleName,120);
-  if(given&&!hasChinese(given))return given;
+  if(given&&!hasChinese(given)&&!['ASSISTANT','PROFESSOR','AUXILIARY'].includes(given.toUpperCase()))return given;
   if(task.role==='PROFESSOR')return 'Profesor';
   if(task.role==='ASSISTANT')return 'Asistent';
   if(task.role==='AUXILIARY')return 'Asistent auxiliar'+(task.auxCode?' '+safeString(task.auxCode,12):'');
@@ -436,6 +436,7 @@ async function handleLease(){
         messageType:head.messageType||'TEXT',
         roleName:outboundRoleName(head),
         translatedRoleName:outboundRoleName(head),
+        outboundText:head.messageType==='IMAGE'?'':outboundRoleName(head)+'\n'+(head.romanianText||''),
         sourceMessageId:head.sourceMessageId||'',
       },
       target:{id:target.id,groupId:target.groupId,groupName:target.groupName},
