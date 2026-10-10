@@ -483,11 +483,6 @@ const server=createServer(async(req,res)=>{
       state.collector.lastHeartbeatAt=now;
       state.collector.running=true;
       state.collector.status='RUNNING';
-      if(state.tasks.some(t=>t.sourceChatId===chatId&&t.sourceMessageId===messageId&&messageId)){
-        const original=state.tasks.find(t=>t.sourceChatId===chatId&&t.sourceMessageId===messageId);
-        await setState(state);
-        return send(res,200,{ok:true,duplicate:true,taskId:original.id});
-      }
       // A photo without a role is held for the next matching role message.
       // No image content analysis, OCR or translation is performed.
       if(media&&!parsed.role){
@@ -520,14 +515,13 @@ const server=createServer(async(req,res)=>{
       const rawText=safeString(input.text??input.caption,12000);
       const roleOnly=rawText.replace(/^\s*(助理|教授|辅助(?:号)?\s*[0-9]{1,3})\s*/m,'').trim()==='';
       const containsText=Boolean(parsed.romanianText)||(!roleOnly&&Boolean(rawText));
-      if(containsText&&!parsed.romanianText){
-        await setState(state);
-        return send(res,422,{error:'ROMANIAN_TRANSLATION_REQUIRED',queued:false,hasImage:Boolean(photoRef)});
-      }
       if(!photoRef&&!parsed.romanianText){
         await setState(state);
-        return send(res,422,{error:'MESSAGE_CONTENT_REQUIRED'});
+        return send(res,422,{error:containsText?'ROMANIAN_TRANSLATION_REQUIRED':'MESSAGE_CONTENT_REQUIRED',queued:false});
       }
+      const imageMessageId=paired?.messageId||messageId;
+      const knownImage=state.tasks.find(t=>t.sourceChatId===chatId&&t.sourceMessageId===imageMessageId&&t.messageType==='IMAGE');
+      const knownText=state.tasks.find(t=>t.sourceChatId===chatId&&t.sourceMessageId===messageId&&t.messageType!=='IMAGE');
       const targets=()=>enabledTargets(state);
       const taskIds=[];
       function queueItem(kind,sourceId,ref,romanian){
@@ -543,17 +537,22 @@ const server=createServer(async(req,res)=>{
         if(!task.targets.length){task.status='ACKED';task.completedAt=now;}
         state.tasks.push(task);taskIds.push(task.id);
       }
-      // Images are independent tasks and are placed before the translated text.
-      // Their lease has zero interval, and their ACK must not update lastText ACK.
-      if(photoRef)queueItem('IMAGE',paired?.messageId||messageId,photoRef,'');
-      if(parsed.romanianText)queueItem('TEXT',messageId,'',parsed.romanianText);
-      if(paired)state.pendingImages=state.pendingImages.filter(p=>p!==paired);
+      // The image is ready once its sending role is known. Translation does not delay it.
+      if(photoRef&&!knownImage)queueItem('IMAGE',imageMessageId,photoRef,'');
+      if(parsed.romanianText&&!knownText)queueItem('TEXT',messageId,'',parsed.romanianText);
+      if(paired&&(!containsText||parsed.romanianText))state.pendingImages=state.pendingImages.filter(p=>p!==paired);
+      if(!taskIds.length){
+        await setState(state);
+        if(containsText&&!parsed.romanianText)return send(res,422,{error:'ROMANIAN_TRANSLATION_REQUIRED',queued:false,hasImage:Boolean(photoRef)});
+        return send(res,200,{ok:true,duplicate:true,taskId:knownText?.id||knownImage?.id||null});
+      }
       state.tasks=state.tasks.slice(-1000);
       state.collector.parsed=(state.collector.parsed||0)+1;
       reconcile(state);
       await setState(state);
-      return send(res,201,{ok:true,taskIds,messageCount:taskIds.length,
+      return send(res,containsText&&!parsed.romanianText?202:201,{ok:true,taskIds,messageCount:taskIds.length,
         role:parsed.role,roleName:parsed.roleName||parsed.role,hasImage:Boolean(photoRef),
+        translationRequired:Boolean(containsText&&!parsed.romanianText),
         textRequiresInterval:Boolean(parsed.romanianText),targetCount:state.groups.filter(g=>g.enabled).length});
     }
 
