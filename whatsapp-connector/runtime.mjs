@@ -1,5 +1,3 @@
-import {setTimeout as delay} from 'node:timers/promises';
-
 const RECONNECT_MIN_MS=15000,RECONNECT_MAX_MS=120000;
 export function validAccountId(id){return typeof id==='string'&&/^[A-Za-z0-9_-]{1,100}$/.test(id)}
 export function phoneSuffix(info){
@@ -81,7 +79,7 @@ export class WhatsAppSessionRuntime{
       this.log('授权需要重新验证：'+id);
     });
     client.on('disconnected',reason=>{
-      if(!live())return;
+      if(!live()||record.client!==client)return;
       const loggedOut=String(reason||'').toUpperCase().includes('LOGOUT');
       record.status=loggedOut?'NEEDS_QR':'OFFLINE';
       record.lastQr='';record.client=null;record.pending=false;
@@ -138,7 +136,8 @@ export class WhatsAppSessionRuntime{
         }
         record.pending=true;
         if(record.lastQr)await this.publishQr(record);
-        if(!record.client&&record.restartAfter!==Infinity&&this.clock()>=record.restartAfter){
+        if(!record.client&&(record.restartAfter===Infinity||this.clock()>=record.restartAfter)){
+          // A fresh operator QR request explicitly re-opens a logged-out session.
           this.sessions.delete(id);await this.openSession(id);
         }
       }
@@ -158,9 +157,11 @@ export class WhatsAppSessionRuntime{
       for(const rec of this.sessions.values()){
         if(rec.status!=='ONLINE'||!rec.client)continue;
         try{
+          let timeout;
           const state=await Promise.race([
-            rec.client.getState(),delay(8000).then(()=>{throw Error('STATE_TIMEOUT')})
-          ]);
+            Promise.resolve().then(()=>rec.client.getState()),
+            new Promise((_,reject)=>{timeout=setTimeout(()=>reject(Error('STATE_TIMEOUT')),8000);timeout.unref?.()})
+          ]).finally(()=>clearTimeout(timeout));
           if(state!=='CONNECTED'){rec.status='OFFLINE';this.log('连接状态异常：'+rec.id)}
         }catch{rec.status='OFFLINE'}
       }
