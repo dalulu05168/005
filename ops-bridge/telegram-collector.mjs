@@ -1,6 +1,26 @@
 /* Telegram group collector helpers. Image bytes are never inspected or translated. */
 const HAN_OR_CJK_PUNCTUATION=/[\p{Script=Han}\u3000-\u303f\uff00-\uff65\ufe10-\ufe1f\ufe30-\ufe4f]/u;
-const ROLE_PREFIX=/^\s*(助理|教授|辅助(?:号)?\s*[0-9]{1,3})(?=\s|[:：]|$)/m;
+const ROLE_PREFIX=/^\s*(资讯助理|资讯教授|助理|教授|辅助(?:号)?\s*[0-9]{1,3}|[0-9]{1,3}\s*[男女])(?=\s|[:：]|$)/mu;
+
+export function identifySourceRole(raw) {
+  const source=String(raw??'');
+  const match=source.match(ROLE_PREFIX);
+  if(!match)return null;
+  const label=match[1].replace(/\s+/g,'');
+  if(label==='资讯助理')return {role:'ASSISTANT',roleName:label,translatedRoleName:'Asistent informativ',auxCode:''};
+  if(label==='助理')return {role:'ASSISTANT',roleName:label,translatedRoleName:'Asistent',auxCode:''};
+  if(label==='资讯教授')return {role:'PROFESSOR',roleName:label,translatedRoleName:'Profesor',auxCode:''};
+  if(label==='教授')return {role:'PROFESSOR',roleName:label,translatedRoleName:'Profesor',auxCode:''};
+  const numbered=label.match(/^([0-9]{1,3})([男女])$/u);
+  if(numbered){
+    const num=Number(numbered[1]);
+    if(num<1||num>70)return null;
+    return {role:'AUXILIARY',roleName:label,translatedRoleName:String(num)+(numbered[2]==='男'?' M':' F'),auxCode:String(num)};
+  }
+  const aux=label.match(/^辅助(?:号)?([0-9]{1,3})$/u);
+  if(aux)return {role:'AUXILIARY',roleName:label,translatedRoleName:'Asistent auxiliar '+Number(aux[1]),auxCode:String(Number(aux[1]))};
+  return null;
+}
 
 export function normalizeTelegramUpdate(update, allowedChatIds) {
   if(!update||typeof update!=='object')return null;
