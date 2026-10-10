@@ -18,7 +18,7 @@ function assertText(value,max=200){return String(value??'').trim().slice(0,max)}
 function normalizedId(value){return assertText(value,80)}
 function numberId(value){return Number.isSafeInteger(Number(value))&&Number(value)>0?Number(value):null}
 function cryptoBox(secret){
-  if(!secret||secret.length<16)throw Error('SESSION_ENCRYPTION_NOT_CONFIGURED');
+  if(!secret)throw Error('SESSION_ENCRYPTION_NOT_CONFIGURED');
   const key=Buffer.from(hkdfSync('sha256',Buffer.from(secret),'nuvexa-sessions-v1','telegram-mtproto-user',32));
   return {
     seal(obj){
@@ -36,11 +36,11 @@ function cryptoBox(secret){
   }
 }
 async function gram(){
-  const t=await import('telegram');
+  const t=await import('teleproto');
   const a=t.default||t;
-  const ss=await import('telegram/sessions/index.js');
+  const ss=await import('teleproto/sessions');
   const se=ss.default||ss;
-  const ev=await import('telegram/events/index.js');
+  const ev=await import('teleproto/events');
   const e=ev.default||ev;
   const TelegramClient=t.TelegramClient||a.TelegramClient;
   const StringSession=ss.StringSession||se.StringSession;
@@ -148,7 +148,7 @@ export function createTelegramSource({redis,secret,ingest,clientLibrary=gram,now
       await p.client.invoke(new Api.auth.SignIn({phoneNumber:p.phone,phoneCodeHash:p.phoneCodeHash,phoneCode:code}));
       return await finish(p);
     }catch(e){
-      if(String(e?.errorMessage||'')==='SESSION_PASSWORD_NEEDED'){p.stage='password';return {stage:'password',passwordRequired:true}}
+      if(String(e?.errorMessage||e?.message||'').includes('SESSION_PASSWORD_NEEDED')){p.stage='password';return {stage:'password',passwordRequired:true}}
       throw Object.assign(Error(safeError(e)),{status:400});
     }
   }
