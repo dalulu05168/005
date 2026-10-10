@@ -21,8 +21,13 @@ fi
 DATA="/srv/nuvexa-whatsapp-pilot"
 CONTAINER="nuvexa-wa-cloud-pilot"
 sudo install -d -m 0700 -o 10001 -g 10001 "$DATA"
-echo "Building OCI ARM64 Chromium container. First build may take several minutes."
-sudo docker build --platform linux/arm64 -f Dockerfile.whatsapp-cloud -t nuvexa-wa-cloud-pilot:arm64 .
+if [[ "${NUVEXA_SKIP_BUILD:-0}" == "1" ]]; then
+  sudo docker image inspect nuvexa-wa-cloud-pilot:arm64 >/dev/null
+  echo "Reusing previously built image; no slow rebuild during 10-minute pairing window."
+else
+  echo "Building OCI ARM64 Chromium container. First build may take several minutes."
+  sudo docker build --platform linux/arm64 -f Dockerfile.whatsapp-cloud -t nuvexa-wa-cloud-pilot:arm64 .
+fi
 echo "Persistent WhatsApp session data: $DATA"
 echo "Port 10000 will be bound only to VM localhost, not public internet."
 sudo docker rm -f "$CONTAINER" >/dev/null 2>&1 || true
