@@ -121,7 +121,7 @@ function standard72AccountSlots(){
   ];
   for(let n=1;n<=65;n++){
     const group=n<=20?'老男成员':n<=30?'老女成员':n<=50?'新男成员':'新女成员';
-    accounts.push(add('member-'+String(n).padStart(2,'0'),group+String(n).padStart(2,'0'),'AUXILIARY','PRIMARY',n));
+    accounts.push({...add('member-'+String(n).padStart(2,'0'),group+String(n).padStart(2,'0'),'AUXILIARY','PRIMARY',n),personaCodes:[String(n)]});
   }
   for(let n=1;n<=3;n++)accounts.push(add('reserve-'+n,'备用'+n,'AUX_BACKUP','BACKUP','',n));
   return accounts;
@@ -207,6 +207,10 @@ function normalizeRange(value,prev){
   if(minMs>maxMs)[minMs,maxMs]=[maxMs,minMs];
   return {minMs,maxMs};
 }
+function personaCodes(raw,fallback=''){
+  const values=Array.isArray(raw)?raw:(raw===undefined||raw===null?[fallback]:String(raw).split(/[,，;；\s]+/));
+  return [...new Set(values.map(v=>String(v).trim()).filter(v=>/^(?:[1-9]|[1-5]\d|6[0-5])$/.test(v)).map(v=>String(Number(v))))].slice(0,65);
+}
 function normalizeAccount(a,index=0){
   const kind=['ASSISTANT','PROFESSOR','AUXILIARY','AUX_BACKUP'].includes(a.kind)?a.kind:'AUXILIARY';
   const slot=['PRIMARY','BACKUP'].includes(a.slot)?a.slot:(kind==='AUX_BACKUP'?'BACKUP':'PRIMARY');
@@ -216,6 +220,7 @@ function normalizeAccount(a,index=0){
     name:safeString(a.name,120)||('账号 '+(index+1)),
     kind,slot,status,
     auxCode:safeString(a.auxCode,32),
+    personaCodes:kind==='AUXILIARY'?personaCodes(a.personaCodes,a.auxCode):[],
     backupOrder:Math.max(0,Number(a.backupOrder)||0),
     phoneLast4:safeString(a.phoneLast4,8),
     sessionId:safeString(a.sessionId,160),
@@ -251,37 +256,48 @@ function accountPublic(a){
     hasSession:Boolean(a.sessionId)};
 }
 function isAccountOnline(a){return accountOnline(a)}
-function selectSender(state,task){
-  const accounts=state.accounts||[];
-  let primary=null;
-  if(task.role==='ASSISTANT')primary=accounts.find(a=>a.kind==='ASSISTANT'&&a.slot==='PRIMARY');
-  else if(task.role==='PROFESSOR')primary=accounts.find(a=>a.kind==='PROFESSOR'&&a.slot==='PRIMARY');
-  else primary=accounts.find(a=>a.kind==='AUXILIARY'&&a.slot==='PRIMARY'&&String(a.auxCode)===String(task.auxCode));
-
-  if(!primary)return {blocked:true,reason:'PRIMARY_ACCOUNT_NOT_CONFIGURED'};
-  if(isAccountOnline(primary))return {account:primary,backup:false};
-  if(primary.status!=='CONFIRMED_UNAVAILABLE'){
-    return {blocked:true,reason:'AWAITING_PRIMARY_CONFIRMATION',account:primary};
+/* Person/role IDs are not WhatsApp account IDs. An account can serve several role IDs.
+ * Reserve 1/2/3 are shared across all 65; assistant2 and professor2 remain dedicated.
+ * Each confirmed-unsent failure excludes that physical sender for the current target.
+ * Unknown outcomes are handled separately by VERIFYING; never auto resend those. */
+function selectSender(state,task,target={}){
+  const accounts=state.accounts||[],excluded=new Set(target.excludedSenderIds||[]);
+  const available=a=>a&&!excluded.has(a.id)&&isAccountOnline(a);
+  if(task.role==='ASSISTANT'||task.role==='PROFESSOR'){
+    const kind=task.role;
+    const primary=accounts.find(a=>a.kind===kind&&a.slot==='PRIMARY');
+    const backup=accounts.find(a=>a.kind===kind&&a.slot==='BACKUP');
+    if(available(primary))return {account:primary,backup:false};
+    if(available(backup))return {account:backup,backup:true,replaces:primary?.id||null};
+    return {blocked:true,reason:kind+'_SENDER_AND_DEDICATED_BACKUP_OFFLINE',account:primary||backup||null};
   }
-
-  if(task.role==='ASSISTANT'){
-    const backup=accounts.find(a=>a.kind==='ASSISTANT'&&a.slot==='BACKUP');
-    if(isAccountOnline(backup))return {account:backup,backup:true,replaces:primary.id};
-    return {blocked:true,reason:'ASSISTANT_BACKUP_UNAVAILABLE',account:backup||null};
+  if(task.role!=='AUXILIARY')return {blocked:true,reason:'UNKNOWN_SOURCE_ROLE'};
+  const roleId=String(Number(task.auxCode||0));
+  const candidates=accounts.filter(a=>a.kind==='AUXILIARY'&&a.slot==='PRIMARY'&&(
+    String(Number(a.auxCode||0))===roleId ||
+    personaCodes(a.personaCodes,a.auxCode).includes(roleId)
+  ));
+  const primary=candidates.find(a=>String(Number(a.auxCode||0))===roleId)||candidates[0]||null;
+  if(available(primary))return {account:primary,backup:false};
+  // When a role has no dedicated primary, use a real sender explicitly assigned
+  // multiple persona IDs. Otherwise a failed dedicated sender borrows reserve 1 first.
+  if(!candidates.some(a=>String(Number(a.auxCode||0))===roleId)){
+    const assigned=candidates.find(available);
+    if(assigned)return {account:assigned,backup:false};
   }
-  if(task.role==='PROFESSOR'){
-    const backup=accounts.find(a=>a.kind==='PROFESSOR'&&a.slot==='BACKUP');
-    if(isAccountOnline(backup))return {account:backup,backup:true,replaces:primary.id};
-    return {blocked:true,reason:'PROFESSOR_BACKUP_UNAVAILABLE',account:backup||null};
-  }
-  const backups=accounts.filter(a=>a.kind==='AUX_BACKUP'&&a.slot==='BACKUP').sort((a,b)=>(a.backupOrder||999)-(b.backupOrder||999));
-  for(const backup of backups){
-    if(isAccountOnline(backup))return {account:backup,backup:true,replaces:primary.id};
-    if(backup.status!=='CONFIRMED_UNAVAILABLE'){
-      return {blocked:true,reason:'AWAITING_AUX_BACKUP_CONFIRMATION',account:backup};
-    }
-  }
-  return {blocked:true,reason:'AUX_BACKUP_POOL_UNAVAILABLE'};
+  // Reserve 1 -> 2 -> 3 is a shared priority queue for every member.
+  const reserves=accounts.filter(a=>a.kind==='AUX_BACKUP'&&a.slot==='BACKUP')
+    .sort((a,b)=>(a.backupOrder||999)-(b.backupOrder||999));
+  const standby=reserves.find(available);
+  if(standby)return {account:standby,backup:true,replaces:primary?.id||null};
+  // A separately assigned sender is a last resort only after shared reserves.
+  const assigned=candidates.find(available);
+  if(assigned)return {account:assigned,backup:assigned.id!==primary?.id,replaces:primary?.id||null};
+  return {blocked:true,reason:'ALL_MEMBER_SENDERS_AND_SHARED_RESERVES_OFFLINE',account:primary||null};
+}
+function excludeConfirmedNotSent(target,accountId){
+  if(!accountId)return;
+  target.excludedSenderIds=[...new Set([...(target.excludedSenderIds||[]),accountId])].slice(0,80);
 }
 function parseTelegram(input){
   const raw=safeString(input.text??input.caption,12000);
@@ -430,7 +446,7 @@ async function handleLease(){
       await setState(state);
       return {status:'BLOCKED',reason:'OUTBOUND_CHINESE_BLOCKED',taskId:head.id};
     }
-    const selection=selectSender(state,head);
+    const selection=selectSender(state,head,target);
     if(selection.blocked){
       state.queue.pauseReason=selection.reason;
       await setState(state);
@@ -802,7 +818,7 @@ const server=createServer(async(req,res)=>{
           const status=safeString(report.status,36);
           if(!['ONLINE','OFFLINE','NEEDS_QR','VERIFYING','CONFIRMED_UNAVAILABLE'].includes(status))continue;
           account.status=status;
-          account.phoneLast4=String(report.phoneLast4||'').replace(/\D/g,'').slice(-4);
+          if(report.phoneLast4!==undefined)account.phoneLast4=String(report.phoneLast4||'').replace(/\D/g,'').slice(-4);
           account.lastHeartbeatAt=time;
           account.sessionId=safeString(report.sessionId,160)||account.sessionId||'';
           matched++;
@@ -909,10 +925,11 @@ const server=createServer(async(req,res)=>{
           return send(res,200,{authorized:false,reason:'GROUP_DISABLED'});
         }
         const sender=state.accounts.find(a=>a.id===target.senderAccountId);
-        if(!sender||sender.status!=='ONLINE'){
+        if(!sender||!isAccountOnline(sender)){
           target.status='WAITING';
           target.leaseId=null;target.leaseUntil=null;target.notBefore=null;
           target.error='SENDER_NOT_ONLINE_BEFORE_SEND';
+          excludeConfirmedNotSent(target,target.senderAccountId);
           task.status=deriveTaskStatus(task);
           await setState(state);
           return send(res,200,{authorized:false,reason:'SENDER_NOT_ONLINE'});
@@ -959,22 +976,33 @@ const server=createServer(async(req,res)=>{
           target.ackedAt=nowIso();
           target.error=null;
           target.leaseUntil=null;
-          if(account){account.lastSentAt=target.ackedAt;account.status='ONLINE'}
+          if(account){account.lastSentAt=target.ackedAt}
           const group=state.groups.find(g=>g.id===target.groupId);if(group)group.lastSentAt=target.ackedAt;
           if(task.messageType!=='IMAGE')state.queue.lastAck={at:target.ackedAt,groupId:target.groupId,logicalSenderKey:logicalSenderKey(task),actualAccountId:target.senderAccountId};
         }else if(result==='CONFIRMED_UNAVAILABLE'){
           target.status='WAITING';
           target.error='SENDER_CONFIRMED_UNAVAILABLE';
           target.leaseId=null;target.leaseUntil=null;target.notBefore=null;
+          excludeConfirmedNotSent(target,target.senderAccountId);
           if(account){account.status='CONFIRMED_UNAVAILABLE';account.lastHeartbeatAt=nowIso()}
         }else if(result==='NOT_SENT'){
           target.status='WAITING';
           target.error=safeString(input.error,500)||'CONFIRMED_NOT_SENT';
+          excludeConfirmedNotSent(target,target.senderAccountId);
           target.leaseId=null;target.leaseUntil=null;target.notBefore=null;
         }else if(result==='FAILED'){
-          target.status='FAILED';
-          target.error=safeString(input.error,500)||'SEND_FAILED';
-          target.leaseUntil=null;
+          // A generic failure does not prove non-delivery. Never auto resend an
+          // ambiguous WhatsApp send; the worker must explicitly confirm no-send.
+          if(input.confirmedNotSent===true){
+            target.status='WAITING';
+            target.error=safeString(input.error,500)||'CONFIRMED_FAILED_BEFORE_SEND';
+            excludeConfirmedNotSent(target,target.senderAccountId);
+            target.leaseId=null;target.leaseUntil=null;target.notBefore=null;
+          }else{
+            target.status='VERIFYING';
+            target.error=safeString(input.error,500)||'FAILED_OUTCOME_UNCONFIRMED';
+            target.leaseUntil=null;
+          }
         }else{
           target.status='VERIFYING';
           target.error=safeString(input.error,500)||'RESULT_UNKNOWN';
@@ -1004,7 +1032,9 @@ const server=createServer(async(req,res)=>{
           target.status='ACKED';target.ackedAt=nowIso();target.error=null;
           if(task.messageType!=='IMAGE')state.queue.lastAck={at:target.ackedAt,groupId:target.groupId,logicalSenderKey:logicalSenderKey(task),actualAccountId:target.senderAccountId};
         }else if(resolution==='NOT_SENT'){
-          target.status='WAITING';target.error='VERIFIED_NOT_SENT';target.leaseId=null;target.notBefore=null;
+          target.status='WAITING';target.error='VERIFIED_NOT_SENT';
+          excludeConfirmedNotSent(target,target.senderAccountId);
+          target.leaseId=null;target.notBefore=null;
         }else return send(res,400,{error:'INVALID_RESOLUTION'});
         task.status=deriveTaskStatus(task);
         reconcile(state);
@@ -1035,6 +1065,7 @@ const server=createServer(async(req,res)=>{
         const normalized=normalizeAccount(value,i),previous=existing.get(normalized.id);
         return {...normalized,
           meta:previous?.meta||normalized.meta,
+          personaCodes:normalized.personaCodes,
           status:previous?.status||'UNCONFIGURED',
           phoneLast4:previous?.phoneLast4||'',
           sessionId:previous?.sessionId||'',
@@ -1049,8 +1080,8 @@ const server=createServer(async(req,res)=>{
       if(primaryAssistant>1||backupAssistant>1||primaryProfessor>1||backupProfessor>1)return send(res,400,{error:'助理1/助理2/教授1/教授2各只能配置一个账号'});
       const auxCodes=new Set();
       for(const a of items.filter(x=>x.kind==='AUXILIARY'&&x.slot==='PRIMARY')){
-        if(!a.auxCode)return send(res,400,{error:'普通辅助号必须设置唯一编号'});
-        if(auxCodes.has(a.auxCode))return send(res,400,{error:'普通辅助号编号不能重复: '+a.auxCode});
+        if(!a.auxCode)return send(res,400,{error:'成员角色必须有独立的人物编号'});
+        if(auxCodes.has(a.auxCode))return send(res,400,{error:'人物编号不能重复（同一发送账号可以分配多个不同的人物编号）: '+a.auxCode});
         auxCodes.add(a.auxCode);
       }
       state.accounts=items;
