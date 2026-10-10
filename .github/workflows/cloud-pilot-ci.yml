@@ -33,6 +33,7 @@ jobs:
           node --test whatsapp-connector/tests/runtime.test.mjs
           node --test ops-bridge/tests/source-role-extraction.test.mjs
           node --test ops-bridge/tests/shared-reserve-routing.test.mjs
+          node --test ops-bridge/tests/ephemeral-confirmation.test.mjs
       - name: Validate protected cloud pilot integration
         run: |
           node --test ops-bridge/tests/cloud-pilot-integration.test.mjs
