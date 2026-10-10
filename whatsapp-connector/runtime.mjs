@@ -10,7 +10,7 @@ export class WhatsAppSessionRuntime{
     this.loadAccounts=loadAccounts;this.saveAccounts=saveAccounts;this.log=log;
     this.maxActive=Math.min(Math.max(Number(maxActive)||3,1),20);
     this.clock=clock;this.sessions=new Map();this.knownAccounts=new Set();
-    this.closed=false;this.requestsBusy=false;this.healthBusy=false;
+    this.closed=false;this.requestsBusy=false;this.healthBusy=false;this.healthDrain=null;
     this.timer=null;this.healthTimer=null;this.reconnectFailures=new Map();
   }
   async start(){
@@ -161,7 +161,10 @@ export class WhatsAppSessionRuntime{
     try{await client.destroy()}catch{}
   }
   async heartbeat(){
-    if(this.closed||this.healthBusy)return;
+    if(this.closed)return;
+    if(this.healthBusy){if(this.healthDrain)await this.healthDrain;return}
+    let resolveHealth;
+    this.healthDrain=new Promise(resolve=>{resolveHealth=resolve});
     this.healthBusy=true;
     try{
       for(const rec of this.sessions.values()){
@@ -179,7 +182,7 @@ export class WhatsAppSessionRuntime{
       await this.transport.post('/v1/worker/accounts/heartbeat',{
         workerId:'nuvexa-windows-local',accounts
       });
-    }finally{this.healthBusy=false}
+    }finally{this.healthBusy=false;resolveHealth();this.healthDrain=null}
   }
   async stop(){
     this.closed=true;
