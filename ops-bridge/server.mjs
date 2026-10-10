@@ -1034,6 +1034,7 @@ const server=createServer(async(req,res)=>{
       const items=input.items.slice(0,200).map((value,i)=>{
         const normalized=normalizeAccount(value,i),previous=existing.get(normalized.id);
         return {...normalized,
+          meta:previous?.meta||normalized.meta,
           status:previous?.status||'UNCONFIGURED',
           phoneLast4:previous?.phoneLast4||'',
           sessionId:previous?.sessionId||'',
