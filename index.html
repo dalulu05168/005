@@ -155,6 +155,108 @@ body:has(#loginView:not(.hidden)){
 .content[data-page="source"] .source-guide{border:1px solid #e6dece;background:#f8f6ef;border-radius:10px;padding:15px;font-size:12px;line-height:1.85}
 .content[data-page="source"] .source-note{font-size:11px;color:#756c5e;line-height:1.65}
 @media(max-width:780px){.content[data-page="source"] .source-grid{grid-template-columns:1fr}.content[data-page="source"] .source-panel{min-height:auto}.content[data-page="source"]{overflow-y:auto}}
+
+/* Full-bleed Cloud Edition workspace (login view retains its own responsive design).
+   The former 1440x810 centered canvas/padding exposed a blue outer frame. */
+body:has(#appView:not(.hidden)){
+  background:#fff;
+}
+#viewport:has(#appView:not(.hidden)){
+  position:fixed;
+  inset:0;
+  left:0;
+  top:0;
+  width:100%;
+  height:100%;
+  height:100dvh;
+  max-width:none;
+  padding:0;
+  margin:0;
+  transform:none!important;
+  transform-origin:top left;
+}
+#appView.app{
+  width:100%;
+  height:100%;
+  min-width:0;
+  min-height:0;
+  border:0;
+  border-radius:0;
+  box-shadow:none;
+}
+#appView .main{
+  display:flex;
+  flex-direction:column;
+  min-height:0;
+  min-width:0;
+  overflow:hidden;
+}
+#appView .topbar{
+  flex:0 0 68px;
+  min-height:68px;
+}
+#appView .content{
+  flex:1 1 auto;
+  height:auto;
+  min-height:0;
+  min-width:0;
+  overflow-y:auto;
+  overflow-x:hidden;
+  overscroll-behavior:contain;
+  scrollbar-width:thin;
+}
+#appView .sidebar{
+  min-height:0;
+  overflow-y:auto;
+  scrollbar-width:thin;
+}
+#appView .workspace-tabs{
+  overflow-x:auto;
+  overflow-y:hidden;
+  white-space:nowrap;
+  scrollbar-width:thin;
+}
+#appView .workspace-tabs button{flex-shrink:0}
+@media(max-width:1100px){
+  #appView .metrics{grid-template-columns:repeat(2,minmax(0,1fr))}
+  #appView .content{padding:18px}
+  #appView .top-status{gap:6px}
+}
+@media(max-width:700px){
+  #appView.app{grid-template-columns:58px minmax(0,1fr)}
+  #appView .topbar{
+    flex:0 0 auto;
+    height:auto;
+    min-height:64px;
+    padding:10px 13px;
+    flex-wrap:wrap;
+    row-gap:7px;
+  }
+  #appView .top-title{gap:7px}
+  #appView .top-title span{padding-left:7px}
+  #appView .top-status{flex-wrap:wrap;gap:5px}
+  #appView .pill{padding:4px 6px;font-size:9px}
+  #appView .content{padding:14px}
+  #appView .page-head{flex-wrap:wrap;gap:8px}
+  #appView .page-head h1{font-size:21px}
+  #appView .metrics{gap:9px}
+  #appView .metric{min-width:0;padding:12px}
+  #appView .metric-heading{font-size:10px;padding-right:0}
+  #appView .metric .metric-tag{display:none}
+  #appView .metric strong{font-size:24px}
+  #appView .grid2,#appView .grid3{grid-template-columns:1fr}
+  #appView .collector-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}
+  #appView .table-tools{height:auto;flex-wrap:wrap;gap:8px}
+  #appView .search-box{max-width:100%}
+  #appView .search-box input{width:min(210px,45vw)}
+}
+@media(max-width:440px){
+  #appView .metrics{grid-template-columns:minmax(0,1fr)}
+  #appView .top-title span{display:none}
+  #appView .user-badge{display:none}
+  #appView .content{padding:12px}
+}
+
 </style>
 <!-- Tabler Icons license
 MIT License
