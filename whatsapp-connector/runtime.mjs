@@ -13,7 +13,7 @@ export class WhatsAppSessionRuntime{
     this.maxActive=Math.min(Math.max(Number(maxActive)||3,1),20);
     this.clock=clock;this.sessions=new Map();this.knownAccounts=new Set();
     this.closed=false;this.requestsBusy=false;this.healthBusy=false;
-    this.timer=null;this.healthTimer=null;
+    this.timer=null;this.healthTimer=null;this.reconnectFailures=new Map();
   }
   async start(){
     const ids=await this.loadAccounts();
@@ -48,7 +48,7 @@ export class WhatsAppSessionRuntime{
     if(current?.client)return true;
     if(this.sessions.size>=this.maxActive){this.log('已达到并发上限，暂缓启动 '+id);return false}
     const record={id,client:null,status:'OFFLINE',phoneLast4:current?.phoneLast4||'',
-      lastQr:'',qrAt:0,pending:false,restartAfter:0};
+      lastQr:'',qrAt:0,pending:false,restartAfter:0,initializing:true};
     this.sessions.set(id,record);
     let client;
     try{client=await this.createClient(id)}catch(e){
@@ -57,34 +57,47 @@ export class WhatsAppSessionRuntime{
       return false;
     }
     record.client=client;
+    const live=()=>!this.closed&&this.sessions.get(id)===record;
     client.on('qr',qr=>{
+      if(!live())return;
       record.status='NEEDS_QR';record.lastQr=qr;record.qrAt=this.clock();
       // QR is intentionally NOT written to disk or console.
       if(record.pending)void this.publishQr(record);
       this.log('已从 WhatsApp 收到真实扫码挑战：'+id);
     });
-    client.on('authenticated',()=>{record.status='VERIFYING';record.lastQr='';});
+    client.on('authenticated',()=>{if(!live())return;record.status='VERIFYING';record.lastQr='';});
     client.on('ready',()=>{
+      if(!live())return;
+      record.initializing=false;
+      this.reconnectFailures.delete(id);
       record.status='ONLINE';record.phoneLast4=phoneSuffix(client.info);
       record.lastQr='';record.pending=false;record.restartAfter=0;
       this.log('已就绪：'+id+' 尾号 '+(record.phoneLast4||'未知'));
       void this.heartbeat();
     });
     client.on('auth_failure',()=>{
+      if(!live())return;
       record.status='NEEDS_QR';record.lastQr='';
       this.log('授权需要重新验证：'+id);
     });
     client.on('disconnected',reason=>{
+      if(!live())return;
       const loggedOut=String(reason||'').toUpperCase().includes('LOGOUT');
       record.status=loggedOut?'NEEDS_QR':'OFFLINE';
       record.lastQr='';record.client=null;record.pending=false;
-      record.restartAfter=loggedOut?Infinity:this.clock()+RECONNECT_MIN_MS;
+      const fail=(this.reconnectFailures.get(id)||0)+1;
+      this.reconnectFailures.set(id,fail);
+      record.restartAfter=loggedOut?Infinity:this.clock()+Math.min(RECONNECT_MAX_MS,RECONNECT_MIN_MS*2**Math.min(fail-1,3));
+      void client.destroy().catch(()=>{});
       this.log('连接已中断：'+id+'；'+(loggedOut?'需要重新授权':'准备自动重连'));
       void this.heartbeat();
     });
     void Promise.resolve().then(()=>client.initialize()).catch(async e=>{
+      if(!live())return;
       record.status='OFFLINE';record.lastQr='';record.client=null;
-      record.restartAfter=this.clock()+RECONNECT_MIN_MS;
+      const fail=(this.reconnectFailures.get(id)||0)+1;
+      this.reconnectFailures.set(id,fail);
+      record.restartAfter=this.clock()+Math.min(RECONNECT_MAX_MS,RECONNECT_MIN_MS*2**Math.min(fail-1,3));
       this.log('启动或恢复失败：'+id+'；'+String(e?.message||e));
       try{await client.destroy()}catch{}
     });
@@ -163,6 +176,7 @@ export class WhatsAppSessionRuntime{
     if(this.healthTimer)clearInterval(this.healthTimer);
     const all=[...this.sessions.values()];
     this.sessions.clear();
+    this.reconnectFailures.clear();
     await Promise.allSettled(all.map(async rec=>{try{await rec.client?.destroy()}catch{}}));
   }
 }
