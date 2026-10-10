@@ -82,3 +82,27 @@ test('ignore Telegram source groups that are not whitelisted',()=>{
   }},new Set(['-1001234']));
   assert.equal(obj,null);
 });
+
+test('collector server cannot override canonical role or text using an API parameter',async()=>{
+  const {readFile}=await import('node:fs/promises');
+  const backend=await readFile(new URL('../server.mjs',import.meta.url),'utf8');
+  const start=backend.indexOf('function parseTelegram(input){');
+  const end=backend.indexOf('function verifiedForwardReceipt(',start);
+  assert.ok(start>=0&&end>start);
+  const safeString=(s,max=500)=>String(s??'').trim().slice(0,max);
+  const parseTelegram=Function('safeString','parseFixedTelegramMessage',
+    backend.slice(start,end)+'\nreturn parseTelegram')(safeString,parseFixedTelegramMessage);
+  assert.equal(parseTelegram({text:example}).ok,true);
+  assert.equal(parseTelegram({text:example,role:'PROFESSOR'}).error,'TELEGRAM_ROLE_OR_TEXT_MISMATCH');
+  assert.equal(parseTelegram({text:example,auxCode:'66'}).error,'TELEGRAM_ROLE_OR_TEXT_MISMATCH');
+  assert.equal(parseTelegram({text:example,romanianText:'Wrong destination text'}).error,'TELEGRAM_ROLE_OR_TEXT_MISMATCH');
+  assert.equal(parseTelegram({text:'45男：\n早上好。\nBună dimineața!',role:'AUXILIARY',auxCode:'45'}).ok,false);
+  assert.equal(parseTelegram({text:example}).romanianText,'Bună dimineața! Astăzi urmărim evoluția pieței.');
+});
+test('server rejects messages when no target WhatsApp groups are enabled',async()=>{
+  const {readFile}=await import('node:fs/promises');
+  const backend=await readFile(new URL('../server.mjs',import.meta.url),'utf8');
+  const index=backend.indexOf('NO_ENABLED_WHATSAPP_TARGET_GROUPS');
+  assert.ok(index>=0);
+  assert.ok(backend.slice(index-220,index).includes("some(g=>g.enabled)"));
+});
