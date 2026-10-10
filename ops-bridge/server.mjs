@@ -121,6 +121,18 @@ async function body(req){
 }
 
 
+const MEMBER_IDENTITIES=new Set(['老女','新女','老男','新男']);
+function defaultMemberIdentity(code){
+  const n=Number(code);
+  return n>=1&&n<=10?'老女':n<=30&&n>=11?'新女':n<=50&&n>=31?'老男':n<=65&&n>=51?'新男':'';
+}
+function accountIdentity(account){
+  // Existing accounts predate editable identity; derive the default from the
+  // stable slot id (not a code the operator may later edit).
+  const slot=String(account?.id||'').match(/^member-(\d{2})$/);
+  const base=slot?Number(slot[1]):Number(account?.auxCode);
+  return MEMBER_IDENTITIES.has(account?.identity)?account.identity:defaultMemberIdentity(base);
+}
 function standard72AccountSlots(){
   const add=(id,name,kind,slot,auxCode='',backupOrder=0)=>({
     id,name,kind,slot,auxCode:String(auxCode),backupOrder,
@@ -135,7 +147,7 @@ function standard72AccountSlots(){
   ];
   for(let n=1;n<=65;n++){
     const group=n<=10?'老女成员':n<=30?'新女成员':n<=50?'老男成员':'新男成员';
-    accounts.push({...add('member-'+String(n).padStart(2,'0'),group+String(n).padStart(2,'0'),'AUXILIARY','PRIMARY',n),personaCodes:[String(n)]});
+    accounts.push({...add('member-'+String(n).padStart(2,'0'),group+String(n).padStart(2,'0'),'AUXILIARY','PRIMARY',n),identity:defaultMemberIdentity(n),personaCodes:[String(n)]});
   }
   for(let n=1;n<=3;n++)accounts.push(add('reserve-'+n,'备用'+n,'AUX_BACKUP','BACKUP','',n));
   return accounts;
@@ -233,7 +245,7 @@ function normalizeRange(value,prev){
 }
 function personaCodes(raw,fallback=''){
   const values=Array.isArray(raw)?raw:(raw===undefined||raw===null?[fallback]:String(raw).split(/[,，;；\s]+/));
-  return [...new Set(values.map(v=>String(v).trim()).filter(v=>/^(?:[1-9]|[1-5]\d|6[0-5])$/.test(v)).map(v=>String(Number(v))))].slice(0,65);
+  return [...new Set(values.map(v=>String(v).trim()).filter(v=>/^(?:0?[1-9]|[1-9]\d)$/.test(v)).map(v=>String(Number(v))))].slice(0,99);
 }
 function normalizeAccount(a,index=0){
   const kind=['ASSISTANT','PROFESSOR','AUXILIARY','AUX_BACKUP'].includes(a.kind)?a.kind:'AUXILIARY';
@@ -244,6 +256,7 @@ function normalizeAccount(a,index=0){
     name:safeString(a.name,120)||('账号 '+(index+1)),
     kind,slot,status,
     auxCode:safeString(a.auxCode,32),
+    identity:kind==='AUXILIARY'?accountIdentity(a):'',
     personaCodes:kind==='AUXILIARY'?personaCodes(a.personaCodes,a.auxCode):[],
     backupOrder:Math.max(0,Number(a.backupOrder)||0),
     phoneLast4:safeString(a.phoneLast4,8),
@@ -343,6 +356,8 @@ function selectSender(state,task,target={}){
   if(candidates.length===0)return {blocked:true,reason:'ROLE_ACCOUNT_NOT_MAPPED',account:null};
   if(candidates.length!==1)return {blocked:true,reason:'DUPLICATE_PERSONA_ACCOUNT_MAPPING',account:null};
   const primary=candidates[0];
+  if(task.identity&&accountIdentity(primary)!==task.identity)
+    return {blocked:true,reason:'ROLE_IDENTITY_MISMATCH',account:primary};
   if(available(primary))return {account:primary,backup:false};
   // When a role has no dedicated primary, use a real sender explicitly assigned
   // multiple persona IDs. Otherwise a failed dedicated sender borrows reserve 1 first.
@@ -379,7 +394,7 @@ function parseTelegram(input){
     return {ok:false,error:'TELEGRAM_ROLE_OR_TEXT_MISMATCH',raw};
   }
   return {
-    ok:true,role:parsed.role,auxCode:parsed.auxCode,
+    ok:true,role:parsed.role,auxCode:parsed.auxCode,identity:parsed.identity||'',
     roleName:parsed.roleName,translatedRoleName:parsed.translatedRoleName,
     romanianText:parsed.romanianText,
     mediaRef:safeString(input.mediaRef||input.imageUrl,2000),raw
@@ -822,6 +837,17 @@ const server=createServer(async(req,res)=>{
         await setState(state);
         return send(res,422,{error:parsed.error||'SOURCE_FORMAT_INVALID',queued:false});
       }
+      if(parsed.role==='AUXILIARY'){
+        const match=(state.accounts||[]).filter(a=>a.kind==='AUXILIARY'&&a.slot==='PRIMARY'&&
+          (String(Number(a.auxCode||0))===parsed.auxCode||
+            personaCodes(a.personaCodes,a.auxCode).includes(parsed.auxCode)));
+        if(match.length!==1||accountIdentity(match[0])!==parsed.identity){
+          state.collector.rejected=(state.collector.rejected||0)+1;
+          await setState(state);
+          return send(res,422,{error:match.length===0?'ROLE_ACCOUNT_NOT_MAPPED':
+            match.length>1?'DUPLICATE_PERSONA_ACCOUNT_MAPPING':'ROLE_IDENTITY_MISMATCH',queued:false});
+        }
+      }
       const replyId=safeString(input.replyToMessageId,220);
       const threadId=safeString(input.sourceThreadId,220);
       const candidates=media?[]:state.pendingImages.filter(p=>
@@ -857,7 +883,7 @@ const server=createServer(async(req,res)=>{
           sequence:(state.tasks.reduce((m,t)=>Math.max(m,Number(t.sequence)||0),0)||0)+1,
           sourceChatId:chatId,sourceMessageId:sourceId,
           sourceAt:input.sourceAt||now,createdAt:now,
-          role:parsed.role,roleName:parsed.roleName||parsed.role,
+          role:parsed.role,roleName:parsed.roleName||parsed.role,identity:parsed.identity||'',
           translatedRoleName:parsed.translatedRoleName,
           auxCode:parsed.auxCode||'',romanianText:romanian,mediaRef:ref,
           status:'WAITING',completedAt:null,targets:targets()
@@ -1317,12 +1343,15 @@ const server=createServer(async(req,res)=>{
       if(primaryAssistant>1||backupAssistant>1||primaryProfessor>1||backupProfessor>1)return send(res,400,{error:'助理1/助理2/教授1/教授2各只能配置一个账号'});
       const codeOwner=new Map();
       for(const a of items.filter(x=>x.kind==='AUXILIARY'&&x.slot==='PRIMARY')){
-        if(!a.auxCode)return send(res,400,{error:'成员角色必须有独立的人物编号'});
+        if(!/^(?:0?[1-9]|[1-9][0-9])$/.test(String(a.auxCode)))
+          return send(res,400,{error:'人物编号必须在01–99范围内'});
+        if(!MEMBER_IDENTITIES.has(a.identity))
+          return send(res,400,{error:'人物身份必须选择老女、新女、老男或新男'});
         const codes=new Set([a.auxCode,...personaCodes(a.personaCodes,a.auxCode)]);
         for(const rawCode of codes){
           const id=Number(rawCode);
-          if(!Number.isInteger(id)||id<1||id>70)
-            return send(res,400,{error:'人物编号必须在01–70范围内'});
+          if(!Number.isInteger(id)||id<1||id>99)
+            return send(res,400,{error:'人物编号必须在01–99范围内'});
           const code=String(id);
           const previous=codeOwner.get(code);
           if(previous&&previous!==a.id)
