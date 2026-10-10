@@ -456,6 +456,11 @@ body:has(#appView:not(.hidden)){
 #appView .content[data-page="accounts"] .acc-code{background:#fff!important;color:var(--text)!important}
 #appView .content[data-page="accounts"] .acc-personas{background:#fff!important;color:var(--text)!important}
 
+
+/* Always-visible source-only installer link, also when Accounts toolbar overflows. */
+#appView .wa-direct-download{display:inline-flex;align-items:center;justify-content:center;white-space:nowrap;border:1px solid #9bbfb1;border-radius:8px;background:#edf8f3;color:#22664f;padding:7px 11px;font-family:inherit;font-size:12px;font-weight:650;text-decoration:none}
+#appView .wa-direct-download:hover{background:#dcefe7}
+@media(max-width:600px){#appView .wa-direct-download{font-size:11px;padding:5px 8px}}
 </style>
 <!-- Tabler Icons license
 MIT License
@@ -577,7 +582,7 @@ unicode: "eba8"
   <path d="M18 15l3 -3" />
 </svg>
 </button></div></aside>
-  <main class="main"><header class="topbar"><div class="top-title"><strong id="topPageTitle">运营大屏</strong><span>Nuvexa Pro / Cloud Edition</span></div><div class="top-status"><span id="cloudPill" class="pill">Cloud API</span><span id="collectorPill" class="pill">采集器 —</span><span id="publishPill" class="pill">发布 —</span><span id="queuePill" class="pill">队列 —</span><span class="user-badge">Chennan118</span></div></header><div id="pageHost" class="content"></div></main>
+  <main class="main"><header class="topbar"><div class="top-title"><strong id="topPageTitle">运营大屏</strong><span>Nuvexa Pro / Cloud Edition</span></div><div class="top-status"><a class="wa-direct-download" href="/download/Nuvexa-WhatsApp-Connector.zip" download="Nuvexa-WhatsApp-Connector.zip" title="直接下载 Windows 扫码程序">下载 Windows 程序</a><span id="cloudPill" class="pill">Cloud API</span><span id="collectorPill" class="pill">采集器 —</span><span id="publishPill" class="pill">发布 —</span><span id="queuePill" class="pill">队列 —</span><span class="user-badge">Chennan118</span></div></header><div id="pageHost" class="content"></div></main>
 </div>
 </div><div id="waQrOverlay" hidden role="dialog" aria-modal="true" aria-labelledby="waQrTitle"><div class="wa-qr-dialog"><h2 id="waQrTitle">WhatsApp 扫码登录</h2><p id="waQrMessage">仅显示来自真实连接程序的二维码。</p><img id="waQrImage" hidden alt="WhatsApp 真实登录二维码"/><input id="waEnrollCode" readonly hidden aria-label="设备连接码" style="width:100%;padding:12px;text-align:center;letter-spacing:2px;border:1px solid var(--line);border-radius:8px;background:#f5faf8;color:#222"/><button id="waEnrollCopy" hidden type="button">复制连接码</button><div class="qr-dialog-footer"><button id="waQrClose" type="button">关闭</button></div></div></div><div id="toast" class="toast hidden"></div>
 <script>

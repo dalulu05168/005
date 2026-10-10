@@ -818,8 +818,13 @@ const server=createServer(async(req,res)=>{
 
 
 
-    if(url.pathname==='/v1/download/whatsapp-connector.zip'&&req.method==='GET'){
-      if(!userAuth(req))return send(res,401,{error:'ADMIN_AUTH_REQUIRED'});
+    // The ZIP contains only versioned public launcher/source files; no credentials
+    // or persisted WhatsApp sessions. Expose a simple Windows download link so
+    // the user does not have to find an authenticated dashboard button.
+    if((url.pathname==='/download/Nuvexa-WhatsApp-Connector.zip'||
+        url.pathname==='/v1/download/whatsapp-connector.zip')&&req.method==='GET'){
+      if(url.pathname==='/v1/download/whatsapp-connector.zip'&&!userAuth(req))
+        return send(res,401,{error:'ADMIN_AUTH_REQUIRED'});
       const folder=new URL('../whatsapp-connector/',import.meta.url);
       const names=['README.md','START-WHATSAPP.cmd','package.json','connector.mjs','runtime.mjs'];
       const entries=await Promise.all(names.map(async name=>({
