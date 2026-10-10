@@ -4,7 +4,7 @@ import { createHmac, createHash, randomBytes, randomUUID, timingSafeEqual } from
 import { createClient } from 'redis';
 import { createTelegramSource } from './telegram-user-source.mjs';
 import { zipStored } from './build-connector-zip.mjs';
-import { normalizeTelegramUpdate, textWithoutRole, extractPreparedText, identifySourceRole } from './telegram-collector.mjs';
+import { normalizeTelegramUpdate, extractPreparedText, identifySourceRole, parseFixedTelegramMessage } from './telegram-collector.mjs';
 
 const PORT=Number(process.env.PORT||10000);
 const REDIS_URL=String(process.env.REDIS_URL||'').trim();
@@ -134,7 +134,7 @@ function standard72AccountSlots(){
     add('role-professor-backup','教授2号','PROFESSOR','BACKUP')
   ];
   for(let n=1;n<=65;n++){
-    const group=n<=20?'老男成员':n<=30?'老女成员':n<=50?'新男成员':'新女成员';
+    const group=n<=10?'老女成员':n<=30?'新女成员':n<=50?'老男成员':'新男成员';
     accounts.push({...add('member-'+String(n).padStart(2,'0'),group+String(n).padStart(2,'0'),'AUXILIARY','PRIMARY',n),personaCodes:[String(n)]});
   }
   for(let n=1;n<=3;n++)accounts.push(add('reserve-'+n,'备用'+n,'AUX_BACKUP','BACKUP','',n));
@@ -338,7 +338,11 @@ function selectSender(state,task,target={}){
     String(Number(a.auxCode||0))===roleId ||
     personaCodes(a.personaCodes,a.auxCode).includes(roleId)
   ));
-  const primary=candidates.find(a=>String(Number(a.auxCode||0))===roleId)||candidates[0]||null;
+  // A unique source code must have exactly one configured primary account.
+  // Never route an unassigned or multiply-assigned role to arbitrary reserves.
+  if(candidates.length===0)return {blocked:true,reason:'ROLE_ACCOUNT_NOT_MAPPED',account:null};
+  if(candidates.length!==1)return {blocked:true,reason:'DUPLICATE_PERSONA_ACCOUNT_MAPPING',account:null};
+  const primary=candidates[0];
   if(available(primary))return {account:primary,backup:false};
   // When a role has no dedicated primary, use a real sender explicitly assigned
   // multiple persona IDs. Otherwise a failed dedicated sender borrows reserve 1 first.
@@ -362,26 +366,25 @@ function excludeConfirmedNotSent(target,accountId){
 }
 function parseTelegram(input){
   const raw=safeString(input.text??input.caption,12000);
-  const parsedSource=identifySourceRole(raw);
+  const parsed=parseFixedTelegramMessage(raw);
+  if(!parsed.ok)return {ok:false,error:parsed.error,raw};
+  // Telegram header is the only source of role identity. Client-supplied
+  // role/code/translation overrides must not reroute messages.
   const explicitRole=safeString(input.role,32).toUpperCase();
-  let role='',auxCode=safeString(input.auxCode,32);
-  if(['ASSISTANT','PROFESSOR','AUXILIARY'].includes(explicitRole))role=explicitRole;
-  else role=parsedSource?.role||'';
-  if(!auxCode)auxCode=parsedSource?.auxCode||'';
-  const roleName=safeString(input.roleName,120)||parsedSource?.roleName||role;
-  const translatedRoleName=safeString(input.translatedRoleName,120)||parsedSource?.translatedRoleName||'';
-  let romanian=safeString(input.romanianText,10000);
-  if(!romanian)romanian=safeString(extractPreparedText(raw),10000);
-  const mediaRef=safeString(input.mediaRef||input.imageUrl,2000);
-  if(!role)return {ok:false,error:'ROLE_NOT_RECOGNIZED'};
-  if(role==='AUXILIARY'&&!auxCode)return {ok:false,error:'AUX_CODE_REQUIRED'};
-  const common={role,auxCode,roleName,translatedRoleName,romanianText:romanian,mediaRef,raw};
-  if(!romanian&&!mediaRef)return {ok:false,error:'ROMANIAN_TRANSLATION_REQUIRED',...common};
-  return {ok:true,...common};
+  const explicitCode=safeString(input.auxCode,32);
+  const suppliedRomanian=safeString(input.romanianText,10000);
+  if((explicitRole&&explicitRole!==parsed.role)||
+     (explicitCode&&explicitCode!==parsed.auxCode)||
+     (suppliedRomanian&&suppliedRomanian!==parsed.romanianText)){
+    return {ok:false,error:'TELEGRAM_ROLE_OR_TEXT_MISMATCH',raw};
+  }
+  return {
+    ok:true,role:parsed.role,auxCode:parsed.auxCode,
+    roleName:parsed.roleName,translatedRoleName:parsed.translatedRoleName,
+    romanianText:parsed.romanianText,
+    mediaRef:safeString(input.mediaRef||input.imageUrl,2000),raw
+  };
 }
-// A worker ACK is only proof of routing when it identifies the *actual*
-// WhatsApp sender, actual destination group and provider-acknowledged message.
-// The evidence is checked then discarded; the message ID is not persisted.
 function verifiedForwardReceipt(input,target){
   const sender=safeString(input.actualSenderAccountId,120);
   const group=safeString(input.actualGroupId,220);
@@ -799,7 +802,7 @@ const server=createServer(async(req,res)=>{
       state.collector.status='RUNNING';
       // A photo without a role is held for the next matching role message.
       // No image content analysis, OCR or translation is performed.
-      if(media&&!parsed.role){
+      if(media&&!String(input.text??input.caption??'').trim()){
         if(!chatId||!messageId)return send(res,422,{error:'PHOTO_SOURCE_REQUIRED'});
         if(!state.pendingImages.some(p=>p.chatId===chatId&&p.messageId===messageId)){
           state.pendingImages.push({chatId,messageId,senderId,threadId:safeString(input.sourceThreadId,220),media,receivedAt:now});
@@ -808,10 +811,10 @@ const server=createServer(async(req,res)=>{
         await setState(state);
         return send(res,202,{ok:true,queued:false,status:'AWAITING_ROLE',imageInspected:false});
       }
-      if(!parsed.role){
+      if(!parsed.ok){
         state.collector.rejected=(state.collector.rejected||0)+1;
         await setState(state);
-        return send(res,422,{error:parsed.error||'ROLE_NOT_RECOGNIZED'});
+        return send(res,422,{error:parsed.error||'SOURCE_FORMAT_INVALID',queued:false});
       }
       const replyId=safeString(input.replyToMessageId,220);
       const threadId=safeString(input.sourceThreadId,220);
@@ -826,10 +829,8 @@ const server=createServer(async(req,res)=>{
       }
       const paired=candidates[0]||null;
       const photoRef=media||paired?.media||'';
-      const rawText=safeString(input.text??input.caption,12000);
-      const roleOnly=textWithoutRole(rawText)==='';
-      const containsText=Boolean(parsed.romanianText)||(!roleOnly&&Boolean(rawText));
-      const translationUnsafe=Boolean(parsed.romanianText&&hasChinese(parsed.romanianText));
+      const containsText=true; // Strict three-line format requires text.
+      const translationUnsafe=hasChinese(parsed.romanianText);
       const translatedText=translationUnsafe?'':parsed.romanianText;
       if(!photoRef&&!translatedText){
         await setState(state);
@@ -1308,11 +1309,20 @@ const server=createServer(async(req,res)=>{
       const primaryProfessor=items.filter(a=>a.kind==='PROFESSOR'&&a.slot==='PRIMARY').length;
       const backupProfessor=items.filter(a=>a.kind==='PROFESSOR'&&a.slot==='BACKUP').length;
       if(primaryAssistant>1||backupAssistant>1||primaryProfessor>1||backupProfessor>1)return send(res,400,{error:'助理1/助理2/教授1/教授2各只能配置一个账号'});
-      const auxCodes=new Set();
+      const codeOwner=new Map();
       for(const a of items.filter(x=>x.kind==='AUXILIARY'&&x.slot==='PRIMARY')){
         if(!a.auxCode)return send(res,400,{error:'成员角色必须有独立的人物编号'});
-        if(auxCodes.has(a.auxCode))return send(res,400,{error:'人物编号不能重复（同一发送账号可以分配多个不同的人物编号）: '+a.auxCode});
-        auxCodes.add(a.auxCode);
+        const codes=new Set([a.auxCode,...personaCodes(a.personaCodes,a.auxCode)]);
+        for(const rawCode of codes){
+          const id=Number(rawCode);
+          if(!Number.isInteger(id)||id<1||id>70)
+            return send(res,400,{error:'人物编号必须在01–70范围内'});
+          const code=String(id);
+          const previous=codeOwner.get(code);
+          if(previous&&previous!==a.id)
+            return send(res,400,{error:'同一人物编号只能绑定一个主发送账号: '+code});
+          codeOwner.set(code,a.id);
+        }
       }
       state.accounts=items;
       await setState(state);
