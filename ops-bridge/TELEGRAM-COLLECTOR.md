@@ -1,4 +1,4 @@
-# Nuvexa Pro Telegram 采集器（Cloud Edition）
+# Nuvexa Pro 群消息采集接入（Cloud Edition）
 
 ## 状态与边界
 
@@ -6,7 +6,7 @@
 
 模块通过授权来源适配器接收群内的文本和图片，按“图片任务 / 文字任务”分别推入现有队列；Telegram 只是可选来源。**它不负责连接、登录或操作 WhatsApp。**实际 WhatsApp 发图和发文需要独立 worker 实现并调用 `/v1/worker/lease`、`/v1/worker/authorize`、`/v1/worker/ack`；未经验证不能把后端 ACK 当作真实发出。
 
-## Telegram 来源（可选）
+## Telegram 来源（仅选择此来源时需要）
 
 1. 在 Telegram 找 **@BotFather**，使用 `/newbot` 创建专用机器人，私下保存其 **Bot Token**。不要把 Token 发给任何聊天机器人。
 2. 把新机器人加入需要采集的源 Telegram 群组。希望读取普通群消息时，使用 BotFather 的 `/setprivacy` 选择 **Disable**，必要时从群组移除后重新加入；或者按 Telegram 权限要求把机器人设为群组管理员。
