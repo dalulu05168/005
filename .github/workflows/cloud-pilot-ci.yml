@@ -1,0 +1,35 @@
+name: Verify Cloud WhatsApp Pilot
+on:
+  push:
+    branches:
+      - feature/cloud-whatsapp-single-account-20261011
+  pull_request:
+    paths:
+      - 'whatsapp-connector/**'
+      - 'ops-bridge/server.mjs'
+      - 'index.html'
+      - 'Dockerfile.whatsapp-cloud'
+      - '.github/workflows/cloud-pilot-ci.yml'
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Syntax-check cloud and backend
+        run: |
+          node --check whatsapp-connector/cloud.mjs
+          node --check whatsapp-connector/runtime.mjs
+          node --check ops-bridge/server.mjs
+          node --input-type=module -e 'import fs from "node:fs";import vm from "node:vm";const h=fs.readFileSync("index.html","utf8");for(const m of h.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/g)){new vm.Script(m[1])}'
+      - name: QR session/runtime and extraction tests
+        run: |
+          node --test whatsapp-connector/tests/runtime.test.mjs
+          node --test ops-bridge/tests/source-role-extraction.test.mjs
+          node --test ops-bridge/tests/shared-reserve-routing.test.mjs
+      - name: Validate protected cloud pilot integration
+        run: node --test ops-bridge/tests/cloud-pilot-integration.test.mjs
