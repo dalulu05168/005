@@ -135,6 +135,26 @@ body:has(#loginView:not(.hidden)){
   #loginView .login-card>p{margin-bottom:16px}
 }
 
+
+/* Source authorization workspace: keeps the existing premium ivory/white system style. */
+.content[data-page="source"]{overflow-y:auto;scrollbar-width:thin;padding-bottom:26px}
+.content[data-page="source"] .source-grid{display:grid;grid-template-columns:1fr 1.12fr;gap:16px;align-items:start}
+.content[data-page="source"] .source-panel{min-height:395px;overflow:auto;background:linear-gradient(145deg,#fffefa,#f9f7f2);border:1px solid #e7e0d2;border-radius:15px;padding:24px}
+.content[data-page="source"] .source-panel h3{font-size:16px;margin:0 0 8px}
+.content[data-page="source"] .source-panel p{font-size:12px;color:#5f5a50;line-height:1.85;margin:0 0 16px}
+.content[data-page="source"] .source-pill{display:inline-flex;border:1px solid #dacbad;border-radius:99px;background:#f7efdf;padding:6px 12px;font-size:12px;font-weight:700;margin-bottom:18px}
+.content[data-page="source"] .source-pill.good{border-color:#abd5c0;background:#ebf5ee;color:#1c6650!important}
+.content[data-page="source"] .source-form{display:grid;gap:14px;max-width:550px}
+.content[data-page="source"] .source-form label{display:block;font-size:12px;font-weight:650;margin-bottom:6px}
+.content[data-page="source"] .source-form input,.content[data-page="source"] .source-form select{height:43px;width:100%;border:1px solid #ded7cb;border-radius:9px;background:white;padding:0 12px;font-size:14px;box-sizing:border-box;color:#242424}
+.content[data-page="source"] .source-form input:focus,.content[data-page="source"] .source-form select:focus{outline:3px solid rgba(172,145,91,.18);border-color:#ad8d55}
+.content[data-page="source"] .source-actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:9px}
+.content[data-page="source"] .source-actions button{height:43px;border:1px solid #d2c5b1;background:#fffdf9;border-radius:10px;padding:0 14px;cursor:pointer;font-size:13px;font-weight:650}
+.content[data-page="source"] .source-actions button.primary-action{background:#a3895a;border-color:#a3895a;color:#fff!important}
+.content[data-page="source"] .source-actions button:disabled{opacity:.5;cursor:wait}
+.content[data-page="source"] .source-guide{border:1px solid #e6dece;background:#f8f6ef;border-radius:10px;padding:15px;font-size:12px;line-height:1.85}
+.content[data-page="source"] .source-note{font-size:11px;color:#756c5e;line-height:1.65}
+@media(max-width:780px){.content[data-page="source"] .source-grid{grid-template-columns:1fr}.content[data-page="source"] .source-panel{min-height:auto}.content[data-page="source"]{overflow-y:auto}}
 </style>
 <!-- Tabler Icons license
 MIT License
@@ -234,7 +254,7 @@ unicode: "eb20"
   <path d="M10.325 4.317c.426 -1.756 2.924 -1.756 3.35 0a1.724 1.724 0 0 0 2.573 1.066c1.543 -.94 3.31 .826 2.37 2.37a1.724 1.724 0 0 0 1.065 2.572c1.756 .426 1.756 2.924 0 3.35a1.724 1.724 0 0 0 -1.066 2.573c.94 1.543 -.826 3.31 -2.37 2.37a1.724 1.724 0 0 0 -2.572 1.065c-.426 1.756 -2.924 1.756 -3.35 0a1.724 1.724 0 0 0 -2.573 -1.066c-1.543 .94 -3.31 -.826 -2.37 -2.37a1.724 1.724 0 0 0 -1.065 -2.572c-1.756 -.426 -1.756 -2.924 0 -3.35a1.724 1.724 0 0 0 1.066 -2.573c-.94 -1.543 .826 -3.31 2.37 -2.37c1 .608 2.296 .07 2.572 -1.065" />
   <path d="M9 12a3 3 0 1 0 6 0a3 3 0 0 0 -6 0" />
 </svg>
-</span><span>群组设置</span></button></nav><div class="side-foot"><div class="status-line"><span id="sideDot" class="dot"></span><span id="sideCloud">云端 API 检测中</span></div><div class="status-line"><span id="collectorDot" class="dot"></span><span id="sideCollector">采集器未运行</span></div><button id="logoutBtn" class="logout" title="退出登录" aria-label="退出登录"><!--
+</span><span>群组设置</span></button><button data-page="source"><span class="ico"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="23" height="23" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="18" height="14" rx="2"/><path d="M8 6V4a4 4 0 0 1 8 0v2"/><path d="m9 13 2 2 4-4"/></svg></span><span>来源群</span></button></nav><div class="side-foot"><div class="status-line"><span id="sideDot" class="dot"></span><span id="sideCloud">云端 API 检测中</span></div><div class="status-line"><span id="collectorDot" class="dot"></span><span id="sideCollector">采集器未运行</span></div><button id="logoutBtn" class="logout" title="退出登录" aria-label="退出登录"><!--
 tags: [logout, log-out, sign-out, signout, exit, leave, arrow-right-from-bracket, account]
 category: System
 version: "1.4"
@@ -270,7 +290,7 @@ function markDirty(section){ui.edited.add(section);ui.dirty=true;}
 function clearDirty(section){ui.edited.delete(section);ui.dirty=ui.edited.size>0;if(section==='intervals')ui.intervalDraft=null;}
 const API='https://nuvexa-ops-bridge.onrender.com';
 const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
-const state={token:sessionStorage.getItem('nuvexa_ops_token')||'',page:'dashboard',data:{},timer:null};
+const state={token:sessionStorage.getItem('nuvexa_ops_token')||'',page:'dashboard',data:{},timer:null,source:{connected:false,stage:'',enabled:false},sourceGroups:[]};
 const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 const num=v=>Number.isFinite(Number(v))?Number(v).toLocaleString('zh-CN'):'—';
 const pct=v=>Number.isFinite(Number(v))?Number(v).toFixed(1)+'%':'—';
@@ -283,9 +303,9 @@ function logout(){state.token='';sessionStorage.removeItem('nuvexa_ops_token');c
 function loginSuccess(token){state.token=token;sessionStorage.setItem('nuvexa_ops_token',token);$('#loginView').classList.add('hidden');$('#appView').classList.remove('hidden');setPage(location.hash.replace('#','')||'dashboard');refresh();clearInterval(state.timer);state.timer=setInterval(refresh,4000)}
 $('#loginForm').addEventListener('submit',async e=>{e.preventDefault();const btn=$('#loginBtn');btn.disabled=true;$('#loginError').textContent='';try{const j=await api('/v1/auth/login',{method:'POST',body:JSON.stringify({username:$('#username').value.trim(),password:$('#password').value})});loginSuccess(j.token)}catch(err){$('#loginError').textContent=err instanceof TypeError?'云端服务暂时不可用，请稍后重试。':(err.message||'登录失败，请稍后重试。')}finally{btn.disabled=false}});
 $('#logoutBtn').addEventListener('click',logout);$$('.nav button').forEach(b=>b.addEventListener('click',()=>setPage(b.dataset.page)));
-function setPage(page){if(page!==state.page){if(ui.dirty&&!confirm('有未保存的修改，确定离开当前页面？'))return;ui.dirty=false;ui.edited.clear();ui.intervalDraft=null;}if(!['dashboard','accounts','group'].includes(page))page='dashboard';state.page=page;location.hash=page;$$('.nav button').forEach(b=>b.classList.toggle('active',b.dataset.page===page));$('#topPageTitle').textContent={dashboard:'运营大屏',accounts:'账号管理',group:'群组与转发设置'}[page];render()}
+function setPage(page){if(page!==state.page){if(ui.dirty&&!confirm('有未保存的修改，确定离开当前页面？'))return;ui.dirty=false;ui.edited.clear();ui.intervalDraft=null;}if(!['dashboard','accounts','group','source'].includes(page))page='dashboard';state.page=page;location.hash=page;$$('.nav button').forEach(b=>b.classList.toggle('active',b.dataset.page===page));$('#topPageTitle').textContent={dashboard:'运营大屏',accounts:'账号管理',group:'群组与转发设置',source:'连接来源群'}[page];render();if(page==='source')void loadSource()}
 window.addEventListener('hashchange',()=>setPage(location.hash.replace('#','')));
-async function refresh(){if(!state.token||ui.dirty||document.activeElement?.id==='taskSearch')return;try{state.data=await api('/v1/dashboard');updateChrome();render()}catch(err){toast(err.message,true)}}
+async function refresh(){if(!state.token||ui.dirty||state.page==='source'||document.activeElement?.id==='taskSearch')return;try{state.data=await api('/v1/dashboard');updateChrome();render()}catch(err){toast(err.message,true)}}
 function updateChrome(){const d=state.data||{},c=d.collector||{},s=d.settings||{},q=d.queue||{};$('#sideDot').classList.add('on');$('#sideCloud').textContent='云端 API 在线';$('#collectorDot').classList.toggle('on',c.running===true);$('#sideCollector').textContent=c.running?'采集器运行中':'采集器未运行';$('#cloudPill').className='pill ok';$('#cloudPill').textContent='Cloud API 在线';$('#collectorPill').className='pill '+(c.running?'ok':'warn');$('#collectorPill').textContent='采集器 '+(c.running?'运行中':'待接入');$('#publishPill').className='pill '+(s.globalPublishEnabled?'ok':'bad');$('#publishPill').textContent=s.globalPublishEnabled?'允许发布':'全局停止';$('#queuePill').className='pill '+(q.paused?'bad':'ok');$('#queuePill').textContent=q.paused?'队列暂停':'严格顺序运行'}
 function metric(label,value,cls=''){return '<div class="metric"><span>'+label+'</span><strong class="'+cls+'">'+value+'</strong></div>'}
 function energy(s={}){const vals=[+s.success||0,+s.processing||0,+s.failed||0,+s.waiting||0,+s.verifying||0],total=vals.reduce((a,b)=>a+b,0)||1;return '<div class="energy"><i class="success" style="width:'+(vals[0]/total*100)+'%"></i><i class="processing" style="width:'+(vals[1]/total*100)+'%"></i><i class="failed" style="width:'+(vals[2]/total*100)+'%"></i><i class="waiting" style="width:'+(vals[3]/total*100)+'%"></i><i class="verify" style="width:'+(vals[4]/total*100)+'%"></i></div>'}
@@ -310,7 +330,68 @@ function groupPage(){const d=state.data||{},groups=d.groups||[],st=d.settings||{
 '<section class="panel"><div class="panel-title"><h3>发送间隔</h3><span>默认 2–3 秒</span></div><div class="form-grid two"><div class="field"><label for="crossMin">同角色跨群 最小秒</label><input id="crossMin" type="number" min="0" step="0.1" value="'+sec(st.crossGroupInterval?.minMs)+'"></div><div class="field"><label for="crossMax">同角色跨群 最大秒</label><input id="crossMax" type="number" min="0" step="0.1" value="'+sec(st.crossGroupInterval?.maxMs)+'"></div><div class="field"><label for="sameMin">同角色同群多条 最小秒</label><input id="sameMin" type="number" min="0" step="0.1" value="'+sec(st.sameGroupInterval?.minMs)+'"></div><div class="field"><label for="sameMax">同角色同群多条 最大秒</label><input id="sameMax" type="number" min="0" step="0.1" value="'+sec(st.sameGroupInterval?.maxMs)+'"></div></div><div class="toolbar section-gap"><button id="saveIntervals" class="btn green">保存时间区间</button></div><div class="banner section-gap">每次等待时间在用户设置区间内随机取值。当前任务未确认完成时，计时不会让后续账号越过。</div></section></div>'+
 '<div class="grid2 section-gap"><section class="panel"><div class="panel-title"><h3>全局发布</h3><span>总开关</span></div><div class="group-row" style="grid-template-columns:1fr auto"><div><b>'+(st.globalPublishEnabled?'允许发布':'全局停止')+'</b><div class="sync-note">关闭后不再派发新的 WhatsApp 发送任务。</div></div><button id="globalToggle" aria-label="全局发布开关" class="switch '+(st.globalPublishEnabled?'on':'')+'"></button></div></section><section class="panel"><div class="panel-title"><h3>路由规则</h3><span>STRICT ORDER</span></div><div class="route-flow"><div class="flow-node">Telegram 信息采集器</div><div class="flow-arrow">↓</div><div class="flow-node">识别角色/编号 + 只取图片与罗马尼亚语</div><div class="flow-arrow">↓</div><div class="flow-node">按原始消息顺序进入唯一队列</div><div class="flow-arrow">↓</div><div class="flow-node">对应账号 → 已开启群组逐个 ACK</div></div></section></div>'}
 function groupRow(g,i){return '<div class="group-row" data-group-id="'+esc(g.id)+'"><input class="grp-order" type="number" min="1" value="'+num(g.order||i+1)+'"><input class="grp-name" value="'+esc(g.name||'')+'" placeholder="群组名称"><input class="grp-id" value="'+esc(g.id||'')+'" placeholder="WhatsApp 群组 ID"><button aria-label="启用群组" class="switch '+(g.enabled?'on':'')+' grp-toggle"></button><button class="btn red remove-group">删除</button></div>'}
-function render(){if($('#appView').classList.contains('hidden'))return;$('#pageHost').dataset.page=state.page;$('#pageHost').innerHTML=state.page==='accounts'?accountsPage():state.page==='group'?groupPage():dashboard();bindDynamic();bindWorkspace()}
+
+function sourcePage(){
+  const x=state.source||{},connected=x.connected===true;
+  const st=connected?(x.enabled?'正在监听指定群组':'已授权 · 未启用采集'):x.stage==='code'?'等待登录验证码':x.stage==='password'?'需要两步验证密码':'尚未连接';
+  let connection='';
+  if(connected){
+    connection='<p>Telegram 账号后四位：'+esc(x.phoneSuffix||'—')+'。会话仅加密存储在服务器，不展示在网页。</p><div class="source-actions"><button id="sourceRefresh">刷新状态</button><button id="sourceDisconnect">断开并撤销当前采集会话</button></div>';
+  }else if(x.stage==='code'){
+    connection='<p>验证码由 Telegram 发送到你已登录的应用或手机号。只在此页面输入，不要发到聊天中。</p><form class="source-form" id="sourceCodeForm"><div><label for="sourceCode">Telegram 登录验证码</label><input id="sourceCode" type="text" inputmode="numeric" autocomplete="one-time-code" minlength="4" maxlength="8" required></div><div class="source-actions"><button class="primary-action" type="submit">确认验证码</button></div></form>';
+  }else if(x.stage==='password'){
+    connection='<p>你的 Telegram 账号开启了两步验证，请在此安全登录页输入密码。密码不会保存。</p><form class="source-form" id="sourcePasswordForm"><div><label for="sourcePassword">Telegram 两步验证密码</label><input id="sourcePassword" type="password" autocomplete="off" required></div><div class="source-actions"><button class="primary-action" type="submit">完成授权</button></div></form>';
+  }else{
+    connection='<p>使用 Telegram 管理员个人账号授权连接群组，不需要 Telegram 机器人或任何翻译密钥。</p><form class="source-form" id="sourceBeginForm"><div><label for="sourceApiId">Telegram API ID</label><input id="sourceApiId" type="number" min="1" placeholder="从 my.telegram.org 获取" required></div><div><label for="sourceApiHash">Telegram API Hash</label><input id="sourceApiHash" type="password" autocomplete="off" placeholder="只用于安全授权，不显示在后台" required></div><div><label for="sourcePhone">手机号码（国际区号）</label><input id="sourcePhone" type="tel" autocomplete="tel" placeholder="+60..." required></div><div class="source-actions"><button type="submit" class="primary-action">发送 Telegram 验证码</button></div></form><p class="source-note">API ID 与 API Hash 可在 Telegram 官方 my.telegram.org/apps 创建一次。授权后保存的是加密会话，不必重复填写。</p>';
+  }
+  let selection='';
+  if(connected){
+    const options=(state.sourceGroups||[]).map(g=>'<option value="'+esc(g.id)+'" '+(g.id===x.selectedGroupId?'selected':'')+'>'+esc(g.title)+' · '+esc(g.id)+'</option>').join('');
+    selection='<div class="source-form"><p>请选择你自己管理并授权采集的来源群。开始前需先连接 WhatsApp 发送账号及目标群组。默认不采集。</p><div class="source-actions"><button id="sourceList">读取可访问群组列表</button></div>'+(options?'<div><label for="sourceChatId">来源群组</label><select id="sourceChatId">'+options+'</select></div><div class="source-actions"><button id="sourceSave">仅保存来源群</button><button id="sourceEnable" class="primary-action">启用该群采集</button></div>':'<div class="source-guide">尚未读取群组列表。点击上方按钮，加载此 Telegram 账号可访问的群组。</div>')+'<div class="source-actions"><button id="sourcePause">暂停采集</button></div></div>';
+  }else{
+    selection='<div class="source-guide">第一步完成管理员账号授权，第二步选择来源群，第三步确认 WhatsApp 接收端已经连接后再启用采集。<strong>没有授权和目标群时不会自动发布。</strong></div>';
+  }
+  return '<div class="page-head"><div><h1>连接来源群</h1><p>一次授权 · 指定来源 · 已有译文直接提取 · 中文禁止外发</p></div><span class="sync-note">Telegram 管理员账号连接</span></div>'+
+    '<div class="source-grid"><section class="source-panel"><h3>01 · 管理员账号授权</h3><span class="source-pill '+(connected?'good':'')+'">'+esc(st)+'</span>'+connection+'</section>'+
+    '<section class="source-panel"><h3>02 · 选择来源群</h3><span class="source-pill '+(x.enabled?'good':'')+'">'+(x.enabled?'监听已启用':'采集默认关闭')+'</span><p>当前选择：'+esc(x.selectedGroupName||'尚未选择')+'</p>'+selection+'</section></div>'+
+    '<div class="source-guide section-gap">转发规则：图片仅在原消息确实带图时原样转发，图片不计文字发送间隔；正文只提取中文下方已经存在的罗马尼亚语及英文译文；未识别角色或译文缺失时不会发送中文。</div>';
+}
+async function loadSource(){
+  if(!state.token||state.page!=='source')return;
+  try{const result=await api('/v1/source/status');state.source=result.source||{};if(state.page==='source')render()}catch(e){toast('来源连接状态获取失败：'+e.message,true)}
+}
+function sourceFormBusy(form,busy){form?.querySelectorAll('button').forEach(b=>{b.disabled=busy})}
+async function sourceCommand(path,data){const result=await api(path,{method:'POST',body:JSON.stringify(data||{})});if(result.source)state.source=result.source;else if(result.stage)state.source={...state.source,stage:result.stage};await loadSource();return result}
+function sourceBind(){
+  const form=$('#sourceBeginForm');
+  if(form)form.onsubmit=async e=>{
+    e.preventDefault();sourceFormBusy(form,true);
+    try{await sourceCommand('/v1/source/start',{apiId:Number($('#sourceApiId').value),apiHash:$('#sourceApiHash').value.trim(),phone:$('#sourcePhone').value.trim()});toast('验证码已发送，请在后台输入')}catch(err){toast(err.message,true);sourceFormBusy(form,false)}
+  };
+  const code=$('#sourceCodeForm');
+  if(code)code.onsubmit=async e=>{
+    e.preventDefault();sourceFormBusy(code,true);
+    try{await sourceCommand('/v1/source/code',{code:$('#sourceCode').value.trim()});toast('Telegram 授权步骤已更新')}catch(err){toast(err.message,true);sourceFormBusy(code,false)}
+  };
+  const pass=$('#sourcePasswordForm');
+  if(pass)pass.onsubmit=async e=>{
+    e.preventDefault();sourceFormBusy(pass,true);
+    try{await sourceCommand('/v1/source/password',{password:$('#sourcePassword').value});toast('Telegram 账号授权完成')}catch(err){toast(err.message,true);sourceFormBusy(pass,false)}
+  };
+  $('#sourceList')?.addEventListener('click',async()=>{
+    try{const result=await api('/v1/source/groups');state.sourceGroups=result.items||[];render();toast('已获取 '+state.sourceGroups.length+' 个可选群组')}catch(e){toast(e.message,true)}
+  });
+  async function select(enabled){
+    const id=$('#sourceChatId')?.value;if(!id){toast('请先读取并选择一个群组',true);return}
+    try{await sourceCommand('/v1/source/select',{chatId:id,enabled});toast(enabled?'来源群采集已启用':'来源群已保存，尚未启用')}catch(e){toast(e.message,true)}
+  }
+  $('#sourceSave')?.addEventListener('click',()=>select(false));
+  $('#sourceEnable')?.addEventListener('click',()=>select(true));
+  $('#sourcePause')?.addEventListener('click',async()=>{try{await sourceCommand('/v1/source/pause');toast('已暂停来源采集')}catch(e){toast(e.message,true)}});
+  $('#sourceDisconnect')?.addEventListener('click',async()=>{if(!confirm('确定断开 Telegram 管理员采集会话？需重新授权才能连接。'))return;try{await sourceCommand('/v1/source/disconnect');state.sourceGroups=[];toast('来源连接已断开')}catch(e){toast(e.message,true)}});
+  $('#sourceRefresh')?.addEventListener('click',()=>loadSource());
+}
+function render(){if($('#appView').classList.contains('hidden'))return;$('#pageHost').dataset.page=state.page;$('#pageHost').innerHTML=state.page==='accounts'?accountsPage():state.page==='group'?groupPage():state.page==='source'?sourcePage():dashboard();bindDynamic();bindWorkspace();if(state.page==='source')sourceBind()}
 function bindDynamic(){
  if(state.page==='accounts'){
    $('#seedRoles')?.addEventListener('click',()=>{captureDraft();const current=state.data.accounts||[];if(current.length&&!confirm('保留现有辅助号并补齐固定角色槽位？'))return;const keep=current.filter(a=>a.kind==='AUXILIARY');state.data.accounts=[
