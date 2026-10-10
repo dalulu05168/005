@@ -1,6 +1,6 @@
 import { createServer } from 'node:http';
 import { readFile } from 'node:fs/promises';
-import { createHmac, randomUUID, timingSafeEqual } from 'node:crypto';
+import { createHmac, createHash, randomBytes, randomUUID, timingSafeEqual } from 'node:crypto';
 import { createClient } from 'redis';
 import { createTelegramSource } from './telegram-user-source.mjs';
 import { normalizeTelegramUpdate, textWithoutRole, extractPreparedText, identifySourceRole } from './telegram-collector.mjs';
@@ -244,6 +244,18 @@ function logicalSenderKey(task){
 }
 const ACCOUNT_ALIVE_MS=120000;
 const QR_WORKER_KEY='nuvexa:wa:runtime:worker';
+const DEVICE_CONNECTOR_TOKEN_KEY='nuvexa:wa:connector:token-sha256:v1';
+const DEVICE_CONNECTOR_ENROLL_KEY=code=>'nuvexa:wa:connector:enroll:'+code;
+const CONNECTOR_TOKEN_TTL=90*86400;
+async function connectorAuth(req){
+  if(agentAuth(req))return true;
+  const secret=String(req.headers['x-nuvexa-connector-token']||'').trim();
+  if(!/^nw_[a-f0-9]{64}$/.test(secret))return false;
+  const stored=await redis.get(DEVICE_CONNECTOR_TOKEN_KEY);
+  if(!stored||!/^[a-f0-9]{64}$/.test(stored))return false;
+  const presented=createHash('sha256').update(secret).digest();
+  return timingSafeEqual(presented,Buffer.from(stored,'hex'));
+}
 const qrKey=id=>'nuvexa:wa:qr:'+id;
 const connectKey=id=>'nuvexa:wa:connect:'+id;
 function accountOnline(a){
@@ -803,9 +815,31 @@ const server=createServer(async(req,res)=>{
     }
 
 
+
+    // A logged-in admin pairs the local Windows connector with a one-use short-
+    // lived code. The worker receives a scoped token, NOT the global AGENT_KEY.
+    if(url.pathname==='/v1/worker/enrollment'&&req.method==='POST'){
+      if(!userAuth(req))return send(res,401,{error:'ADMIN_AUTH_REQUIRED'});
+      const code=randomBytes(12).toString('hex').toUpperCase();
+      await redis.set(DEVICE_CONNECTOR_ENROLL_KEY(code),'PENDING',{EX:600});
+      return send(res,200,{code,expiresIn:600,scope:'ACCOUNT_QR_AND_HEARTBEAT_ONLY'});
+    }
+    if(url.pathname==='/v1/worker/enrollment/claim'&&req.method==='POST'){
+      const input=await body(req);
+      const code=safeString(input.code,50).toUpperCase().replace(/[\s-]/g,'');
+      if(!/^[A-F0-9]{24}$/.test(code))return send(res,400,{error:'INVALID_ENROLLMENT_CODE'});
+      const pairing=await redis.getDel(DEVICE_CONNECTOR_ENROLL_KEY(code));
+      if(pairing!=='PENDING')return send(res,409,{error:'PAIRING_CODE_EXPIRED_OR_USED'});
+      const token='nw_'+randomBytes(32).toString('hex');
+      const hashed=createHash('sha256').update(token).digest('hex');
+      await redis.set(DEVICE_CONNECTOR_TOKEN_KEY,hashed,{EX:CONNECTOR_TOKEN_TTL});
+      return send(res,200,{token,expiresIn:CONNECTOR_TOKEN_TTL,
+        scope:'ACCOUNT_QR_AND_HEARTBEAT_ONLY'});
+    }
+
     /* QR is supplied by a real authenticated worker, never synthesized by the dashboard. */
     if(url.pathname==='/v1/worker/accounts/heartbeat'&&req.method==='POST'){
-      if(!agentAuth(req))return send(res,401,{error:'AGENT_AUTH_REQUIRED'});
+      if(!await connectorAuth(req))return send(res,401,{error:'DEVICE_CONNECTOR_AUTH_REQUIRED'});
       const input=await body(req);
       const workerId=safeString(input.workerId,120);
       if(!workerId)return send(res,400,{error:'WORKER_ID_REQUIRED'});
@@ -829,7 +863,7 @@ const server=createServer(async(req,res)=>{
       });
     }
     if(url.pathname==='/v1/worker/accounts/requests'&&req.method==='GET'){
-      if(!agentAuth(req))return send(res,401,{error:'AGENT_AUTH_REQUIRED'});
+      if(!await connectorAuth(req))return send(res,401,{error:'DEVICE_CONNECTOR_AUTH_REQUIRED'});
       const state=await getState(),items=[];
       for(const a of state.accounts){
         const pending=await redis.get(connectKey(a.id));
@@ -838,7 +872,7 @@ const server=createServer(async(req,res)=>{
       return send(res,200,{items});
     }
     if(url.pathname==='/v1/worker/accounts/qr'&&req.method==='POST'){
-      if(!agentAuth(req))return send(res,401,{error:'AGENT_AUTH_REQUIRED'});
+      if(!await connectorAuth(req))return send(res,401,{error:'DEVICE_CONNECTOR_AUTH_REQUIRED'});
       const input=await body(req),accountId=safeString(input.accountId,120);
       if(!accountId||!await redis.get(connectKey(accountId)))return send(res,404,{error:'NO_PENDING_CONNECT_REQUEST'});
       const qr=String(input.qrDataUrl||'');
