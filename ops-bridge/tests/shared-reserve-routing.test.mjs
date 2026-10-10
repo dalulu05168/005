@@ -74,3 +74,18 @@ test('after a confirmed unsent primary send, first shared reserve is selected',(
  excludeConfirmedNotSent(target,'member45');
  assert.equal(selectSender(s,member,target).account.id,'reserve1');
 });
+
+test('unknown role code never falls through to unassigned shared reserve',()=>{
+ const s=build();
+ const result=selectSender(s,{role:'AUXILIARY',auxCode:'70'},{});
+ assert.equal(result.blocked,true);
+ assert.equal(result.reason,'ROLE_ACCOUNT_NOT_MAPPED');
+});
+test('one code assigned to multiple main accounts is rejected before dispatch',()=>{
+ const s=build({member:'ONLINE'});
+ s.accounts.push({id:'duplicate45',kind:'AUXILIARY',slot:'PRIMARY',
+   auxCode:'46',personaCodes:['45'],status:'ONLINE'});
+ const result=selectSender(s,{role:'AUXILIARY',auxCode:'45'},{});
+ assert.equal(result.blocked,true);
+ assert.equal(result.reason,'DUPLICATE_PERSONA_ACCOUNT_MAPPING');
+});
