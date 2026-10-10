@@ -2,11 +2,11 @@
 
 ## 状态与边界
 
-采集器已接入 `ops-bridge/server.mjs`，与现有 Render Web Service 共用一个进程，**默认关闭**。缺少必需环境变量时，Webhook 返回 503，不会读取 Telegram 消息。请勿将机器人令牌、Webhook Secret 或 DeepL 密钥写入 GitHub、截图或聊天记录。
+采集接口已接入 `ops-bridge/server.mjs`，与现有 Render Web Service 共用一个进程。**不强制使用 Telegram 或外部翻译服务**。通用来源适配器可以调用 `POST /v1/collector/ingest`，通过现有 `X-Nuvexa-Agent-Key` 鉴权。只有选择使用 Telegram Bot 时，才需要配置 Telegram 凭据；未配置时 Telegram Webhook 返回 503，不影响通用采集接口。请勿将机器人令牌、Webhook Secret 写入 GitHub、截图或聊天记录。
 
-这套模块接收**用户指定的 Telegram 群组**的文本和图片，按“图片任务 / 文字任务”分别推入现有队列；它**不**负责连接、登录或操作 WhatsApp。实际 WhatsApp 发图和发文需要独立 worker 实现并调用 `/v1/worker/lease`、`/v1/worker/authorize`、`/v1/worker/ack`；未经验证不能把后端 ACK 当作真实发出。
+模块通过授权来源适配器接收群内的文本和图片，按“图片任务 / 文字任务”分别推入现有队列；Telegram 只是可选来源。**它不负责连接、登录或操作 WhatsApp。**实际 WhatsApp 发图和发文需要独立 worker 实现并调用 `/v1/worker/lease`、`/v1/worker/authorize`、`/v1/worker/ack`；未经验证不能把后端 ACK 当作真实发出。
 
-## 配置 Telegram Bot
+## Telegram 来源（可选）
 
 1. 在 Telegram 找 **@BotFather**，使用 `/newbot` 创建专用机器人，私下保存其 **Bot Token**。不要把 Token 发给任何聊天机器人。
 2. 把新机器人加入需要采集的源 Telegram 群组。希望读取普通群消息时，使用 BotFather 的 `/setprivacy` 选择 **Disable**，必要时从群组移除后重新加入；或者按 Telegram 权限要求把机器人设为群组管理员。
@@ -20,8 +20,6 @@
 | `TELEGRAM_SOURCE_CHAT_IDS` | 允许采集的源群组 chat ID，多个用英文逗号隔开，必填 |
 | `TELEGRAM_AUTO_WEBHOOK` | `true` 允许启动时自动向 Telegram 注册 Webhook；默认关闭 |
 | `TELEGRAM_PUBLIC_ORIGIN` | 可选，默认 `https://nuvexa-ops-bridge.onrender.com` |
-| `DEEPL_AUTH_KEY` | DeepL 翻译 API 密钥；有中文原文需要翻译时必填 |
-| `DEEPL_API_ENDPOINT` | 可选；DeepL 免费方案默认 `https://api-free.deepl.com/v2/translate`，Pro 方案用 `https://api.deepl.com/v2/translate` |
 
 配置后启用 `TELEGRAM_AUTO_WEBHOOK=true`，在 Render 部署/重启完成时注册：
 
@@ -29,14 +27,29 @@
 
 Telegram Webhook 验证 `X-Telegram-Bot-Api-Secret-Token`，非白名单群组更新直接忽略。图片下载由受 Agent Key 保护的 `GET /v1/worker/media?ref=tgfile:...` 提供，不公开 Telegram Bot Token，也不读取图片内容。
 
+## 通用采集（不需要 Telegram）
+
+调用 `POST https://nuvexa-ops-bridge.onrender.com/v1/collector/ingest`，请求头携带 `X-Nuvexa-Agent-Key`，正文例子：
+
+```json
+{
+  "sourceChatId": "authorized-source-group",
+  "sourceMessageId": "message-001",
+  "sourceSenderId": "source-actor-id",
+  "text": "助理\n今日市场上涨。\n\nPiața a crescut astăzi. Good morning!"
+}
+```
+
+字段 `text` 里上面是中文、下面是现成译文，无需 `romanianText`，系统自动提取下方译文。分开发送的图片通过 `mediaRef` 提供不可变图片引用，图片不计入文字间隔。同一个来源同一条消息使用稳定的消息 ID，避免重复发送。来源适配器仍须另行连接到实际群消息系统，接口上线不代表已经接入真实聊天消息。
+
 ## 业务规则
 
 - 识别目前支持的角色前缀：`助理`、`教授`、`辅助 01` 等（也可由现有 API 显式传入 role）。如果真实群里使用其他人名标签，需要扩展角色映射；**不能随意猜身份**。
 - 图片只有在能与同群的角色文字准确匹配时才排队；没有角色的独立图片先短暂暂存，不自行外发。
 - 图片与译文是不同任务。**图片无需文字间隔，也不更新文字间隔时钟**；文字按原本的群组间隔发送。
 - 图片保持原始文件信息，不进行 OCR/视觉识别，且不计入翻译调用。
-- 中文原文必须先翻译为罗马尼亚语。英语可以与罗马尼亚语混合，最终文字禁止出现中文汉字及中文标点。后端在入队、任务领取、发送前授权三个阶段检查。
-- 没有 DeepL Key 时，仅不包含中文的原文可以直接进入文本队列；不能将中文源消息原样外发。
+- 中文原文之后应已经附带罗马尼亚语或英文译文。系统只提取**最后一段中文之后**的非中文内容，不调用任何翻译 API。英语可以与罗马尼亚语混合，最终外发文字禁止出现中文汉字或中文标点。后端在入队、任务领取、发送前授权三个阶段检查。
+- 没有现成的非中文译文时，必须阻断文字消息；不能将中文原文直接外发。不含中文的消息可以直接进入文字队列。
 - 如果图片无效、消息不含角色、同一时刻存在多个无法区分的候选图片，须阻断或等待，不能错配或伪造。
 - Webhook 处理失败时 Telegram 会重试，后端依据来源群和消息 ID 对图片/文字分开去重。
 
@@ -45,11 +58,11 @@ Telegram Webhook 验证 `X-Telegram-Bot-Api-Secret-Token`，非白名单群组�
 1. Render 服务正常、Redis 可连接，日志有 `Telegram webhook registration OK`，检查 Telegram `getWebhookInfo` 指向本服务。
 2. 白名单群组文字进入队列，非白名单群组被忽略。
 3. 一张图片位于角色文字上方：图片不分析，先生成 IMAGE 任务；角色译文另生成 TEXT 任务。
-4. 中文、英文混写原文翻成罗马尼亚语；发送前检查禁止中文外发。
+4. 中文上方段落只用于角色和内容分段，下方已经准备好的译文原样取出；发送前检查禁止中文外发。
 5. 图片发送不重置或增加文字冷却时间。
 6. WhatsApp worker 实际拉取图片字节、发至**用户明确授权的测试群**并确认收到；失败时不能 ACK 冒充成功。
 7. 在实际外发运行之前，先用独立测试群完成完整端到端验证，切勿以模拟回执代替。
 
 ## 注意
 
-不同 Telegram 图片可能以 album/media_group 发出；目前主要覆盖单图和后续角色消息，多图相册需要另外验证。消息归属不确定时不强行匹配。翻译 API 可能产生费用；需要检查额度。禁止把采集的群消息或个人隐私数据发到未获授权的群组。
+不同 Telegram 图片可能以 album/media_group 发出；目前主要覆盖单图和后续角色消息，多图相册需要另外验证。消息归属不确定时不强行匹配。不要求翻译服务或其密钥。禁止把采集的群消息或个人隐私数据发到未获授权的群组。
