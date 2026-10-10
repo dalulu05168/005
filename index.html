@@ -313,6 +313,15 @@ body:has(#appView:not(.hidden)){
 #appView .account-role-filters .btn.active{background:#eff8f6;color:var(--green)!important;border-color:var(--green)}
 #appView .acc-connect{white-space:nowrap}
 
+
+#waQrOverlay{position:fixed;inset:0;background:rgba(20,34,32,.45);display:grid;place-items:center;z-index:200;padding:14px}
+#waQrOverlay[hidden]{display:none}
+#waQrOverlay .wa-qr-dialog{background:#fff;max-width:420px;width:100%;border:1px solid var(--line);border-radius:14px;box-shadow:0 20px 70px rgba(0,0,0,.15);padding:26px;display:grid;gap:14px}
+#waQrOverlay .wa-qr-dialog h2{margin:0;font-size:20px;line-height:1.3;font-weight:600}
+#waQrOverlay .wa-qr-dialog p{margin:0;font-size:12px;line-height:1.7;color:var(--muted)}
+#waQrOverlay img{display:block;margin:auto;max-width:275px;width:100%;height:auto;aspect-ratio:1;border:1px solid var(--line);border-radius:8px}
+#waQrOverlay .qr-dialog-footer{display:flex;justify-content:flex-end}
+#waQrOverlay button{border-radius:6px;background:#fff;border:1px solid var(--line);padding:9px 16px;color:#242424;font-size:12px}
 </style>
 <!-- Tabler Icons license
 MIT License
@@ -436,7 +445,7 @@ unicode: "eba8"
 </button></div></aside>
   <main class="main"><header class="topbar"><div class="top-title"><strong id="topPageTitle">运营大屏</strong><span>Nuvexa Pro / Cloud Edition</span></div><div class="top-status"><span id="cloudPill" class="pill">Cloud API</span><span id="collectorPill" class="pill">采集器 —</span><span id="publishPill" class="pill">发布 —</span><span id="queuePill" class="pill">队列 —</span><span class="user-badge">Chennan118</span></div></header><div id="pageHost" class="content"></div></main>
 </div>
-</div><div id="toast" class="toast hidden"></div>
+</div><div id="waQrOverlay" hidden role="dialog" aria-modal="true" aria-labelledby="waQrTitle"><div class="wa-qr-dialog"><h2 id="waQrTitle">WhatsApp 扫码登录</h2><p id="waQrMessage">仅显示来自真实连接程序的二维码。</p><img id="waQrImage" hidden alt="WhatsApp 真实登录二维码"/><div class="qr-dialog-footer"><button id="waQrClose" type="button">关闭</button></div></div></div><div id="toast" class="toast hidden"></div>
 <script>
 // Icons from Tabler Icons (MIT), https://github.com/tabler/tabler-icons
 const ICONS={"search":"<!--\ncategory: System\ntags: [find, magnifier, magnifying-glass, lookup, zoom, explore, query, browse, search]\nversion: \"1.0\"\nunicode: \"eb1c\"\n-->\n<svg\n  xmlns=\"http://www.w3.org/2000/svg\"\n  width=\"24\"\n  height=\"24\"\n  viewBox=\"0 0 24 24\"\n  fill=\"none\"\n  stroke=\"currentColor\"\n  stroke-width=\"2\"\n  stroke-linecap=\"round\"\n  stroke-linejoin=\"round\"\n>\n  <path d=\"M3 10a7 7 0 1 0 14 0a7 7 0 1 0 -14 0\" />\n  <path d=\"M21 21l-6 -6\" />\n</svg>\n","cloud":"<!--\ntags: [weather, cloudy, cloud-storage, online, server, sync, internet, overcast, forecast, icloud, cloud]\ncategory: Weather\nversion: \"1.0\"\nunicode: \"ea76\"\n-->\n<svg\n  xmlns=\"http://www.w3.org/2000/svg\"\n  width=\"24\"\n  height=\"24\"\n  viewBox=\"0 0 24 24\"\n  fill=\"none\"\n  stroke=\"currentColor\"\n  stroke-width=\"2\"\n  stroke-linecap=\"round\"\n  stroke-linejoin=\"round\"\n>\n  <path d=\"M6.657 18c-2.572 0 -4.657 -2.007 -4.657 -4.483c0 -2.475 2.085 -4.482 4.657 -4.482c.393 -1.762 1.794 -3.2 3.675 -3.773c1.88 -.572 3.956 -.193 5.444 1c1.488 1.19 2.162 3.007 1.77 4.769h.99c1.913 0 3.464 1.56 3.464 3.486c0 1.927 -1.551 3.487 -3.465 3.487h-11.878\" />\n</svg>\n","users":"<!--\ntags: [people, group, team, persons, accounts, members, community, user, users]\ncategory: System\nversion: \"1.7\"\nunicode: \"ebf2\"\n-->\n<svg\n  xmlns=\"http://www.w3.org/2000/svg\"\n  width=\"24\"\n  height=\"24\"\n  viewBox=\"0 0 24 24\"\n  fill=\"none\"\n  stroke=\"currentColor\"\n  stroke-width=\"2\"\n  stroke-linecap=\"round\"\n  stroke-linejoin=\"round\"\n>\n  <path d=\"M5 7a4 4 0 1 0 8 0a4 4 0 1 0 -8 0\" />\n  <path d=\"M3 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2\" />\n  <path d=\"M16 3.13a4 4 0 0 1 0 7.75\" />\n  <path d=\"M21 21v-2a4 4 0 0 0 -3 -3.85\" />\n</svg>\n","list-details":"<!--\ntags: [list, details, list-view, items, rows, thumbnails, menu]\ncategory: Text\nversion: \"1.42\"\nunicode: \"ef40\"\n-->\n<svg\n  xmlns=\"http://www.w3.org/2000/svg\"\n  width=\"24\"\n  height=\"24\"\n  viewBox=\"0 0 24 24\"\n  fill=\"none\"\n  stroke=\"currentColor\"\n  stroke-width=\"2\"\n  stroke-linecap=\"round\"\n  stroke-linejoin=\"round\"\n>\n  <path d=\"M13 5h8\" />\n  <path d=\"M13 9h5\" />\n  <path d=\"M13 15h8\" />\n  <path d=\"M13 19h5\" />\n  <path d=\"M3 5a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v4a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1l0 -4\" />\n  <path d=\"M3 15a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v4a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1l0 -4\" />\n</svg>\n","arrows-sort":"<!--\ntags: [order, reorder, ascending, descending, up-down, pointer, navigation, direction, arrows, sort]\ncategory: Arrows\nversion: \"1.2\"\nunicode: \"eb5a\"\n-->\n<svg\n  xmlns=\"http://www.w3.org/2000/svg\"\n  width=\"24\"\n  height=\"24\"\n  viewBox=\"0 0 24 24\"\n  fill=\"none\"\n  stroke=\"currentColor\"\n  stroke-width=\"2\"\n  stroke-linecap=\"round\"\n  stroke-linejoin=\"round\"\n>\n  <path d=\"M3 9l4 -4l4 4m-4 -4v14\" />\n  <path d=\"M21 15l-4 4l-4 -4m4 4v-14\" />\n</svg>\n","brand-whatsapp":"<!--\ntags: [whatsapp, meta, messenger, messaging, chat, phone, message, logo, brand]\ncategory: Brand\nversion: \"1.13\"\nunicode: \"ec74\"\n-->\n<svg\n  xmlns=\"http://www.w3.org/2000/svg\"\n  width=\"24\"\n  height=\"24\"\n  viewBox=\"0 0 24 24\"\n  fill=\"none\"\n  stroke=\"currentColor\"\n  stroke-width=\"2\"\n  stroke-linecap=\"round\"\n  stroke-linejoin=\"round\"\n>\n  <path d=\"M3 21l1.65 -3.8a9 9 0 1 1 3.4 2.9l-5.05 .9\" />\n  <path d=\"M9 10a.5 .5 0 0 0 1 0v-1a.5 .5 0 0 0 -1 0v1a5 5 0 0 0 5 5h1a.5 .5 0 0 0 0 -1h-1a.5 .5 0 0 0 0 1\" />\n</svg>\n","brand-telegram":"<!--\ntags: [telegram, messenger, messaging, chat, message, paper-plane, logo, brand]\ncategory: Brand\nversion: \"1.9\"\nunicode: \"ec26\"\n-->\n<svg\n  xmlns=\"http://www.w3.org/2000/svg\"\n  width=\"24\"\n  height=\"24\"\n  viewBox=\"0 0 24 24\"\n  fill=\"none\"\n  stroke=\"currentColor\"\n  stroke-width=\"2\"\n  stroke-linecap=\"round\"\n  stroke-linejoin=\"round\"\n>\n  <path d=\"M15 10l-4 4l6 6l4 -16l-18 7l4 2l2 6l3 -4\" />\n</svg>\n","settings":"<!--\ntags: [cog, gear, preferences, configuration, options, config, setup, control, settings]\ncategory: System\nversion: \"1.0\"\nunicode: \"eb20\"\n-->\n<svg\n  xmlns=\"http://www.w3.org/2000/svg\"\n  width=\"24\"\n  height=\"24\"\n  viewBox=\"0 0 24 24\"\n  fill=\"none\"\n  stroke=\"currentColor\"\n  stroke-width=\"2\"\n  stroke-linecap=\"round\"\n  stroke-linejoin=\"round\"\n>\n  <path d=\"M10.325 4.317c.426 -1.756 2.924 -1.756 3.35 0a1.724 1.724 0 0 0 2.573 1.066c1.543 -.94 3.31 .826 2.37 2.37a1.724 1.724 0 0 0 1.065 2.572c1.756 .426 1.756 2.924 0 3.35a1.724 1.724 0 0 0 -1.066 2.573c.94 1.543 -.826 3.31 -2.37 2.37a1.724 1.724 0 0 0 -2.572 1.065c-.426 1.756 -2.924 1.756 -3.35 0a1.724 1.724 0 0 0 -2.573 -1.066c-1.543 .94 -3.31 -.826 -2.37 -2.37a1.724 1.724 0 0 0 -1.065 -2.572c-1.756 -.426 -1.756 -2.924 0 -3.35a1.724 1.724 0 0 0 1.066 -2.573c-.94 -1.543 .826 -3.31 2.37 -2.37c1 .608 2.296 .07 2.572 -1.065\" />\n  <path d=\"M9 12a3 3 0 1 0 6 0a3 3 0 0 0 -6 0\" />\n</svg>\n","clock":"<!--\ntags: [time, watch, hour, schedule, timer, clock-face, history, pending, wall-clock, minutes, clock]\ncategory: System\nversion: \"1.0\"\nunicode: \"ea70\"\n-->\n<svg\n  xmlns=\"http://www.w3.org/2000/svg\"\n  width=\"24\"\n  height=\"24\"\n  viewBox=\"0 0 24 24\"\n  fill=\"none\"\n  stroke=\"currentColor\"\n  stroke-width=\"2\"\n  stroke-linecap=\"round\"\n  stroke-linejoin=\"round\"\n>\n  <path d=\"M3 12a9 9 0 1 0 18 0a9 9 0 0 0 -18 0\" />\n  <path d=\"M12 7v5l3 3\" />\n</svg>\n","shield-check":"<!--\ntags: [security, protection, protect, verified, secured, safe, approved, check, tick, guard, safety, secure, shield]\ncategory: System\nversion: \"1.0\"\nunicode: \"eb22\"\n-->\n<svg\n  xmlns=\"http://www.w3.org/2000/svg\"\n  width=\"24\"\n  height=\"24\"\n  viewBox=\"0 0 24 24\"\n  fill=\"none\"\n  stroke=\"currentColor\"\n  stroke-width=\"2\"\n  stroke-linecap=\"round\"\n  stroke-linejoin=\"round\"\n>\n  <path d=\"M11.46 20.846a12 12 0 0 1 -7.96 -14.846a12 12 0 0 0 8.5 -3a12 12 0 0 0 8.5 3a12 12 0 0 1 -.09 7.06\" />\n  <path d=\"M15 19l2 2l4 -4\" />\n</svg>\n","logout":"<!--\ntags: [logout, log-out, sign-out, signout, exit, leave, arrow-right-from-bracket, account]\ncategory: System\nversion: \"1.4\"\nunicode: \"eba8\"\n-->\n<svg\n  xmlns=\"http://www.w3.org/2000/svg\"\n  width=\"24\"\n  height=\"24\"\n  viewBox=\"0 0 24 24\"\n  fill=\"none\"\n  stroke=\"currentColor\"\n  stroke-width=\"2\"\n  stroke-linecap=\"round\"\n  stroke-linejoin=\"round\"\n>\n  <path d=\"M14 8v-2a2 2 0 0 0 -2 -2h-7a2 2 0 0 0 -2 2v12a2 2 0 0 0 2 2h7a2 2 0 0 0 2 -2v-2\" />\n  <path d=\"M9 12h12l-3 -3\" />\n  <path d=\"M18 15l3 -3\" />\n</svg>\n","layout-dashboard":"<!--\ntags: [dashboard, layout, grid, admin, panel, overview, widgets, ui]\ncategory: Design\nversion: \"1.55\"\nunicode: \"f02c\"\n-->\n<svg\n  xmlns=\"http://www.w3.org/2000/svg\"\n  width=\"24\"\n  height=\"24\"\n  viewBox=\"0 0 24 24\"\n  fill=\"none\"\n  stroke=\"currentColor\"\n  stroke-width=\"2\"\n  stroke-linecap=\"round\"\n  stroke-linejoin=\"round\"\n>\n  <path d=\"M5 4h4a1 1 0 0 1 1 1v6a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1v-6a1 1 0 0 1 1 -1\" />\n  <path d=\"M5 16h4a1 1 0 0 1 1 1v2a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1v-2a1 1 0 0 1 1 -1\" />\n  <path d=\"M15 12h4a1 1 0 0 1 1 1v6a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1v-6a1 1 0 0 1 1 -1\" />\n  <path d=\"M15 4h4a1 1 0 0 1 1 1v2a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1v-2a1 1 0 0 1 1 -1\" />\n</svg>\n"};
@@ -472,6 +481,41 @@ function memberGroup(code){
  if(!Number.isInteger(n)||n<1||n>65)return '其他成员';
  return n<=20?'老男成员':n<=30?'老女成员':n<=50?'新男成员':'新女成员';
 }
+
+let waQrInterval=null;
+function stopWaQr(){
+ if(waQrInterval){clearInterval(waQrInterval);waQrInterval=null}
+ const overlay=$('#waQrOverlay');if(overlay)overlay.hidden=true;
+ const img=$('#waQrImage');if(img){img.hidden=true;img.removeAttribute('src')}
+}
+async function beginAccountConnect(accountId){
+ const account=(state.data?.accounts||[]).find(a=>a.id===accountId);
+ if(!account){toast('账号未找到',true);return}
+ try{
+   const r=await api('/v1/accounts/connect',{method:'POST',body:JSON.stringify({accountId})});
+   if(r.status!=='WAITING_FOR_REAL_QR')throw Error('无法启动扫码');
+   stopWaQr();
+   const layer=$('#waQrOverlay'),image=$('#waQrImage'),msg=$('#waQrMessage');
+   layer.hidden=false;$('#waQrTitle').textContent=accountLabel(account)+' · 扫码登录';
+   msg.textContent='等待真实连接器生成 WhatsApp 二维码…';
+   const poll=async()=>{
+      if(layer.hidden)return;
+      try{
+        const result=await api('/v1/accounts/qr?accountId='+encodeURIComponent(accountId));
+        if(result.status==='SCAN_READY'&&/^data:image\/png;base64,/.test(result.qrDataUrl||'')){
+          image.src=result.qrDataUrl;image.hidden=false;
+          msg.textContent='使用此账号对应的 WhatsApp 扫码授权。';
+        }else if(result.status==='CONNECTED'){
+          image.hidden=true;msg.textContent='设备已确认连接。号码后四位：'+(result.phoneLast4||'—');
+          if(waQrInterval){clearInterval(waQrInterval);waQrInterval=null}
+          await refresh();
+        }else{image.hidden=true;image.removeAttribute('src');msg.textContent='等待实际设备连接器返回二维码。不会生成虚假二维码。'}
+      }catch(e){image.hidden=true;msg.textContent='连接状态不可用：'+e.message}
+   };
+   await poll();waQrInterval=setInterval(poll,3000);
+ }catch(e){toast('扫码连接尚不可用：'+e.message,true)}
+}
+
 function accountLabel(a){
  if(a.kind==='ASSISTANT')return a.slot==='PRIMARY'?'助理1号':'助理2号（专属备用）';
  if(a.kind==='PROFESSOR')return a.slot==='PRIMARY'?'教授1号':'教授2号（专属备用）';
@@ -621,6 +665,9 @@ $$('[data-task-page]').forEach(b=>b.onclick=()=>{ui.pages.tasks+=Number(b.datase
 $('#taskSearch')?.addEventListener('input',e=>{ui.search=e.target.value;ui.pages.tasks=0;$('#queueTable').innerHTML=queueTable(state.data||{});$$('[data-task-page]').forEach(b=>b.onclick=()=>{ui.pages.tasks+=Number(b.dataset.taskPage);render()})});
 $('[data-go-settings]')?.addEventListener('click',()=>setPage('group'));
 if(state.page==='accounts'||state.page==='group'){$('#pageHost input,#pageHost select').forEach(e=>e.addEventListener('input',()=>markDirty(state.page==='accounts'?'accounts':e.closest('#groupsHost')?'groups':'intervals')));applyListPagination(state.page==='accounts'?'accounts':'groups');if(state.page==='accounts'){$('.account-role-filter').forEach(b=>{b.classList.toggle('active',b.dataset.roleFilter===ui.accountFilter);b.onclick=()=>{ui.accountFilter=b.dataset.roleFilter;ui.pages.accounts=0;applyListPagination('accounts');$('.account-role-filter').forEach(x=>x.classList.toggle('active',x===b))}})}}
+if(state.page==='accounts'){$('.acc-connect').forEach(b=>b.onclick=()=>beginAccountConnect(b.dataset.connectId))}
+$('#waQrClose').onclick=stopWaQr;
+$('#waQrOverlay').onclick=e=>{if(e.target.id==='waQrOverlay')stopWaQr()};
 }
 (async()=>{cloudCheck();if(state.token){try{await api('/v1/auth/me');loginSuccess(state.token)}catch{logout()}}})();
 </script>
