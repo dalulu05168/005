@@ -1,6 +1,7 @@
 /**
  * Nuvexa Pro single-account CLOUD QR bridge.
- * No WhatsApp message sending. Requires a real paid disk mounted /var/data.
+ * No WhatsApp message sending. Requires /var/data backed by a real persistent mount
+ * (e.g., an Oracle Always Free VM's boot or block volume bind-mounted by Docker).
  */
 import http from 'node:http';
 import path from 'node:path';
@@ -37,7 +38,7 @@ async function ensureDisk(){
   if(!DATA_DIR.startsWith(MOUNT_POINT+'/'))throw Error('INVALID_PERSISTENT_STORAGE_PATH');
   const mounts=await fs.readFile('/proc/self/mountinfo','utf8');
   if(!mounts.split('\n').some(line=>line.split(' ')[4]===MOUNT_POINT))
-    throw Error('PERSISTENT_DISK_NOT_MOUNTED: attach paid Render persistent disk at /var/data');
+    throw Error('PERSISTENT_DISK_NOT_MOUNTED: bind-mount a persistent host directory at /var/data');
   await fs.mkdir(profilesDir,{recursive:true});
   const probe=path.join(DATA_DIR,'.write-test-'+process.pid);
   await fs.writeFile(probe,'ok',{mode:0o600});await fs.unlink(probe);
@@ -73,7 +74,7 @@ async function retrieveToken(){
   }
   const code=String(process.env.NUVEXA_CLOUD_PAIR_CODE||'').replace(/[\s-]/g,'').toUpperCase();
   if(!/^[A-F0-9]{24}$/.test(code)){
-    log('Waiting for admin pairing. Paste a short-lived pairing code into Render private env NUVEXA_CLOUD_PAIR_CODE.');
+    log('Waiting for administrator pairing. Set one-time NUVEXA_CLOUD_PAIR_CODE inside the private cloud container.');
     return null;
   }
   const response=await fetch(ORIGIN+'/v1/cloud/enrollment/claim',{
