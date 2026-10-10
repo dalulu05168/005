@@ -24,22 +24,21 @@ test('assistant and professor share the same exact three-line grammar',()=>{
     assert.equal(m.auxCode,'');
   }
 });
-test('all 70 codes map to only one identity category per code',()=>{
-  const expected=n=>n<=10?'老女':n<=30?'新女':n<=50?'老男':'新男';
-  for(let i=1;i<=70;i++){
+test('source syntax supports editable identity for any two-digit unique code',()=>{
+  for(let i=1;i<=99;i++){
     const code=String(i).padStart(2,'0');
-    const p=parseFixedTelegramMessage(code+expected(i)+'：\n早上好。\nBună dimineața!');
-    assert.equal(p.ok,true,code);
-    assert.equal(p.auxCode,String(i));
-    for(const other of ['老女','新女','老男','新男'].filter(v=>v!==expected(i))){
-      assert.equal(identifySourceRole(code+other+'：\n早上好。\nBună dimineața!'),null,code+other);
+    for(const category of ['老女','新女','老男','新男']){
+      const p=parseFixedTelegramMessage(code+category+'：\n早上好。\nBună dimineața!');
+      assert.equal(p.ok,true,code+category);
+      assert.equal(p.auxCode,String(i));
+      assert.equal(p.identity,category);
     }
   }
 });
 test('legacy aliases, ASCII colons, missing zero and spaces are all rejected',()=>{
   for(const first of [
     '45男：','辅助45：','资讯助理：','资讯教授：','45老男:','45 老男：',
-    '5老女：','05 老女：','01新女：','31新男：','70老男：','71新男：',
+    '5老女：','05 老女：',
     '45老男','45老男 ：','45老男：你好','助理:','教授： '
   ]){
     assert.equal(parseFixedTelegramMessage(first+'\n你好。\nBună dimineața!').ok,false,first);
@@ -97,6 +96,7 @@ test('collector server cannot override canonical role or text using an API param
   assert.equal(parseTelegram({text:example,auxCode:'66'}).error,'TELEGRAM_ROLE_OR_TEXT_MISMATCH');
   assert.equal(parseTelegram({text:example,romanianText:'Wrong destination text'}).error,'TELEGRAM_ROLE_OR_TEXT_MISMATCH');
   assert.equal(parseTelegram({text:'45男：\n早上好。\nBună dimineața!',role:'AUXILIARY',auxCode:'45'}).ok,false);
+  assert.equal(parseTelegram({text:example}).identity,'老男');
   assert.equal(parseTelegram({text:example}).romanianText,'Bună dimineața! Astăzi urmărim evoluția pieței.');
 });
 test('server rejects messages when no target WhatsApp groups are enabled',async()=>{
