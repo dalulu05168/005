@@ -565,7 +565,7 @@ async function handleLease(){
         messageType:head.messageType||'TEXT',
         roleName:outboundRoleName(head),
         translatedRoleName:outboundRoleName(head),
-        outboundText:head.messageType==='IMAGE'?'':outboundRoleName(head)+'\n'+(head.romanianText||''),
+        outboundText:head.messageType==='IMAGE'?'':(head.romanianText||''),
         sourceMessageId:head.sourceMessageId||'',
       },
       target:{id:target.id,groupId:target.groupId,groupName:target.groupName},
