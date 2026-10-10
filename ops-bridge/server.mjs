@@ -5,6 +5,7 @@ import { createClient } from 'redis';
 import { createTelegramSource } from './telegram-user-source.mjs';
 import { zipStored } from './build-connector-zip.mjs';
 import { normalizeTelegramUpdate, extractPreparedText, identifySourceRole, parseFixedTelegramMessage } from './telegram-collector.mjs';
+import { selectNextDispatchTask } from './priority-scheduler.mjs';
 
 const PORT=Number(process.env.PORT||10000);
 const REDIS_URL=String(process.env.REDIS_URL||'').trim();
@@ -448,7 +449,7 @@ function reconcile(state){
     task.status=deriveTaskStatus(task);
     if(task.status==='ACKED'&&!task.completedAt)task.completedAt=nowIso();
   }
-  const head=(state.tasks||[]).find(t=>!TERMINAL_TASKS.has(t.status));
+  const head=selectNextDispatchTask(state.tasks||[]);
   state.queue.headTaskId=head?.id||null;
   state.queue.updatedAt=nowIso();
   return head||null;
