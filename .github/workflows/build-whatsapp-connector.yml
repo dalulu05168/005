@@ -1,0 +1,55 @@
+name: Windows WhatsApp Connector Package
+
+on:
+  push:
+    branches:
+      - deploy/nuvexa-ops-v026
+    paths:
+      - 'whatsapp-connector/**'
+      - '.github/workflows/build-whatsapp-connector.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check startup scripts and isolated runtime tests
+        run: |
+          node --check whatsapp-connector/connector.mjs
+          node --check whatsapp-connector/runtime.mjs
+          cd whatsapp-connector
+          node --test tests/*.test.mjs
+      - name: Create a source-only Windows ZIP
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          from zipfile import ZipFile, ZIP_DEFLATED
+          root=Path('whatsapp-connector')
+          names=['README.md','START-WHATSAPP.cmd','package.json','connector.mjs','runtime.mjs']
+          out=Path('dist')
+          out.mkdir(parents=True,exist_ok=True)
+          name=out/'Nuvexa-WhatsApp-Connector.zip'
+          with ZipFile(name,'w',ZIP_DEFLATED,compresslevel=9) as archive:
+              for item in names:
+                  archive.write(root/item,arcname='Nuvexa-WhatsApp-Connector/'+item)
+          with ZipFile(name) as archive:
+              assert archive.testzip() is None
+              assert len(archive.namelist()) == len(names)
+          print('ZIP built:',name,name.stat().st_size,'bytes')
+          PY
+      - name: Upload Windows ZIP
+        uses: actions/upload-artifact@v4
+        with:
+          name: Nuvexa-WhatsApp-Connector
+          path: dist/Nuvexa-WhatsApp-Connector.zip
+          if-no-files-found: error
+          retention-days: 30
