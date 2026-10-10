@@ -109,6 +109,7 @@ function defaultState(){
     accounts:[],
     groups:[],
     tasks:[],
+    pendingImages:[],
     queue:{
       paused:false,
       pauseReason:'',
@@ -135,6 +136,7 @@ async function getState(){
       accounts:Array.isArray(s.accounts)?s.accounts:[],
       groups:Array.isArray(s.groups)?s.groups:[],
       tasks:Array.isArray(s.tasks)?s.tasks:[],
+      pendingImages:Array.isArray(s.pendingImages)?s.pendingImages:[],
     };
   }catch{return defaultState()}
 }
@@ -247,8 +249,8 @@ function parseTelegram(input){
   const mediaRef=safeString(input.mediaRef||input.imageUrl,2000);
   if(!role)return {ok:false,error:'ROLE_NOT_RECOGNIZED'};
   if(role==='AUXILIARY'&&!auxCode)return {ok:false,error:'AUX_CODE_REQUIRED'};
-  if(!romanian&&!mediaRef)return {ok:false,error:'ROMANIAN_TEXT_OR_MEDIA_REQUIRED'};
-  return {ok:true,role,auxCode,romanianText:romanian,mediaRef,raw};
+  if(!romanian&&!mediaRef)return {ok:false,error:'ROMANIAN_TRANSLATION_REQUIRED',role,auxCode,roleName:safeString(input.roleName,120)||((raw.match(/^\s*(助理|教授|辅助(?:号)?\s*[0-9]{1,3})/m)||[])[1]||'')};
+  return {ok:true,role,auxCode,romanianText:romanian,mediaRef,raw,roleName:safeString(input.roleName,120)||((raw.match(/^\s*(助理|教授|辅助(?:号)?\s*[0-9]{1,3})/m)||[])[1]||'')};
 }
 function enabledTargets(state){
   return (state.groups||[]).filter(g=>g.enabled).sort((a,b)=>a.order-b.order).map(g=>({
@@ -332,10 +334,12 @@ function publicState(state){
   };
 }
 function intervalFor(state,task,target){
+  if(task.messageType==='IMAGE')return 0;
   const last=state.queue?.lastAck;
   if(!last||last.logicalSenderKey!==logicalSenderKey(task))return 0;
   const range=last.groupId===target.groupId?state.settings.sameGroupInterval:state.settings.crossGroupInterval;
-  return randomMs(range.minMs,range.maxMs);
+  const elapsed=last.at?Math.max(0,Date.now()-Date.parse(last.at)):0;
+  return Math.max(0,randomMs(range.minMs,range.maxMs)-elapsed);
 }
 
 async function handleLease(){
@@ -412,6 +416,8 @@ async function handleLease(){
         auxCode:head.auxCode||'',
         romanianText:head.romanianText||'',
         mediaRef:head.mediaRef||'',
+        messageType:head.messageType||'TEXT',
+        roleName:head.roleName||'',
         sourceMessageId:head.sourceMessageId||'',
       },
       target:{id:target.id,groupId:target.groupId,groupName:target.groupName},
@@ -460,48 +466,94 @@ const server=createServer(async(req,res)=>{
       await setState(state);
       return send(res,200,{ok:true,collector:state.collector});
     }
+
     if(url.pathname==='/v1/collector/telegram/ingest'&&req.method==='POST'){
       if(!agentAuth(req))return send(res,401,{error:'AGENT_AUTH_REQUIRED'});
       const input=await body(req);
       const parsed=parseTelegram(input);
       const state=await getState();
+      const chatId=safeString(input.sourceChatId,220);
+      const messageId=safeString(input.sourceMessageId,220);
+      const senderId=safeString(input.sourceSenderId,220);
+      const media=safeString(input.mediaRef||input.imageUrl,2000);
+      const now=nowIso();
+      state.pendingImages=(state.pendingImages||[]).filter(p=>p&&Date.parse(p.receivedAt)>Date.now()-180000).slice(-100);
       state.collector.todayCollected=(state.collector.todayCollected||0)+1;
-      state.collector.lastCollectedAt=nowIso();
-      state.collector.lastHeartbeatAt=nowIso();
+      state.collector.lastCollectedAt=now;
+      state.collector.lastHeartbeatAt=now;
       state.collector.running=true;
       state.collector.status='RUNNING';
-      if(!parsed.ok){
+      // A photo without a role is held for the next matching role message.
+      // No image content analysis, OCR or translation is performed.
+      if(media&&!parsed.role){
+        if(!chatId||!messageId)return send(res,422,{error:'PHOTO_SOURCE_REQUIRED'});
+        if(!state.pendingImages.some(p=>p.chatId===chatId&&p.messageId===messageId)){
+          state.pendingImages.push({chatId,messageId,senderId,threadId:safeString(input.sourceThreadId,220),media,receivedAt:now});
+        }
+        state.pendingImages=state.pendingImages.slice(-100);
+        await setState(state);
+        return send(res,202,{ok:true,queued:false,status:'AWAITING_ROLE',imageInspected:false});
+      }
+      if(!parsed.role){
         state.collector.rejected=(state.collector.rejected||0)+1;
         await setState(state);
-        return send(res,422,{error:parsed.error});
+        return send(res,422,{error:parsed.error||'ROLE_NOT_RECOGNIZED'});
       }
-      const duplicate=(state.tasks||[]).find(t=>t.sourceChatId===safeString(input.sourceChatId,220)&&t.sourceMessageId===safeString(input.sourceMessageId,220)&&t.sourceMessageId);
-      if(duplicate){
+      const replyId=safeString(input.replyToMessageId,220);
+      const threadId=safeString(input.sourceThreadId,220);
+      const candidates=media?[]:state.pendingImages.filter(p=>
+        p.chatId===chatId&&(replyId?true:Boolean(senderId&&p.senderId&&senderId===p.senderId))&&
+        (!threadId||!p.threadId||threadId===p.threadId)&&
+        (replyId?p.messageId===replyId:(!/^\d+$/.test(messageId)||!/^\d+$/.test(p.messageId)||BigInt(messageId)>BigInt(p.messageId)))
+      );
+      if(candidates.length>1){
         await setState(state);
-        return send(res,200,{ok:true,duplicate:true,taskId:duplicate.id});
+        return send(res,409,{error:'AMBIGUOUS_PHOTO_PAIR',queued:false});
       }
-      const targets=enabledTargets(state);
-      const task={
-        id:randomUUID(),
-        sequence:(state.tasks.reduce((m,t)=>Math.max(m,Number(t.sequence)||0),0)||0)+1,
-        sourceChatId:safeString(input.sourceChatId,220),
-        sourceMessageId:safeString(input.sourceMessageId,220),
-        sourceAt:input.sourceAt||nowIso(),
-        createdAt:nowIso(),
-        role:parsed.role,
-        auxCode:parsed.auxCode||'',
-        romanianText:parsed.romanianText,
-        mediaRef:parsed.mediaRef,
-        status:targets.length?'WAITING':'ACKED',
-        completedAt:targets.length?null:nowIso(),
-        targets,
-      };
-      state.tasks.push(task);
-      if(state.tasks.length>1000)state.tasks=state.tasks.slice(-1000);
+      const paired=candidates[0]||null;
+      const photoRef=media||paired?.media||'';
+      const rawText=safeString(input.text??input.caption,12000);
+      const roleOnly=rawText.replace(/^\s*(助理|教授|辅助(?:号)?\s*[0-9]{1,3})\s*/m,'').trim()==='';
+      const containsText=Boolean(parsed.romanianText)||(!roleOnly&&Boolean(rawText));
+      if(!photoRef&&!parsed.romanianText){
+        await setState(state);
+        return send(res,422,{error:containsText?'ROMANIAN_TRANSLATION_REQUIRED':'MESSAGE_CONTENT_REQUIRED',queued:false});
+      }
+      const imageMessageId=paired?.messageId||messageId;
+      const knownImage=state.tasks.find(t=>t.sourceChatId===chatId&&t.sourceMessageId===imageMessageId&&t.messageType==='IMAGE');
+      const knownText=state.tasks.find(t=>t.sourceChatId===chatId&&t.sourceMessageId===messageId&&t.messageType!=='IMAGE');
+      const targets=()=>enabledTargets(state);
+      const taskIds=[];
+      function queueItem(kind,sourceId,ref,romanian){
+        const task={
+          id:randomUUID(),messageType:kind,
+          sequence:(state.tasks.reduce((m,t)=>Math.max(m,Number(t.sequence)||0),0)||0)+1,
+          sourceChatId:chatId,sourceMessageId:sourceId,
+          sourceAt:input.sourceAt||now,createdAt:now,
+          role:parsed.role,roleName:parsed.roleName||parsed.role,
+          auxCode:parsed.auxCode||'',romanianText:romanian,mediaRef:ref,
+          status:'WAITING',completedAt:null,targets:targets()
+        };
+        if(!task.targets.length){task.status='ACKED';task.completedAt=now;}
+        state.tasks.push(task);taskIds.push(task.id);
+      }
+      // The image is ready once its sending role is known. Translation does not delay it.
+      if(photoRef&&!knownImage)queueItem('IMAGE',imageMessageId,photoRef,'');
+      if(parsed.romanianText&&!knownText)queueItem('TEXT',messageId,'',parsed.romanianText);
+      if(paired&&(!containsText||parsed.romanianText))state.pendingImages=state.pendingImages.filter(p=>p!==paired);
+      if(!taskIds.length){
+        await setState(state);
+        if(containsText&&!parsed.romanianText)return send(res,422,{error:'ROMANIAN_TRANSLATION_REQUIRED',queued:false,hasImage:Boolean(photoRef)});
+        return send(res,200,{ok:true,duplicate:true,taskId:knownText?.id||knownImage?.id||null});
+      }
+      state.tasks=state.tasks.slice(-1000);
       state.collector.parsed=(state.collector.parsed||0)+1;
       reconcile(state);
       await setState(state);
-      return send(res,201,{ok:true,taskId:task.id,sequence:task.sequence,targetCount:targets.length,role:task.role,auxCode:task.auxCode});
+      return send(res,containsText&&!parsed.romanianText?202:201,{ok:true,taskIds,messageCount:taskIds.length,
+        role:parsed.role,roleName:parsed.roleName||parsed.role,hasImage:Boolean(photoRef),
+        translationRequired:Boolean(containsText&&!parsed.romanianText),
+        textRequiresInterval:Boolean(parsed.romanianText),targetCount:state.groups.filter(g=>g.enabled).length});
     }
 
     if(url.pathname==='/v1/worker/lease'&&req.method==='POST'){
@@ -598,7 +650,7 @@ const server=createServer(async(req,res)=>{
           target.leaseUntil=null;
           if(account){account.lastSentAt=target.ackedAt;account.status='ONLINE'}
           const group=state.groups.find(g=>g.id===target.groupId);if(group)group.lastSentAt=target.ackedAt;
-          state.queue.lastAck={at:target.ackedAt,groupId:target.groupId,logicalSenderKey:logicalSenderKey(task),actualAccountId:target.senderAccountId};
+          if(task.messageType!=='IMAGE')state.queue.lastAck={at:target.ackedAt,groupId:target.groupId,logicalSenderKey:logicalSenderKey(task),actualAccountId:target.senderAccountId};
         }else if(result==='CONFIRMED_UNAVAILABLE'){
           target.status='WAITING';
           target.error='SENDER_CONFIRMED_UNAVAILABLE';
@@ -639,7 +691,7 @@ const server=createServer(async(req,res)=>{
         const resolution=safeString(input.resolution,32).toUpperCase();
         if(resolution==='ACKED'){
           target.status='ACKED';target.ackedAt=nowIso();target.error=null;
-          state.queue.lastAck={at:target.ackedAt,groupId:target.groupId,logicalSenderKey:logicalSenderKey(task),actualAccountId:target.senderAccountId};
+          if(task.messageType!=='IMAGE')state.queue.lastAck={at:target.ackedAt,groupId:target.groupId,logicalSenderKey:logicalSenderKey(task),actualAccountId:target.senderAccountId};
         }else if(resolution==='NOT_SENT'){
           target.status='WAITING';target.error='VERIFIED_NOT_SENT';target.leaseId=null;target.notBefore=null;
         }else return send(res,400,{error:'INVALID_RESOLUTION'});
