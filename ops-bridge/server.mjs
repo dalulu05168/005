@@ -1,4 +1,5 @@
 import { createServer } from 'node:http';
+import { readFile } from 'node:fs/promises';
 import { createHmac, randomUUID, timingSafeEqual } from 'node:crypto';
 import { createClient } from 'redis';
 import { createTelegramSource } from './telegram-user-source.mjs';
@@ -506,6 +507,17 @@ const server=createServer(async(req,res)=>{
   if(req.method==='OPTIONS'){res.writeHead(204);return res.end()}
   const url=new URL(req.url,'http://localhost');
   try{
+    if((url.pathname==='/admin'||url.pathname==='/admin/')&&req.method==='GET'){
+      const html=await readFile(new URL('../index.html',import.meta.url));
+      res.writeHead(200,{
+        'Content-Type':'text/html; charset=utf-8',
+        'Cache-Control':'no-store',
+        'X-Content-Type-Options':'nosniff',
+        'X-Frame-Options':'DENY',
+        'Referrer-Policy':'no-referrer'
+      });
+      return res.end(html);
+    }
 
     if(url.pathname==='/v1/collector/telegram/webhook'&&req.method==='POST'){
       if(!TELEGRAM_CONFIGURED)return send(res,503,{ok:false,error:'COLLECTOR_NOT_CONFIGURED'});
