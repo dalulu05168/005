@@ -33,6 +33,16 @@ async function readBody(req) {
 createServer(async (req, res) => {
   const origin = req.headers.origin || '';
   const url = new URL(req.url || '/', 'http://localhost');
+  // Public, read-only preview reachability probe. Never expose credentials.
+  if (url.pathname === '/healthz/upstream' && req.method === 'GET') {
+    try {
+      const probe = await fetch(UPSTREAM + '/v1/health', { signal: AbortSignal.timeout(15000), cache: 'no-store' });
+      return respond(res, 200, { upstreamHttpStatus: probe.status, upstreamReachable: probe.ok });
+    } catch (e) {
+      return respond(res, 200, { upstreamHttpStatus: null, upstreamReachable: false,
+        errorType: e?.name === 'TimeoutError' ? 'TIMEOUT' : 'NETWORK_ERROR' });
+    }
+  }
   if (url.pathname === '/healthz' && req.method === 'GET') {
     return respond(res, 200, { ok: true, role: 'nuvexa-preview-relay' });
   }
