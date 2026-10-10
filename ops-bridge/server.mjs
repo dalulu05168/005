@@ -106,6 +106,27 @@ async function body(req){
   return JSON.parse(Buffer.concat(chunks).toString('utf8')||'{}');
 }
 
+
+function standard72AccountSlots(){
+  const add=(id,name,kind,slot,auxCode='',backupOrder=0)=>({
+    id,name,kind,slot,auxCode:String(auxCode),backupOrder,
+    status:'UNCONFIGURED',phoneLast4:'',sessionId:'',
+    lastHeartbeatAt:null,lastSentAt:null,meta:{}
+  });
+  const accounts=[
+    add('role-assistant-primary','助理1号','ASSISTANT','PRIMARY'),
+    add('role-assistant-backup','助理2号','ASSISTANT','BACKUP'),
+    add('role-professor-primary','教授1号','PROFESSOR','PRIMARY'),
+    add('role-professor-backup','教授2号','PROFESSOR','BACKUP')
+  ];
+  for(let n=1;n<=65;n++){
+    const group=n<=20?'老男成员':n<=30?'老女成员':n<=50?'新男成员':'新女成员';
+    accounts.push(add('member-'+String(n).padStart(2,'0'),group+String(n).padStart(2,'0'),'AUXILIARY','PRIMARY',n));
+  }
+  for(let n=1;n<=3;n++)accounts.push(add('reserve-'+n,'备用'+n,'AUX_BACKUP','BACKUP','',n));
+  return accounts;
+}
+
 function defaultState(){
   return {
     schemaVersion:3,
@@ -127,7 +148,7 @@ function defaultState(){
       rejected:0,
       sourceChats:[],
     },
-    accounts:[],
+    accounts:standard72AccountSlots(),
     groups:[],
     tasks:[],
     pendingImages:[],
@@ -154,7 +175,7 @@ async function getState(){
       },
       collector:{...d.collector,...(s.collector||{})},
       queue:{...d.queue,...(s.queue||{})},
-      accounts:Array.isArray(s.accounts)?s.accounts:[],
+      accounts:Array.isArray(s.accounts)&&s.accounts.length?s.accounts:d.accounts,
       groups:Array.isArray(s.groups)?s.groups:[],
       tasks:Array.isArray(s.tasks)?s.tasks:[],
       pendingImages:Array.isArray(s.pendingImages)?s.pendingImages:[],
