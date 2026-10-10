@@ -150,6 +150,16 @@ export class WhatsAppSessionRuntime{
       }
     }finally{this.requestsBusy=false}
   }
+  async detachUnhealthy(record,reason){
+    if(this.closed||!record.client)return;
+    const client=record.client;record.client=null;
+    record.status='OFFLINE';record.lastQr='';record.pending=false;
+    const fail=(this.reconnectFailures.get(record.id)||0)+1;
+    this.reconnectFailures.set(record.id,fail);
+    record.restartAfter=this.clock()+Math.min(RECONNECT_MAX_MS,RECONNECT_MIN_MS*2**Math.min(fail-1,3));
+    this.log('状态检查失败，准备恢复连接：'+record.id+' '+reason);
+    try{await client.destroy()}catch{}
+  }
   async heartbeat(){
     if(this.closed||this.healthBusy)return;
     this.healthBusy=true;
@@ -162,8 +172,8 @@ export class WhatsAppSessionRuntime{
             Promise.resolve().then(()=>rec.client.getState()),
             new Promise((_,reject)=>{timeout=setTimeout(()=>reject(Error('STATE_TIMEOUT')),8000);timeout.unref?.()})
           ]).finally(()=>clearTimeout(timeout));
-          if(state!=='CONNECTED'){rec.status='OFFLINE';this.log('连接状态异常：'+rec.id)}
-        }catch{rec.status='OFFLINE'}
+          if(state!=='CONNECTED')await this.detachUnhealthy(rec,'STATE_'+String(state).slice(0,40));
+        }catch(e){await this.detachUnhealthy(rec,String(e?.message||e).slice(0,40))}
       }
       const accounts=this.snapshot();
       await this.transport.post('/v1/worker/accounts/heartbeat',{
