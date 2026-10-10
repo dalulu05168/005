@@ -33,6 +33,18 @@ await redis.connect();
 const nowIso=()=>new Date().toISOString();
 const clamp=(n,min,max)=>Math.max(min,Math.min(max,n));
 const safeString=(v,max=500)=>String(v??'').trim().slice(0,max);
+// Outbound text only: images remain opaque and are never inspected.
+const FORBIDDEN_OUTBOUND_CHINESE=/[\p{Script=Han}\u3000-\u303f\uff00-\uff65\ufe10-\ufe1f\ufe30-\ufe4f]/u;
+const hasChinese=value=>FORBIDDEN_OUTBOUND_CHINESE.test(String(value??''));
+function outboundRoleName(task){
+  const given=safeString(task.translatedRoleName||task.roleName,120);
+  if(given&&!hasChinese(given)&&!['ASSISTANT','PROFESSOR','AUXILIARY'].includes(given.toUpperCase()))return given;
+  if(task.role==='PROFESSOR')return 'Profesor';
+  if(task.role==='ASSISTANT')return 'Asistent';
+  if(task.role==='AUXILIARY')return 'Asistent auxiliar'+(task.auxCode?' '+safeString(task.auxCode,12):'');
+  return 'Participant';
+}
+const outboundTextBlocked=task=>task.messageType!=='IMAGE'&&(!String(task.romanianText||'').trim()||hasChinese(task.romanianText));
 const b64=value=>Buffer.from(value).toString('base64url');
 const unb64=value=>Buffer.from(value,'base64url').toString('utf8');
 const randomMs=(min,max)=>{
@@ -375,6 +387,11 @@ async function handleLease(){
       await setState(state);
       return {status:'IDLE'};
     }
+    if(outboundTextBlocked(head)){
+      state.queue.pauseReason='OUTBOUND_TRANSLATION_REQUIRED';
+      await setState(state);
+      return {status:'BLOCKED',reason:'OUTBOUND_CHINESE_BLOCKED',taskId:head.id};
+    }
     const selection=selectSender(state,head);
     if(selection.blocked){
       state.queue.pauseReason=selection.reason;
@@ -417,7 +434,9 @@ async function handleLease(){
         romanianText:head.romanianText||'',
         mediaRef:head.mediaRef||'',
         messageType:head.messageType||'TEXT',
-        roleName:head.roleName||'',
+        roleName:outboundRoleName(head),
+        translatedRoleName:outboundRoleName(head),
+        outboundText:head.messageType==='IMAGE'?'':outboundRoleName(head)+'\n'+(head.romanianText||''),
         sourceMessageId:head.sourceMessageId||'',
       },
       target:{id:target.id,groupId:target.groupId,groupName:target.groupName},
@@ -515,9 +534,11 @@ const server=createServer(async(req,res)=>{
       const rawText=safeString(input.text??input.caption,12000);
       const roleOnly=rawText.replace(/^\s*(助理|教授|辅助(?:号)?\s*[0-9]{1,3})\s*/m,'').trim()==='';
       const containsText=Boolean(parsed.romanianText)||(!roleOnly&&Boolean(rawText));
-      if(!photoRef&&!parsed.romanianText){
+      const translationUnsafe=Boolean(parsed.romanianText&&hasChinese(parsed.romanianText));
+      const translatedText=translationUnsafe?'':parsed.romanianText;
+      if(!photoRef&&!translatedText){
         await setState(state);
-        return send(res,422,{error:containsText?'ROMANIAN_TRANSLATION_REQUIRED':'MESSAGE_CONTENT_REQUIRED',queued:false});
+        return send(res,422,{error:translationUnsafe?'OUTBOUND_CHINESE_BLOCKED':containsText?'ROMANIAN_TRANSLATION_REQUIRED':'MESSAGE_CONTENT_REQUIRED',queued:false});
       }
       const imageMessageId=paired?.messageId||messageId;
       const knownImage=state.tasks.find(t=>t.sourceChatId===chatId&&t.sourceMessageId===imageMessageId&&t.messageType==='IMAGE');
@@ -531,6 +552,7 @@ const server=createServer(async(req,res)=>{
           sourceChatId:chatId,sourceMessageId:sourceId,
           sourceAt:input.sourceAt||now,createdAt:now,
           role:parsed.role,roleName:parsed.roleName||parsed.role,
+          translatedRoleName:safeString(input.translatedRoleName,120),
           auxCode:parsed.auxCode||'',romanianText:romanian,mediaRef:ref,
           status:'WAITING',completedAt:null,targets:targets()
         };
@@ -539,21 +561,22 @@ const server=createServer(async(req,res)=>{
       }
       // The image is ready once its sending role is known. Translation does not delay it.
       if(photoRef&&!knownImage)queueItem('IMAGE',imageMessageId,photoRef,'');
-      if(parsed.romanianText&&!knownText)queueItem('TEXT',messageId,'',parsed.romanianText);
-      if(paired&&(!containsText||parsed.romanianText))state.pendingImages=state.pendingImages.filter(p=>p!==paired);
+      if(translatedText&&!knownText)queueItem('TEXT',messageId,'',translatedText);
+      if(paired&&(!containsText||translatedText))state.pendingImages=state.pendingImages.filter(p=>p!==paired);
       if(!taskIds.length){
         await setState(state);
-        if(containsText&&!parsed.romanianText)return send(res,422,{error:'ROMANIAN_TRANSLATION_REQUIRED',queued:false,hasImage:Boolean(photoRef)});
+        if(containsText&&!translatedText)return send(res,422,{error:translationUnsafe?'OUTBOUND_CHINESE_BLOCKED':'ROMANIAN_TRANSLATION_REQUIRED',queued:false,hasImage:Boolean(photoRef)});
         return send(res,200,{ok:true,duplicate:true,taskId:knownText?.id||knownImage?.id||null});
       }
       state.tasks=state.tasks.slice(-1000);
       state.collector.parsed=(state.collector.parsed||0)+1;
       reconcile(state);
       await setState(state);
-      return send(res,containsText&&!parsed.romanianText?202:201,{ok:true,taskIds,messageCount:taskIds.length,
+      return send(res,containsText&&!translatedText?202:201,{ok:true,taskIds,messageCount:taskIds.length,
         role:parsed.role,roleName:parsed.roleName||parsed.role,hasImage:Boolean(photoRef),
-        translationRequired:Boolean(containsText&&!parsed.romanianText),
-        textRequiresInterval:Boolean(parsed.romanianText),targetCount:state.groups.filter(g=>g.enabled).length});
+        translationRequired:Boolean(containsText&&!translatedText),
+        outboundTextBlocked:translationUnsafe,
+        textRequiresInterval:Boolean(translatedText),targetCount:state.groups.filter(g=>g.enabled).length});
     }
 
     if(url.pathname==='/v1/worker/lease'&&req.method==='POST'){
@@ -573,6 +596,14 @@ const server=createServer(async(req,res)=>{
         }
         if(!task||!target)return send(res,404,{error:'LEASE_NOT_FOUND'});
         if(target.status!=='SENDING')return send(res,409,{error:'LEASE_NOT_ACTIVE',status:target.status});
+        if(outboundTextBlocked(task)){
+          target.status='WAITING';
+          target.leaseId=null;target.leaseUntil=null;target.notBefore=null;
+          target.error='OUTBOUND_CHINESE_BLOCKED';
+          task.status=deriveTaskStatus(task);
+          await setState(state);
+          return send(res,409,{authorized:false,reason:'OUTBOUND_CHINESE_BLOCKED'});
+        }
         if(target.leaseUntil&&Date.parse(target.leaseUntil)<=Date.now()){
           target.status='VERIFYING';
           target.error='LEASE_EXPIRED_RESULT_UNKNOWN';
