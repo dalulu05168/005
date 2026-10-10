@@ -628,7 +628,7 @@ const server=createServer(async(req,res)=>{
         if(!(state.groups||[]).some(g=>g.enabled)){
           return send(res,409,{error:'CONFIGURE_WHATSAPP_TARGET_GROUPS_FIRST'});
         }
-        if(!(state.accounts||[]).some(a=>a.status==='ONLINE')){
+        if(!(state.accounts||[]).some(isAccountOnline)){
           return send(res,409,{error:'CONNECT_WHATSAPP_SENDER_FIRST'});
         }
       }
