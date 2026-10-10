@@ -338,7 +338,8 @@ function intervalFor(state,task,target){
   const last=state.queue?.lastAck;
   if(!last||last.logicalSenderKey!==logicalSenderKey(task))return 0;
   const range=last.groupId===target.groupId?state.settings.sameGroupInterval:state.settings.crossGroupInterval;
-  return randomMs(range.minMs,range.maxMs);
+  const elapsed=last.at?Math.max(0,Date.now()-Date.parse(last.at)):0;
+  return Math.max(0,randomMs(range.minMs,range.maxMs)-elapsed);
 }
 
 async function handleLease(){
@@ -506,7 +507,7 @@ const server=createServer(async(req,res)=>{
       const replyId=safeString(input.replyToMessageId,220);
       const threadId=safeString(input.sourceThreadId,220);
       const candidates=media?[]:state.pendingImages.filter(p=>
-        p.chatId===chatId&&(!senderId||!p.senderId||senderId===p.senderId)&&
+        p.chatId===chatId&&(replyId?true:Boolean(senderId&&p.senderId&&senderId===p.senderId))&&
         (!threadId||!p.threadId||threadId===p.threadId)&&
         (replyId?p.messageId===replyId:(!/^\d+$/.test(messageId)||!/^\d+$/.test(p.messageId)||BigInt(messageId)>BigInt(p.messageId)))
       );
