@@ -257,6 +257,62 @@ body:has(#appView:not(.hidden)){
   #appView .content{padding:12px}
 }
 
+
+/* Same typography, surface and controls across source / dashboard / accounts. */
+#appView .content[data-page="source"] .source-panel{
+  background:#fff;
+  border:1px solid var(--line);
+  border-radius:11px;
+  box-shadow:none;
+  padding:18px;
+  font:inherit;
+}
+#appView .content[data-page="source"] .source-panel h3{
+  font-size:13px;
+  font-family:inherit;
+  font-weight:600;
+  letter-spacing:normal;
+  margin:0 0 14px;
+}
+#appView .content[data-page="source"] .source-panel p{
+  font-size:12px;
+  font-family:inherit;
+  color:var(--muted);
+  line-height:1.65;
+}
+#appView .content[data-page="source"] .source-form input,
+#appView .content[data-page="source"] .source-form select{
+  height:40px;
+  border:1px solid var(--line);
+  background:#fff;
+  border-radius:7px;
+  font-family:inherit;
+  font-size:12px;
+}
+#appView .content[data-page="source"] .source-actions button{
+  height:36px;
+  border:1px solid var(--line);
+  background:#fff;
+  border-radius:6px;
+  font:inherit;
+  font-size:11px;
+}
+#appView .content[data-page="source"] .source-actions button.primary-action{background:var(--green);border-color:var(--green);color:#fff!important}
+#appView .content[data-page="source"] .source-guide{
+  background:#f7faf9;
+  border:1px solid var(--line);
+  border-left:2px solid #b6cfc7;
+  border-radius:6px;
+  font:inherit;
+  font-size:11px;
+  line-height:1.7;
+}
+#appView .content[data-page="source"] .source-pill{background:#f3faf7;border:1px solid var(--line);border-radius:5px;font:inherit;font-size:10px;padding:6px 9px}
+#appView .content[data-page="source"] .source-pill.good{color:var(--green)!important}
+#appView .account-role-filters{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:15px}
+#appView .account-role-filters .btn.active{background:#eff8f6;color:var(--green)!important;border-color:var(--green)}
+#appView .acc-connect{white-space:nowrap}
+
 </style>
 <!-- Tabler Icons license
 MIT License
@@ -387,7 +443,7 @@ const ICONS={"search":"<!--\ncategory: System\ntags: [find, magnifier, magnifyin
 const icon=name=>ICONS[name].replace('<svg ','<svg aria-hidden="true" ');
 function fitViewport(){document.documentElement.style.setProperty('--fit',Math.min(innerWidth/1440,innerHeight/810));}
 addEventListener('resize',fitViewport);fitViewport();
-const ui={tab:'queue',groupTab:0,filter:'all',search:'',pages:{},dirty:false,edited:new Set(),intervalDraft:null};
+const ui={tab:'queue',groupTab:0,filter:'all',search:'',pages:{},accountFilter:'all',dirty:false,edited:new Set(),intervalDraft:null};
 function markDirty(section){ui.edited.add(section);ui.dirty=true;}
 function clearDirty(section){ui.edited.delete(section);ui.dirty=ui.edited.size>0;if(section==='intervals')ui.intervalDraft=null;}
 const API='https://nuvexa-ops-bridge.onrender.com';
@@ -411,7 +467,37 @@ async function refresh(){if(!state.token||ui.dirty||state.page==='source'||docum
 function updateChrome(){const d=state.data||{},c=d.collector||{},s=d.settings||{},q=d.queue||{};$('#sideDot').classList.add('on');$('#sideCloud').textContent='云端 API 在线';$('#collectorDot').classList.toggle('on',c.running===true);$('#sideCollector').textContent=c.running?'采集器运行中':'采集器未运行';$('#cloudPill').className='pill ok';$('#cloudPill').textContent='Cloud API 在线';$('#collectorPill').className='pill '+(c.running?'ok':'warn');$('#collectorPill').textContent='采集器 '+(c.running?'运行中':'待接入');$('#publishPill').className='pill '+(s.globalPublishEnabled?'ok':'bad');$('#publishPill').textContent=s.globalPublishEnabled?'允许发布':'全局停止';$('#queuePill').className='pill '+(q.paused?'bad':'ok');$('#queuePill').textContent=q.paused?'队列暂停':'严格顺序运行'}
 function metric(label,value,cls=''){return '<div class="metric"><span>'+label+'</span><strong class="'+cls+'">'+value+'</strong></div>'}
 function energy(s={}){const vals=[+s.success||0,+s.processing||0,+s.failed||0,+s.waiting||0,+s.verifying||0],total=vals.reduce((a,b)=>a+b,0)||1;return '<div class="energy"><i class="success" style="width:'+(vals[0]/total*100)+'%"></i><i class="processing" style="width:'+(vals[1]/total*100)+'%"></i><i class="failed" style="width:'+(vals[2]/total*100)+'%"></i><i class="waiting" style="width:'+(vals[3]/total*100)+'%"></i><i class="verify" style="width:'+(vals[4]/total*100)+'%"></i></div>'}
-function accountLabel(a){if(a.kind==='ASSISTANT')return a.slot==='PRIMARY'?'助理1号':'助理2号（专属替补）';if(a.kind==='PROFESSOR')return a.slot==='PRIMARY'?'教授1号':'教授2号（专属替补）';if(a.kind==='AUX_BACKUP')return '普通辅助替补 '+(a.backupOrder||'');return '辅助号 '+(a.auxCode||'—')}
+function memberGroup(code){
+ const n=Number(code);
+ if(!Number.isInteger(n)||n<1||n>65)return '其他成员';
+ return n<=20?'老男成员':n<=30?'老女成员':n<=50?'新男成员':'新女成员';
+}
+function accountLabel(a){
+ if(a.kind==='ASSISTANT')return a.slot==='PRIMARY'?'助理1号':'助理2号（专属备用）';
+ if(a.kind==='PROFESSOR')return a.slot==='PRIMARY'?'教授1号':'教授2号（专属备用）';
+ if(a.kind==='AUX_BACKUP')return '备用 '+(a.backupOrder||'');
+ return memberGroup(a.auxCode)+' '+String(a.auxCode||'—').padStart(2,'0');
+}
+function accountGroup(a){
+ if(a.kind==='ASSISTANT')return 'assistant';
+ if(a.kind==='PROFESSOR')return 'professor';
+ if(a.kind==='AUX_BACKUP')return 'backup';
+ const n=Number(a.auxCode);
+ return n<=20?'oldman':n<=30?'oldwoman':n<=50?'newman':'newwoman';
+}
+function default72Accounts(existing=[]){
+ const own=new Map(existing.map(a=>[(a.kind==='ASSISTANT'||a.kind==='PROFESSOR')?a.kind+':'+a.slot:a.kind==='AUX_BACKUP'?'BACKUP:'+a.backupOrder:'AUX:'+a.auxCode,a]));
+ const add=(key,defaults)=>own.get(key)||{id:crypto.randomUUID(),status:'UNCONFIGURED',...defaults};
+ const base=[
+   add('ASSISTANT:PRIMARY',{name:'助理1号',kind:'ASSISTANT',slot:'PRIMARY',auxCode:'',backupOrder:0}),
+   add('ASSISTANT:BACKUP',{name:'助理2号',kind:'ASSISTANT',slot:'BACKUP',auxCode:'',backupOrder:0}),
+   add('PROFESSOR:PRIMARY',{name:'教授1号',kind:'PROFESSOR',slot:'PRIMARY',auxCode:'',backupOrder:0}),
+   add('PROFESSOR:BACKUP',{name:'教授2号',kind:'PROFESSOR',slot:'BACKUP',auxCode:'',backupOrder:0})
+ ];
+ for(let n=1;n<=65;n++)base.push(add('AUX:'+n,{name:memberGroup(n)+' '+String(n).padStart(2,'0'),kind:'AUXILIARY',slot:'PRIMARY',auxCode:String(n),backupOrder:0}));
+ for(let n=1;n<=3;n++)base.push(add('BACKUP:'+n,{name:'备用'+n,kind:'AUX_BACKUP',slot:'BACKUP',auxCode:'',backupOrder:n}));
+ return base;
+}
 function statusBadge(v){const m={ONLINE:['在线','on'],OFFLINE:['离线','bad'],CONFIRMED_UNAVAILABLE:['确认不可发送','bad'],NEEDS_QR:['需要扫码','warn'],VERIFYING:['确认中','warn'],UNCONFIGURED:['未配置','']};const x=m[v]||[v||'未知',''];return '<span class="state '+x[1]+'">'+x[0]+'</span>'}
 function overviewCard(title,value,detail,iconName,tag){return '<article class="metric"><div class="metric-heading"><span class="metric-icon">'+icon(iconName)+'</span>'+title+'</div><span class="metric-tag">'+tag+'</span><strong>'+value+'</strong><small>'+detail+'</small></article>'}
 function dashboard(){const d=state.data||{},s=d.summary||{},c=d.collector||{},q=d.queue||{};
@@ -425,8 +511,8 @@ if(ui.tab==='intervals')return '<section class="panel detail-view"><div class="p
 return '<div class="table-tools"><div class="filters">'+[['all','全部任务'],['WAITING','等待发送'],['PROCESSING','处理中'],['VERIFYING','确认中']].map(([key,label])=>'<button data-filter="'+key+'" class="'+(ui.filter===key?'active':'')+'">'+label+'</button>').join('')+'</div><label class="search-box">'+icon('search')+'<input id="taskSearch" aria-label="搜索任务" placeholder="搜索任务 / 角色" value="'+esc(ui.search)+'"></label></div><div id="queueTable">'+queueTable(d)+'</div><div class="rule section-gap">'+(q.paused?'队列已暂停。':'严格顺序运行。')+' 结果不确定时锁住队列；仅确认未发送后才允许对应替补接管。</div>';}
 function queueTable(d){const all=(d.tasks||[]).filter(t=>(ui.filter==='all'||t.status===ui.filter)&&(!ui.search||[t.id,t.role,t.sequence,t.auxCode].join(' ').toLowerCase().includes(ui.search.toLowerCase())));const size=5,pages=Math.max(1,Math.ceil(all.length/size)),p=Math.min(ui.pages.tasks||0,pages-1);ui.pages.tasks=p;const rows=all.slice(p*size,(p+1)*size);
 return '<table class="table"><thead><tr><th>任务 / 序号</th><th>角色</th><th>状态</th><th>群组进度</th><th>创建时间</th></tr></thead><tbody>'+(rows.length?rows.map(t=>'<tr><td>#'+num(t.sequence)+' <span class="sync-note">'+esc(t.id)+'</span></td><td>'+esc(t.roleName||t.role)+(t.auxCode?' · '+esc(t.auxCode):'')+(t.messageType==='IMAGE'?' <span class="pill">图片 · 无间隔</span>':t.messageType==='TEXT'?' <span class="pill">文字 · 按间隔</span>':'')+'</td><td><span class="state">'+esc(t.status)+'</span></td><td>'+num((t.targets||[]).filter(x=>x.status==='ACKED').length)+' / '+num((t.targets||[]).length)+'</td><td>'+time(t.createdAt)+'</td></tr>').join(''):'<tr><td colspan="5"><div class="empty">'+icon('list-details')+((d.tasks||[]).length?'没有匹配的任务':'当前没有待执行任务')+'<p>采集器接入后，任务将按原始顺序出现在这里。</p></div></td></tr>')+'</tbody></table><div class="pager"><span class="count">'+all.length+' 条任务 · '+(d.queue?.headTaskId?'队列头 '+esc(d.queue.headTaskId):'队列空闲')+'</span><button data-task-page="-1" '+(p===0?'disabled':'')+'>上一页</button><span>'+(p+1)+' / '+pages+'</span><button data-task-page="1" '+(p===pages-1?'disabled':'')+'>下一页</button></div>';}
-function accountsPage(){const items=state.data?.accounts||[];return '<div class="page-head"><div><h1>账号管理</h1><p>主账号与替补账号严格分角色。替补账号平时待命，不占正常发送顺序。</p></div><div class="toolbar"><button id="seedRoles" class="btn green">初始化角色槽位</button><button id="addAux" class="btn">增加辅助号</button><button id="saveAccounts" class="btn green">保存账号结构</button></div></div><section class="panel"><div class="table-wrap"><table class="table"><thead><tr><th>角色</th><th>显示名称</th><th>辅助编号</th><th>替补顺序</th><th>Session状态</th><th>号码后四位</th><th>最后心跳</th><th></th></tr></thead><tbody id="accountsBody">'+(items.length?items.map(accountRow).join(''):'<tr><td colspan="8"><div class="empty">尚未配置云端 WhatsApp 账号。先初始化角色槽位。</div></td></tr>')+'</tbody></table></div><div class="banner section-gap">助理2号只能替助理1号；教授2号只能替教授1号；普通替补01/02/03只能替普通辅助号。任何替补都必须在原账号被确认无法发送后才能启用。</div></section>'}
-function accountRow(a){return '<tr data-account-id="'+esc(a.id)+'" data-kind="'+esc(a.kind)+'" data-slot="'+esc(a.slot)+'"><td>'+accountLabel(a)+'</td><td><input class="acc-name" value="'+esc(a.name||'')+'" style="width:180px;background:#0d1216;color:#fff;border:1px solid var(--line);border-radius:8px;padding:7px"></td><td><input class="acc-code" value="'+esc(a.auxCode||'')+'" '+((a.kind==='AUXILIARY')?'':'disabled')+' style="width:90px;background:#0d1216;color:#fff;border:1px solid var(--line);border-radius:8px;padding:7px"></td><td>'+num(a.backupOrder||0)+'</td><td>'+statusBadge(a.status)+'</td><td>'+esc(a.phoneLast4||'—')+'</td><td>'+time(a.lastHeartbeatAt)+'</td><td>'+(a.kind==='AUXILIARY'?'<button class="btn red remove-acc">删除</button>':'')+'</td></tr>'}
+function accountsPage(){const items=state.data?.accounts||[];return '<div class="page-head"><div><h1>账号管理</h1><p>助理2 · 教授2 · 成员65 · 备用3，合计72个独立账号位置。在线与掉线状态仅由真实连接器反馈。</p></div><div class="toolbar"><button id="seedRoles" class="btn green">补齐72个账号位置</button><button id="saveAccounts" class="btn green">保存账号结构</button></div></div><section class="panel"><div class="account-role-filters" role="group" aria-label="账号类别筛选"><button class="btn account-role-filter" data-role-filter="all">全部（'+items.length+'）</button><button class="btn account-role-filter" data-role-filter="assistant">助理2</button><button class="btn account-role-filter" data-role-filter="professor">教授2</button><button class="btn account-role-filter" data-role-filter="oldman">老男1–20</button><button class="btn account-role-filter" data-role-filter="oldwoman">老女21–30</button><button class="btn account-role-filter" data-role-filter="newman">新男31–50</button><button class="btn account-role-filter" data-role-filter="newwoman">新女51–65</button><button class="btn account-role-filter" data-role-filter="backup">备用1–3</button></div><div class="table-wrap"><table class="table"><thead><tr><th>角色</th><th>显示名称</th><th>辅助编号</th><th>替补顺序</th><th>Session状态</th><th>号码后四位</th><th>最后心跳</th><th>连接操作</th></tr></thead><tbody id="accountsBody">'+(items.length?items.map(accountRow).join(''):'<tr><td colspan="8"><div class="empty">尚未配置云端 WhatsApp 账号。先初始化角色槽位。</div></td></tr>')+'</tbody></table></div><div class="banner section-gap">助理2号只能替助理1号；教授2号只能替教授1号；普通替补01/02/03只能替普通辅助号。任何替补都必须在原账号被确认无法发送后才能启用。</div></section>'}
+function accountRow(a){return '<tr data-account-id="'+esc(a.id)+'" data-kind="'+esc(a.kind)+'" data-slot="'+esc(a.slot)+'" data-role-group="'+esc(accountGroup(a))+'"><td>'+accountLabel(a)+'</td><td><input class="acc-name" value="'+esc(a.name||'')+'" style="width:180px;background:#0d1216;color:#fff;border:1px solid var(--line);border-radius:8px;padding:7px"></td><td><input class="acc-code" value="'+esc(a.auxCode||'')+'" '+((a.kind==='AUXILIARY')?'':'disabled')+' style="width:90px;background:#0d1216;color:#fff;border:1px solid var(--line);border-radius:8px;padding:7px"></td><td>'+num(a.backupOrder||0)+'</td><td>'+statusBadge(a.status)+'</td><td>'+esc(a.phoneLast4||'—')+'</td><td>'+time(a.lastHeartbeatAt)+'</td><td><button class="btn acc-connect" data-connect-id="'+esc(a.id)+'">扫码登录</button></td></tr>'}
 function groupPage(){const d=state.data||{},groups=d.groups||[],st=d.settings||{};return '<div class="page-head"><div><h1>群组与转发设置</h1><p>支持多个 WhatsApp 群组。每个群组独立开关；同一任务按群组顺序逐个发送。</p></div><div class="toolbar"><button id="addGroup" class="btn">增加群组</button><button id="saveGroups" class="btn green">保存群组</button></div></div>'+
 '<div class="grid2"><section class="panel"><div class="panel-title"><h3>群组池</h3><span>'+groups.length+' 个群组</span></div><div id="groupsHost">'+(groups.length?groups.map(groupRow).join(''):'<div class="empty">尚未配置目标群组。</div>')+'</div><div class="rule section-gap">关闭某个群组只停止该群组，其他已开启群组继续。已经 ACK 成功的群组不会因替补接管而重复发送。</div></section>'+
 '<section class="panel"><div class="panel-title"><h3>发送间隔</h3><span>默认 2–3 秒</span></div><div class="form-grid two"><div class="field"><label for="crossMin">同角色跨群 最小秒</label><input id="crossMin" type="number" min="0" step="0.1" value="'+sec(st.crossGroupInterval?.minMs)+'"></div><div class="field"><label for="crossMax">同角色跨群 最大秒</label><input id="crossMax" type="number" min="0" step="0.1" value="'+sec(st.crossGroupInterval?.maxMs)+'"></div><div class="field"><label for="sameMin">同角色同群多条 最小秒</label><input id="sameMin" type="number" min="0" step="0.1" value="'+sec(st.sameGroupInterval?.minMs)+'"></div><div class="field"><label for="sameMax">同角色同群多条 最大秒</label><input id="sameMax" type="number" min="0" step="0.1" value="'+sec(st.sameGroupInterval?.maxMs)+'"></div></div><div class="toolbar section-gap"><button id="saveIntervals" class="btn green">保存时间区间</button></div><div class="banner section-gap">每次等待时间在用户设置区间内随机取值。当前任务未确认完成时，计时不会让后续账号越过。</div></section></div>'+
@@ -496,16 +582,15 @@ function sourceBind(){
 function render(){if($('#appView').classList.contains('hidden'))return;$('#pageHost').dataset.page=state.page;$('#pageHost').innerHTML=state.page==='accounts'?accountsPage():state.page==='group'?groupPage():state.page==='source'?sourcePage():dashboard();bindDynamic();bindWorkspace();if(state.page==='source')sourceBind()}
 function bindDynamic(){
  if(state.page==='accounts'){
-   $('#seedRoles')?.addEventListener('click',()=>{captureDraft();const current=state.data.accounts||[];if(current.length&&!confirm('保留现有辅助号并补齐固定角色槽位？'))return;const keep=current.filter(a=>a.kind==='AUXILIARY');state.data.accounts=[
-    {id:crypto.randomUUID(),name:'助理1号',kind:'ASSISTANT',slot:'PRIMARY',status:'UNCONFIGURED',auxCode:'',backupOrder:0},
-    {id:crypto.randomUUID(),name:'助理2号',kind:'ASSISTANT',slot:'BACKUP',status:'UNCONFIGURED',auxCode:'',backupOrder:0},
-    {id:crypto.randomUUID(),name:'教授1号',kind:'PROFESSOR',slot:'PRIMARY',status:'UNCONFIGURED',auxCode:'',backupOrder:0},
-    {id:crypto.randomUUID(),name:'教授2号',kind:'PROFESSOR',slot:'BACKUP',status:'UNCONFIGURED',auxCode:'',backupOrder:0},
-    {id:crypto.randomUUID(),name:'普通替补01',kind:'AUX_BACKUP',slot:'BACKUP',status:'UNCONFIGURED',auxCode:'',backupOrder:1},
-    {id:crypto.randomUUID(),name:'普通替补02',kind:'AUX_BACKUP',slot:'BACKUP',status:'UNCONFIGURED',auxCode:'',backupOrder:2},
-    {id:crypto.randomUUID(),name:'普通替补03',kind:'AUX_BACKUP',slot:'BACKUP',status:'UNCONFIGURED',auxCode:'',backupOrder:3},
-    ...keep];markDirty(state.page==='accounts'?'accounts':'groups');render()});
-   $('#addAux')?.addEventListener('click',()=>{captureDraft();markDirty(state.page==='accounts'?'accounts':'groups');state.data.accounts=state.data.accounts||[];state.data.accounts.push({id:crypto.randomUUID(),name:'辅助号',kind:'AUXILIARY',slot:'PRIMARY',status:'UNCONFIGURED',auxCode:'',backupOrder:0});ui.pages.accounts=Math.floor((state.data.accounts.length-1)/8);render()});
+   $('#seedRoles')?.addEventListener('click',()=>{
+     captureDraft();
+     const existing=state.data.accounts||[];
+     const generated=default72Accounts(existing);
+     const additional=existing.filter(a=>!generated.some(x=>x.id===a.id));
+     if(additional.length&&!confirm('现有数据中有 '+additional.length+' 个额外账号位置。点击确定仅补齐72个标准位置，额外位置保留在列表中；不会清除已有会话资料。'))return;
+     state.data.accounts=[...generated,...additional];ui.pages.accounts=0;ui.accountFilter='all';
+     markDirty('accounts');render();toast('已生成标准72个位置；请点击保存账号结构。此操作不会登录 WhatsApp。');
+   });
    $$('.remove-acc').forEach(b=>b.addEventListener('click',()=>{captureDraft();markDirty(state.page==='accounts'?'accounts':'groups');const tr=b.closest('tr'),id=tr.dataset.accountId;state.data.accounts=state.data.accounts.filter(a=>a.id!==id);render()}));
    $('#saveAccounts')?.addEventListener('click',async()=>{const rows=$$('#accountsBody tr[data-account-id]');const map=new Map((state.data.accounts||[]).map(a=>[a.id,a]));for(const tr of rows){const a=map.get(tr.dataset.accountId);if(a){a.name=tr.querySelector('.acc-name').value.trim();a.auxCode=tr.querySelector('.acc-code').value.trim()}}try{const r=await api('/v1/accounts',{method:'PUT',body:JSON.stringify({items:[...map.values()]})});state.data.accounts=r.items;clearDirty('accounts');toast('账号结构已保存');render()}catch(e){toast(e.message,true)}});
  }
@@ -521,7 +606,7 @@ function bindDynamic(){
 function captureDraft(){
 if(state.page==='accounts')for(const row of $$('#accountsBody tr[data-account-id]')){const a=state.data.accounts?.find(x=>x.id===row.dataset.accountId);if(a){a.name=row.querySelector('.acc-name').value;a.auxCode=row.querySelector('.acc-code').value;}}
 if(state.page==='group'){if(ui.edited.has('intervals'))ui.intervalDraft=Object.fromEntries(['crossMin','crossMax','sameMin','sameMax'].map(id=>[id,$('#'+id).value]));state.data.groups=$$('#groupsHost .group-row').map((r,i)=>({id:r.querySelector('.grp-id').value,name:r.querySelector('.grp-name').value,order:Number(r.querySelector('.grp-order').value)||i+1,enabled:r.querySelector('.grp-toggle').classList.contains('on')}));}}
-function applyListPagination(kind){const host=kind==='accounts'?$('#accountsBody'):$('#groupsHost');if(!host)return;const rows=[...host.querySelectorAll(kind==='accounts'?'tr[data-account-id]':'.group-row')],size=kind==='accounts'?8:4,pages=Math.max(1,Math.ceil(rows.length/size));ui.pages[kind]=Math.min(ui.pages[kind]||0,pages-1);const p=ui.pages[kind];rows.forEach((r,i)=>{r.hidden=i<p*size||i>=(p+1)*size;});let pager=$('#'+kind+'Pager');if(!pager){pager=document.createElement('div');pager.id=kind+'Pager';pager.className='pager';(kind==='accounts'?host.closest('.table-wrap'):host).after(pager);}pager.innerHTML='<span class="count">'+rows.length+' 条 · 每页 '+size+' 条</span><button data-page-step="-1" '+(p===0?'disabled':'')+'>上一页</button><span>'+(p+1)+' / '+pages+'</span><button data-page-step="1" '+(p===pages-1?'disabled':'')+'>下一页</button>';pager.querySelectorAll('button').forEach(b=>b.onclick=()=>{ui.pages[kind]+=Number(b.dataset.pageStep);applyListPagination(kind)});}
+function applyListPagination(kind){const host=kind==='accounts'?$('#accountsBody'):$('#groupsHost');if(!host)return;const allRows=[...host.querySelectorAll(kind==='accounts'?'tr[data-account-id]':'.group-row')],rows=kind==='accounts'?allRows.filter(r=>ui.accountFilter==='all'||r.dataset.roleGroup===ui.accountFilter):allRows,size=kind==='accounts'?8:4,pages=Math.max(1,Math.ceil(rows.length/size));ui.pages[kind]=Math.min(ui.pages[kind]||0,pages-1);const p=ui.pages[kind];allRows.forEach(r=>{r.hidden=true});rows.forEach((r,i)=>{r.hidden=i<p*size||i>=(p+1)*size;});let pager=$('#'+kind+'Pager');if(!pager){pager=document.createElement('div');pager.id=kind+'Pager';pager.className='pager';(kind==='accounts'?host.closest('.table-wrap'):host).after(pager);}pager.innerHTML='<span class="count">'+rows.length+' 条 · 每页 '+size+' 条</span><button data-page-step="-1" '+(p===0?'disabled':'')+'>上一页</button><span>'+(p+1)+' / '+pages+'</span><button data-page-step="1" '+(p===pages-1?'disabled':'')+'>下一页</button>';pager.querySelectorAll('button').forEach(b=>b.onclick=()=>{ui.pages[kind]+=Number(b.dataset.pageStep);applyListPagination(kind)});}
 function bindWorkspace(){
 if(state.page==='group'){
 if(ui.intervalDraft)for(const [id,value] of Object.entries(ui.intervalDraft))$('#'+id).value=value;
@@ -535,7 +620,7 @@ $$('[data-filter]').forEach(b=>b.onclick=()=>{ui.filter=b.dataset.filter;ui.page
 $$('[data-task-page]').forEach(b=>b.onclick=()=>{ui.pages.tasks+=Number(b.dataset.taskPage);render()});
 $('#taskSearch')?.addEventListener('input',e=>{ui.search=e.target.value;ui.pages.tasks=0;$('#queueTable').innerHTML=queueTable(state.data||{});$$('[data-task-page]').forEach(b=>b.onclick=()=>{ui.pages.tasks+=Number(b.dataset.taskPage);render()})});
 $('[data-go-settings]')?.addEventListener('click',()=>setPage('group'));
-if(state.page!=='dashboard'){$$('#pageHost input,#pageHost select').forEach(e=>e.addEventListener('input',()=>markDirty(state.page==='accounts'?'accounts':e.closest('#groupsHost')?'groups':'intervals')));applyListPagination(state.page==='accounts'?'accounts':'groups');}
+if(state.page==='accounts'||state.page==='group'){$('#pageHost input,#pageHost select').forEach(e=>e.addEventListener('input',()=>markDirty(state.page==='accounts'?'accounts':e.closest('#groupsHost')?'groups':'intervals')));applyListPagination(state.page==='accounts'?'accounts':'groups');if(state.page==='accounts'){$('.account-role-filter').forEach(b=>{b.classList.toggle('active',b.dataset.roleFilter===ui.accountFilter);b.onclick=()=>{ui.accountFilter=b.dataset.roleFilter;ui.pages.accounts=0;applyListPagination('accounts');$('.account-role-filter').forEach(x=>x.classList.toggle('active',x===b))}})}}
 }
 (async()=>{cloudCheck();if(state.token){try{await api('/v1/auth/me');loginSuccess(state.token)}catch{logout()}}})();
 </script>
