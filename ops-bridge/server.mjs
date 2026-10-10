@@ -1,6 +1,7 @@
 import { createServer } from 'node:http';
 import { createHmac, randomUUID, timingSafeEqual } from 'node:crypto';
 import { createClient } from 'redis';
+import { normalizeTelegramUpdate, textWithoutRole, translateRomanian } from './telegram-collector.mjs';
 
 const PORT=Number(process.env.PORT||10000);
 const REDIS_URL=String(process.env.REDIS_URL||'').trim();
@@ -17,6 +18,14 @@ const ALLOWED_ORIGINS=new Set(
 );
 const STATE_KEY='nuvexa:cloud:state:v3';
 const LOCK_KEY='nuvexa:cloud:lock:v3';
+const TELEGRAM_BOT_TOKEN=String(process.env.TELEGRAM_BOT_TOKEN||'').trim();
+const TELEGRAM_WEBHOOK_SECRET=String(process.env.TELEGRAM_WEBHOOK_SECRET||'').trim();
+const TELEGRAM_SOURCE_CHAT_IDS=new Set(String(process.env.TELEGRAM_SOURCE_CHAT_IDS||'').split(',').map(x=>x.trim()).filter(Boolean));
+const TELEGRAM_AUTO_WEBHOOK=process.env.TELEGRAM_AUTO_WEBHOOK==='true';
+const DEEPL_AUTH_KEY=String(process.env.DEEPL_AUTH_KEY||'').trim();
+const DEEPL_API_ENDPOINT=String(process.env.DEEPL_API_ENDPOINT||'https://api-free.deepl.com/v2/translate').trim();
+const TELEGRAM_CONFIGURED=Boolean(TELEGRAM_BOT_TOKEN&&TELEGRAM_WEBHOOK_SECRET&&TELEGRAM_SOURCE_CHAT_IDS.size);
+
 const MAX_BODY=4*1024*1024;
 const TERMINAL_TARGETS=new Set(['ACKED','SKIPPED_DISABLED','FAILED']);
 const TERMINAL_TASKS=new Set(['ACKED','FAILED','CANCELLED']);
@@ -452,11 +461,102 @@ async function handleLease(){
   });
 }
 
+
+async function ingestTelegramCollectorInput(input){
+  const response=await fetch('http://127.0.0.1:'+PORT+'/v1/collector/telegram/ingest',{
+    method:'POST',
+    headers:{'Content-Type':'application/json','X-Nuvexa-Agent-Key':AGENT_KEY},
+    body:JSON.stringify(input),
+    signal:AbortSignal.timeout(12000)
+  });
+  const body=await response.json();
+  if(!response.ok)throw Object.assign(new Error(body.error||'INGEST_FAILED'),{status:response.status});
+  return body;
+}
+function isTelegramWebhookAuthorized(req){
+  const received=String(req.headers['x-telegram-bot-api-secret-token']||'');
+  const expected=TELEGRAM_WEBHOOK_SECRET;
+  if(!received||!expected)return false;
+  const a=Buffer.from(received),b=Buffer.from(expected);
+  return a.length===b.length&&timingSafeEqual(a,b);
+}
+async function registerTelegramWebhook(){
+  if(!TELEGRAM_CONFIGURED||!TELEGRAM_AUTO_WEBHOOK)return;
+  const publicOrigin=String(process.env.TELEGRAM_PUBLIC_ORIGIN||'https://nuvexa-ops-bridge.onrender.com').replace(/\/+$/,'');
+  if(!/^https:\/\/[a-zA-Z0-9.-]+$/.test(publicOrigin)){
+    console.error('Telegram webhook URL must use HTTPS and a fixed hostname');return;
+  }
+  try{
+    const result=await fetch('https://api.telegram.org/bot'+TELEGRAM_BOT_TOKEN+'/setWebhook',{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        url:publicOrigin+'/v1/collector/telegram/webhook',
+        secret_token:TELEGRAM_WEBHOOK_SECRET,
+        allowed_updates:['message','channel_post'],
+        drop_pending_updates:false,max_connections:1
+      }),signal:AbortSignal.timeout(12000)
+    });
+    const reply=await result.json();
+    if(result.ok&&reply.ok)console.log('Telegram webhook registration OK');
+    else console.error('Telegram webhook registration failed: HTTP '+result.status);
+  }catch(error){console.error('Telegram webhook registration unavailable:',error.message)}
+}
+
 const server=createServer(async(req,res)=>{
   cors(req,res);
   if(req.method==='OPTIONS'){res.writeHead(204);return res.end()}
   const url=new URL(req.url,'http://localhost');
   try{
+
+    if(url.pathname==='/v1/collector/telegram/webhook'&&req.method==='POST'){
+      if(!TELEGRAM_CONFIGURED)return send(res,503,{ok:false,error:'COLLECTOR_NOT_CONFIGURED'});
+      if(!isTelegramWebhookAuthorized(req))return send(res,401,{ok:false,error:'TELEGRAM_WEBHOOK_UNAUTHORIZED'});
+      const update=await body(req);
+      const input=normalizeTelegramUpdate(update,TELEGRAM_SOURCE_CHAT_IDS);
+      if(!input)return send(res,200,{ok:true,ignored:true});
+      // Image ingestion goes first, before translation; the image is never read by translation.
+      let imageResult=null;
+      if(input.mediaRef)imageResult=await ingestTelegramCollectorInput(input);
+      const hasRole=/^\s*(助理|教授|辅助(?:号)?\s*[0-9]{1,3})(?=\s|[:：]|$)/m.test(input.text);
+      const messageText=textWithoutRole(input.text);
+      if(!hasRole||!messageText){
+        return send(res,200,{ok:true,photo:imageResult?.status||null,textQueued:false});
+      }
+      const translated=await translateRomanian(input.text,{key:DEEPL_AUTH_KEY,endpoint:DEEPL_API_ENDPOINT});
+      const textResult=await ingestTelegramCollectorInput({...input,romanianText:translated});
+      return send(res,200,{ok:true,photo:Boolean(input.mediaRef),textQueued:Boolean(textResult?.taskIds?.length||textResult?.duplicate)});
+    }
+    if(url.pathname==='/v1/worker/media'&&req.method==='GET'){
+      if(!agentAuth(req))return send(res,401,{error:'AGENT_AUTH_REQUIRED'});
+      if(!TELEGRAM_BOT_TOKEN)return send(res,503,{error:'TELEGRAM_NOT_CONFIGURED'});
+      const ref=String(url.searchParams.get('ref')||'');
+      if(!/^tgfile:[A-Za-z0-9_-]{8,512}$/.test(ref))return send(res,400,{error:'INVALID_MEDIA_REF'});
+      const fileId=ref.slice('tgfile:'.length);
+      const meta=await fetch('https://api.telegram.org/bot'+TELEGRAM_BOT_TOKEN+'/getFile',{
+        method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({file_id:fileId}),
+        signal:AbortSignal.timeout(12000)
+      });
+      const info=await meta.json();
+      if(!meta.ok||!info.ok||!info.result?.file_path)return send(res,502,{error:'TELEGRAM_GET_FILE_FAILED'});
+      if(Number(info.result.file_size)>20*1024*1024)return send(res,413,{error:'MEDIA_TOO_LARGE'});
+      const path=String(info.result.file_path);
+      if(!/^[A-Za-z0-9_\/-]+\.[A-Za-z0-9]{2,7}$/.test(path)||path.includes('..'))return send(res,502,{error:'INVALID_TELEGRAM_FILE_PATH'});
+      const stream=await fetch('https://api.telegram.org/file/bot'+TELEGRAM_BOT_TOKEN+'/'+path,{
+        signal:AbortSignal.timeout(20000)
+      });
+      if(!stream.ok)return send(res,502,{error:'TELEGRAM_FILE_DOWNLOAD_FAILED'});
+      const array=await stream.arrayBuffer();
+      if(array.byteLength>20*1024*1024)return send(res,413,{error:'MEDIA_TOO_LARGE'});
+      res.writeHead(200,{
+        'Content-Type':stream.headers.get('content-type')||'application/octet-stream',
+        'Content-Length':String(array.byteLength),
+        'Cache-Control':'private, no-store',
+        'X-Content-Type-Options':'nosniff'
+      });
+      return res.end(Buffer.from(array));
+    }
+
     if(url.pathname==='/v1/health'&&req.method==='GET'){
       const state=await getState();
       reconcile(state);
@@ -818,4 +918,4 @@ const server=createServer(async(req,res)=>{
   }
 });
 
-server.listen(PORT,'0.0.0.0',()=>console.log('Nuvexa Pro Cloud API v0.3.0 listening on '+PORT));
+server.listen(PORT,'0.0.0.0',()=>{console.log('Nuvexa Pro Cloud API v0.3.0 listening on '+PORT);void registerTelegramWebhook();});
