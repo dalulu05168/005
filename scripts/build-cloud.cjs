@@ -5,7 +5,19 @@ const { execFileSync } = require('node:child_process');
 
 const root = path.resolve(__dirname, '..');
 const output = path.join(root, 'dist', 'cloud');
-const html = fs.readFileSync(path.join(root, 'index.html'));
+let html = fs.readFileSync(path.join(root, 'index.html'));
+// The original public Vercel build remains untouched. Only the isolated
+// Render UI preview targets the restricted API relay during its build.
+if (process.env.NUVEXA_PREVIEW_RELAY_URL) {
+  const relay = process.env.NUVEXA_PREVIEW_RELAY_URL;
+  if (relay !== 'https://nuvexa-ops-preview-api-relay.onrender.com') {
+    throw new Error('Unapproved preview API relay destination');
+  }
+  const original = "const API='https://nuvexa-ops-bridge.onrender.com';";
+  const source = html.toString('utf8');
+  if (!source.includes(original)) throw new Error('Expected Cloud API binding missing');
+  html = Buffer.from(source.replace(original, "const API='" + relay + "';"));
+}
 if (!html.toString('utf8').includes('<title>Nuvexa Pro v0.3.0')) {
   throw new Error('Refusing to publish an unexpected application');
 }
@@ -24,3 +36,6 @@ fs.writeFileSync(path.join(output, 'release.json'), JSON.stringify({
   files: { 'index.html': crypto.createHash('sha256').update(html).digest('hex') },
 }, null, 2) + '\n');
 console.log(JSON.stringify({ output, sourceSha, files: ['index.html', 'release.json'] }));
+
+// Public, credential-free Windows installer for direct browser downloads.
+require('./build-local-download.cjs');

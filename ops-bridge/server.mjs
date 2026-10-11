@@ -257,6 +257,31 @@ async function connectorAuth(req){
   const presented=createHash('sha256').update(secret).digest();
   return timingSafeEqual(presented,Buffer.from(stored,'hex'));
 }
+
+/* Single-account cloud trial is isolated from the existing Windows connector:
+ * different authentication token, heartbeat, pairing requests and QR buffer.
+ * Never overwrite the Windows pairing token or load/change its local profiles. */
+const CLOUD_AUTH_KEY='nuvexa:wa:cloud:token:sha256:v1';
+const CLOUD_HEALTH_KEY='nuvexa:wa:cloud:worker-health:v1';
+const CLOUD_ACCOUNT_KEY='nuvexa:wa:cloud:pilot-account:v1';
+const cloudQrKey=id=>'nuvexa:wa:cloud:qr:'+id;
+const cloudConnectKey=id=>'nuvexa:wa:cloud:connect:'+id;
+async function cloudAuth(req){
+  const token=String(req.headers['x-nuvexa-cloud-token']||'').trim();
+  if(!/^nc_[a-f0-9]{64}$/.test(token))return false;
+  const expected=await redis.get(CLOUD_AUTH_KEY);
+  if(!expected||!/^[a-f0-9]{64}$/.test(expected))return false;
+  return timingSafeEqual(createHash('sha256').update(token).digest(),Buffer.from(expected,'hex'));
+}
+async function currentCloudHealth(){
+  let h=null;try{h=JSON.parse(await redis.get(CLOUD_HEALTH_KEY)||'null')}catch{}
+  const age=Date.parse(h?.at||'');
+  return {connected:Number.isFinite(age)&&Date.now()-age>=0&&Date.now()-age<ACCOUNT_ALIVE_MS,
+    lastHeartbeatAt:h?.at||null,reportedAccounts:Math.max(0,Number(h?.reportedAccounts)||0),
+    onlineAccounts:Math.max(0,Number(h?.onlineAccounts)||0),
+    ageSeconds:Number.isFinite(age)?Math.max(0,Math.floor((Date.now()-age)/1000)):null};
+}
+
 const qrKey=id=>'nuvexa:wa:qr:'+id;
 const connectKey=id=>'nuvexa:wa:connect:'+id;
 function accountOnline(a){
@@ -863,6 +888,67 @@ const server=createServer(async(req,res)=>{
         scope:'ACCOUNT_QR_AND_HEARTBEAT_ONLY'});
     }
 
+
+    // Cloud trial pairing is independent of the local Windows connector.
+    if(url.pathname==='/v1/cloud/enrollment/claim'&&req.method==='POST'){
+      const input=await body(req);
+      const code=safeString(input.code,50).replace(/[\s-]/g,'').toUpperCase();
+      if(!/^[A-F0-9]{24}$/.test(code))return send(res,400,{error:'INVALID_ENROLLMENT_CODE'});
+      const claim=await redis.getDel(DEVICE_CONNECTOR_ENROLL_KEY(code));
+      if(claim!=='PENDING')return send(res,409,{error:'PAIRING_CODE_EXPIRED_OR_USED'});
+      const token='nc_'+randomBytes(32).toString('hex');
+      await redis.set(CLOUD_AUTH_KEY,createHash('sha256').update(token).digest('hex'),{EX:CONNECTOR_TOKEN_TTL});
+      return send(res,200,{token,expiresIn:CONNECTOR_TOKEN_TTL,scope:'CLOUD_PILOT_ONE_ACCOUNT'});
+    }
+    if(url.pathname==='/v1/cloud/status'&&req.method==='GET'){
+      if(!userAuth(req))return send(res,401,{error:'ADMIN_AUTH_REQUIRED'});
+      return send(res,200,{...(await currentCloudHealth()),accountId:await redis.get(CLOUD_ACCOUNT_KEY)||null});
+    }
+    if(url.pathname==='/v1/cloud/heartbeat'&&req.method==='POST'){
+      if(!await cloudAuth(req))return send(res,401,{error:'CLOUD_WORKER_AUTH_REQUIRED'});
+      const data=await body(req),items=Array.isArray(data.accounts)?data.accounts.slice(0,1):[];
+      const enabledId=await redis.get(CLOUD_ACCOUNT_KEY);
+      return await withLock(async()=>{
+        const state=await getState(),stamp=nowIso();
+        let received=0,online=0;
+        for(const report of items){
+          const id=safeString(report.accountId,100);
+          if(id!==enabledId)continue;
+          const acc=state.accounts.find(a=>a.id===id);
+          if(!acc)continue;
+          const status=safeString(report.status,30);
+          if(!['ONLINE','OFFLINE','NEEDS_QR','VERIFYING','CONFIRMED_UNAVAILABLE'].includes(status))continue;
+          acc.status=status;
+          if(report.phoneLast4!==undefined)acc.phoneLast4=String(report.phoneLast4||'').replace(/\D/g,'').slice(-4);
+          acc.lastHeartbeatAt=stamp;
+          if(status==='ONLINE')acc.sessionId='cloud:'+id;
+          received++;
+          if(status==='ONLINE')online++;
+        }
+        if(received)await setState(state);
+        await redis.set(CLOUD_HEALTH_KEY,JSON.stringify({at:stamp,reportedAccounts:received,onlineAccounts:online}),{EX:300});
+        return send(res,200,{ok:true,matched:received});
+      });
+    }
+    if(url.pathname==='/v1/cloud/accounts/requests'&&req.method==='GET'){
+      if(!await cloudAuth(req))return send(res,401,{error:'CLOUD_WORKER_AUTH_REQUIRED'});
+      const id=await redis.get(CLOUD_ACCOUNT_KEY);
+      const state=await getState(),a=state.accounts.find(a=>a.id===id);
+      const waiting=a&&await redis.get(cloudConnectKey(a.id));
+      return send(res,200,{items:waiting?[{accountId:a.id,kind:a.kind,slot:a.slot,auxCode:a.auxCode}]:[]});
+    }
+    if(url.pathname==='/v1/cloud/accounts/qr'&&req.method==='POST'){
+      if(!await cloudAuth(req))return send(res,401,{error:'CLOUD_WORKER_AUTH_REQUIRED'});
+      const input=await body(req),id=safeString(input.accountId,100);
+      if(!id||id!==await redis.get(CLOUD_ACCOUNT_KEY)||!await redis.get(cloudConnectKey(id)))
+        return send(res,404,{error:'NO_PENDING_CLOUD_QR_REQUEST'});
+      const qr=String(input.qrDataUrl||'');
+      if(!/^data:image\/png;base64,[A-Za-z0-9+/=]+$/.test(qr)||qr.length>100000)
+        return send(res,422,{error:'INVALID_QR_IMAGE'});
+      await redis.set(cloudQrKey(id),qr,{EX:90});
+      return send(res,200,{ok:true,expiresIn:90});
+    }
+
     /* QR is supplied by a real authenticated worker, never synthesized by the dashboard. */
     if(url.pathname==='/v1/worker/accounts/heartbeat'&&req.method==='POST'){
       if(!await connectorAuth(req))return send(res,401,{error:'DEVICE_CONNECTOR_AUTH_REQUIRED'});
@@ -930,6 +1016,20 @@ const server=createServer(async(req,res)=>{
       const input=await body(req),accountId=safeString(input.accountId,120);
       const state=await getState(),account=state.accounts.find(a=>a.id===accountId);
       if(!account)return send(res,404,{error:'ACCOUNT_NOT_FOUND'});
+      if(input.mode==='cloud'){
+        const current=await currentCloudHealth();
+        if(!current.connected)return send(res,503,{error:'CLOUD_CONNECTOR_OFFLINE',message:'云端连接器尚未运行或尚未完成安全授权'});
+        const designated=await redis.get(CLOUD_ACCOUNT_KEY);
+        if(designated&&designated!==accountId)
+          return send(res,409,{error:'CLOUD_PILOT_ALREADY_ASSIGNED',message:'目前仅允许一个测试账号，请先完成首个账号验收'});
+        if(isAccountOnline(account)&&!designated)
+          return send(res,409,{error:'ACCOUNT_ALREADY_ONLINE_ON_WINDOWS',
+            message:'该账号正在其他设备在线，请选未登录的备用账号进行云端首测'});
+        if(!designated)await redis.set(CLOUD_ACCOUNT_KEY,accountId);
+        await redis.del(cloudQrKey(accountId));
+        await redis.set(cloudConnectKey(accountId),nowIso(),{EX:180});
+        return send(res,202,{status:'WAITING_FOR_REAL_QR',accountId,source:'CLOUD'});
+      }
       const status=await redis.get(QR_WORKER_KEY);
       let alive=false;try{
         const item=JSON.parse(status||'null'),last=Date.parse(item?.at||'');
@@ -947,6 +1047,11 @@ const server=createServer(async(req,res)=>{
       const state=await getState(),account=state.accounts.find(a=>a.id===accountId);
       if(!account)return send(res,404,{error:'ACCOUNT_NOT_FOUND'});
       if(accountOnline(account))return send(res,200,{status:'CONNECTED',phoneLast4:account.phoneLast4||''});
+      if(accountId===await redis.get(CLOUD_ACCOUNT_KEY)){
+        const qrCloud=await redis.get(cloudQrKey(accountId));
+        if(qrCloud)return send(res,200,{status:'SCAN_READY',qrDataUrl:qrCloud,expiresIn:90,source:'CLOUD'});
+        if(await redis.get(cloudConnectKey(accountId)))return send(res,200,{status:'WAITING_FOR_REAL_QR',source:'CLOUD'});
+      }
       const qr=await redis.get(qrKey(accountId));
       if(qr)return send(res,200,{status:'SCAN_READY',qrDataUrl:qr,expiresIn:90});
       if(await redis.get(connectKey(accountId)))return send(res,200,{status:'WAITING_FOR_REAL_QR'});
