@@ -897,6 +897,14 @@ const server=createServer(async(req,res)=>{
         await setState(state);
         return send(res,409,{error:'SEAT_PLAN_ROLE_NOT_SCHEDULED_OR_OUT_OF_ORDER',queued:false});
       }
+      // Never silently truncate in-flight tasks to fit the Redis state cap.
+      // Reject the new intake before mutating the queue when it is full.
+      const neededSlots=Number(Boolean(photoRef&&!knownImage&&!completedImage))+
+        Number(Boolean(translatedText&&!knownText&&!completedText));
+      if((state.tasks||[]).length+neededSlots>1000){
+        await setState(state);
+        return send(res,429,{error:'FORWARD_QUEUE_AT_CAPACITY',queued:false});
+      }
       const taskIds=[];
       function queueItem(kind,sourceId,ref,romanian){
         const task={
@@ -923,7 +931,6 @@ const server=createServer(async(req,res)=>{
         if(containsText&&!translatedText)return send(res,422,{error:translationUnsafe?'OUTBOUND_CHINESE_BLOCKED':'ROMANIAN_TRANSLATION_REQUIRED',queued:false,hasImage:Boolean(photoRef)});
         return send(res,200,{ok:true,duplicate:true,taskId:knownText?.id||knownImage?.id||null});
       }
-      state.tasks=state.tasks.slice(-1000);
       state.collector.parsed=(state.collector.parsed||0)+1;
       reconcile(state);
       await setState(state);
