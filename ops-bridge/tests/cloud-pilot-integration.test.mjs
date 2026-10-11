@@ -65,7 +65,7 @@ test('cloud worker refuses ephemeral profile storage and never sends WhatsApp me
 
 test('one-click admin QR keeps cloud backend and does not require local CMD or pairing codes for daily login',async()=>{
  const html=await readFile(new URL('../../index.html',import.meta.url),'utf8');
- const start=html.indexOf('function accountsPage()');
+ const start=html.indexOf('function accountsPageCore()');
  const end=html.indexOf('function accountRow(',start);
  assert.ok(start>=0&&end>start,'account screen exists');
  const page=html.slice(start,end);
