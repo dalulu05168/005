@@ -63,3 +63,20 @@ test('invalid ID, identity, or >7 capacity fails closed',()=>{
  assert.throws(()=>createDailySeatPlan([],accounts),/LENGTH/);
  assert.throws(()=>createDailySeatPlan(['01老女'],accounts,{maxSeats:8}),/CAPACITY/);
 });
+
+test('disabled or missing group must never count as successful delivery',async()=>{
+ const src=await (await import('node:fs/promises')).readFile(new URL('../server.mjs',import.meta.url),'utf8');
+ const start=src.indexOf('function deriveTaskStatus(task){');
+ const end=src.indexOf('function reconcile(state){',start);
+ assert.ok(start>=0&&end>start);
+ const deriveTaskStatus=Function(src.slice(start,end)+'return deriveTaskStatus;')();
+ assert.equal(deriveTaskStatus({targets:[{status:'ACKED'},{status:'SKIPPED_DISABLED'}]}),'FAILED');
+ assert.equal(deriveTaskStatus({targets:[]}), 'FAILED');
+ assert.equal(deriveTaskStatus({targets:[{status:'ACKED'},{status:'ACKED'}]}),'ACKED');
+ assert.equal(deriveTaskStatus({targets:[{status:'ACKED'},{status:'VERIFYING'}]}),'VERIFYING');
+ const plan=createDailySeatPlan(['01老女'],accounts);
+ markSeatPlanReceived(plan.entries[0],['task']);
+ reconcileSeatPlan(plan,[{id:'task',status:'FAILED',targets:[{status:'SKIPPED_DISABLED'}]}]);
+ assert.equal(plan.cursor,0);
+ assert.equal(plan.entries[0].status,'BLOCKED');
+});
