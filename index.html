@@ -1168,8 +1168,8 @@ if(state.page==='accounts'||state.page==='group'){
  }
 }
 if(state.page==='accounts'){
- $('.accounts-view-switch button').forEach(b=>b.onclick=()=>{const next=b.dataset.accountView;if(next===ui.accountsSubview)return;if(ui.dirty){toast('请先保存当前页面的修改，再切换标签',true);return}ui.accountsSubview=next;render()});
- $('.acc-connect').forEach(b=>b.onclick=()=>beginAccountConnect(b.dataset.connectId))
+ document.querySelectorAll('.accounts-view-switch button').forEach(b=>b.onclick=()=>{const next=b.dataset.accountView;if(next===ui.accountsSubview)return;if(ui.dirty){toast('请先保存当前页面的修改，再切换标签',true);return}ui.accountsSubview=next;render()});
+ document.querySelectorAll('.acc-connect').forEach(b=>b.onclick=()=>beginAccountConnect(b.dataset.connectId))
 }
 $('#waQrClose').onclick=stopWaQr;
 $('#waEnroll')?.addEventListener('click',createWaEnrollment);
