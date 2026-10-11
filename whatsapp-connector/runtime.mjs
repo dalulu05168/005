@@ -1,3 +1,4 @@
+import {planSeatMoves} from './seat-controller.mjs';
 const RECONNECT_MIN_MS=15000,RECONNECT_MAX_MS=120000;
 export function validAccountId(id){return typeof id==='string'&&/^[A-Za-z0-9_-]{1,100}$/.test(id)}
 export function phoneSuffix(info){
@@ -5,20 +6,24 @@ export function phoneSuffix(info){
   return number.slice(-4);
 }
 export class WhatsAppSessionRuntime{
-  constructor({createClient,toPngDataUrl,transport,loadAccounts,saveAccounts,log=()=>{},maxActive=3,clock=()=>Date.now()}){
+  constructor({createClient,toPngDataUrl,transport,loadAccounts,saveAccounts,log=()=>{},maxActive=3,seatMode=false,clock=()=>Date.now()}){
     this.createClient=createClient;this.toPngDataUrl=toPngDataUrl;this.transport=transport;
     this.loadAccounts=loadAccounts;this.saveAccounts=saveAccounts;this.log=log;
-    this.maxActive=Math.min(Math.max(Number(maxActive)||3,1),20);
+    this.seatMode=seatMode===true;
+    this.maxActive=Math.min(Math.max(Number(maxActive)||3,1),this.seatMode?7:20);
     this.clock=clock;this.sessions=new Map();this.knownAccounts=new Set();
     this.closed=false;this.requestsBusy=false;this.healthBusy=false;
     this.timer=null;this.healthTimer=null;this.reconnectFailures=new Map();
+    this.sleeping=new Set();this.seatBusy=false;this.lastSeatPlanError='';
   }
   async start(){
     const ids=await this.loadAccounts();
     this.knownAccounts=new Set((Array.isArray(ids)?ids:[]).filter(validAccountId));
     this.log('已保存本机会话：'+this.knownAccounts.size+' 个；并发上限 '+this.maxActive);
-    // Restore only sessions the operator previously connected on this machine.
-    for(const id of this.knownAccounts){
+    // In rolling mode do NOT automatically boot the first seven remembered
+    // accounts. Await the authenticated server's explicit seat plan instead.
+    if(this.seatMode)for(const id of this.knownAccounts)this.sleeping.add(id);
+    if(!this.seatMode)for(const id of this.knownAccounts){
       if(this.sessions.size>=this.maxActive)break;
       await this.openSession(id);
     }
@@ -33,7 +38,7 @@ export class WhatsAppSessionRuntime{
       const s=this.sessions.get(id);
       list.push({
         accountId:id,
-        status:s?.status||'OFFLINE',
+        status:s?.status||(this.sleeping.has(id)?'SLEEPING':'OFFLINE'),
         ...(s?.phoneLast4?{phoneLast4:s.phoneLast4}:{}),
         ...(s?.status==='ONLINE'?{sessionId:'local:'+id}:{})
       });
@@ -46,8 +51,8 @@ export class WhatsAppSessionRuntime{
     if(current?.client)return true;
     if(this.sessions.size>=this.maxActive){this.log('已达到并发上限，暂缓启动 '+id);return false}
     const record={id,client:null,status:'OFFLINE',phoneLast4:current?.phoneLast4||'',
-      lastQr:'',qrAt:0,pending:false,restartAfter:0,initializing:true};
-    this.sessions.set(id,record);
+      lastQr:'',qrAt:0,pending:false,restartAfter:0,initializing:true,startedAt:this.clock(),releasing:false};
+    this.sessions.set(id,record);this.sleeping.delete(id);
     let client;
     try{client=await this.createClient(id)}catch(e){
       record.status='OFFLINE';this.sessions.delete(id);
@@ -55,7 +60,7 @@ export class WhatsAppSessionRuntime{
       return false;
     }
     record.client=client;
-    const live=()=>!this.closed&&this.sessions.get(id)===record;
+    const live=()=>!this.closed&&!record.releasing&&this.sessions.get(id)===record;
     client.on('qr',qr=>{
       if(!live())return;
       record.status='NEEDS_QR';record.lastQr=qr;record.qrAt=this.clock();
@@ -75,14 +80,14 @@ export class WhatsAppSessionRuntime{
     });
     client.on('auth_failure',()=>{
       if(!live())return;
-      record.status='NEEDS_QR';record.lastQr='';
+      record.status='NEEDS_QR';record.lastQr='';record.initializing=false;
       this.log('授权需要重新验证：'+id);
     });
     client.on('disconnected',reason=>{
       if(!live()||record.client!==client)return;
       const loggedOut=String(reason||'').toUpperCase().includes('LOGOUT');
       record.status=loggedOut?'NEEDS_QR':'OFFLINE';
-      record.lastQr='';record.client=null;record.pending=false;
+      record.lastQr='';record.client=null;record.pending=false;record.initializing=false;
       const fail=(this.reconnectFailures.get(id)||0)+1;
       this.reconnectFailures.set(id,fail);
       record.restartAfter=loggedOut?Infinity:this.clock()+Math.min(RECONNECT_MAX_MS,RECONNECT_MIN_MS*2**Math.min(fail-1,3));
@@ -92,7 +97,7 @@ export class WhatsAppSessionRuntime{
     });
     void Promise.resolve().then(()=>client.initialize()).catch(async e=>{
       if(!live())return;
-      record.status='OFFLINE';record.lastQr='';record.client=null;
+      record.status='OFFLINE';record.lastQr='';record.client=null;record.initializing=false;
       const fail=(this.reconnectFailures.get(id)||0)+1;
       this.reconnectFailures.set(id,fail);
       record.restartAfter=this.clock()+Math.min(RECONNECT_MAX_MS,RECONNECT_MIN_MS*2**Math.min(fail-1,3));
@@ -100,6 +105,70 @@ export class WhatsAppSessionRuntime{
       try{await client.destroy()}catch{}
     });
     return true;
+  }
+  // A released seat retains LocalAuth files and the enrollment whitelist.
+  // destroy() closes Chromium; logout() would revoke credentials and is forbidden.
+  async releaseSession(id,{protectedIds=[]}={}){
+    if(!validAccountId(id))return false;
+    if(protectedIds.includes(id))return false;
+    const rec=this.sessions.get(id);
+    if(!rec){if(this.knownAccounts.has(id))this.sleeping.add(id);return true}
+    // Incomplete initialization and pending manual QR pairing are not safe to evict.
+    if(rec.pending||rec.status==='VERIFYING')return false;
+    // If Chromium hangs during initial setup, never kill immediately;
+    // after a bounded timeout the seat can safely be reclaimed.
+    if(rec.initializing&&this.clock()-rec.startedAt<120000)return false;
+    rec.releasing=true;
+    try{if(rec.client)await rec.client.destroy()}catch(e){
+      rec.releasing=false;
+      this.log('座位释放失败 '+id+' '+String(e?.message||e));
+      return false;
+    }
+    if(this.sessions.get(id)!==rec)return false;
+    this.sessions.delete(id);this.reconnectFailures.delete(id);
+    this.sleeping.add(id);
+    this.log('已释放座位（保留授权会话）：'+id);
+    return true;
+  }
+  async syncSeatPlan(plan){
+    if(!this.seatMode||!plan||plan.enabled!==true)return {status:'DISABLED'};
+    if(this.seatBusy)return {status:'BUSY'};
+    this.seatBusy=true;
+    try{
+      const ids=Array.isArray(plan.desired)?plan.desired:[];
+      // The connector may only resume profiles that were previously enrolled
+      // on this device. A remote plan cannot silently authorize an unknown ID.
+      const desired=ids.filter(id=>this.knownAccounts.has(id));
+      const unpaired=ids.filter(id=>validAccountId(id)&&!this.knownAccounts.has(id));
+      const protectedIds=Array.isArray(plan.protectedAccountIds)?plan.protectedAccountIds:[];
+      const moves=planSeatMoves({active:[...this.sessions.keys()],desired,
+        protectedIds,maxActive:this.maxActive});
+      const released=[];
+      for(const id of moves.release){
+        if(await this.releaseSession(id,{protectedIds}))released.push(id);
+      }
+      const active=new Set(this.sessions.keys());
+      const started=[];
+      for(const id of desired){
+        if(active.size>=this.maxActive)break;
+        if(active.has(id))continue;
+        if(await this.openSession(id)){active.add(id);started.push(id)}
+      }
+      return {status:unpaired.length?'NEEDS_AUTHORIZATION':'APPLIED',
+        released,started,unpaired,active:[...this.sessions.keys()]};
+    }finally{this.seatBusy=false}
+  }
+  async pollSeatPlan(){
+    if(!this.seatMode||this.closed)return;
+    try{
+      const result=await this.transport.get('/v1/worker/seat-plan');
+      if(result?.enabled===true)await this.syncSeatPlan(result);
+      this.lastSeatPlanError='';
+    }catch(e){
+      const reason=String(e?.message||e).slice(0,120);
+      if(reason!==this.lastSeatPlanError)this.log('座位计划暂不可用：'+reason);
+      this.lastSeatPlanError=reason;
+    }
   }
   async publishQr(record){
     if(this.closed||!record.pending||!record.lastQr)return;
@@ -141,6 +210,8 @@ export class WhatsAppSessionRuntime{
           this.sessions.delete(id);await this.openSession(id);
         }
       }
+      // Backend controls the rolling roster; legacy mode retains old behavior.
+      if(this.seatMode)await this.pollSeatPlan();
       // Ordinary disconnection of an existing session causes a reconnect attempt,
       // but explicit LOGOUT waits for the operator to request pairing again.
       for(const [id,rec] of this.sessions){
@@ -187,7 +258,7 @@ export class WhatsAppSessionRuntime{
     if(this.healthTimer)clearInterval(this.healthTimer);
     const all=[...this.sessions.values()];
     this.sessions.clear();
-    this.reconnectFailures.clear();
+    this.reconnectFailures.clear();this.sleeping.clear();
     await Promise.allSettled(all.map(async rec=>{try{await rec.client?.destroy()}catch{}}));
   }
 }

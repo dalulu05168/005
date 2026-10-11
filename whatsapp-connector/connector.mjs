@@ -101,7 +101,8 @@ async function main(){
     loadAccounts:()=>readJson(accountsPath,[]),
     saveAccounts:accounts=>secureWrite(accountsPath,accounts),
     log,
-    maxActive:Number(process.env.NUVEXA_MAX_ACTIVE||3)
+    maxActive:Number(process.env.NUVEXA_MAX_ACTIVE||(process.env.NUVEXA_SEAT_MODE==='true'?'7':'3')),
+    seatMode:process.env.NUVEXA_SEAT_MODE==='true'
   });
   log('账号会话目录：'+authPath);
   log('保持此窗口运行；打开 Nuvexa 后台逐个点击「扫码登录」即可。');

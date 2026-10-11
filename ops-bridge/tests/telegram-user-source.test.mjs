@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {createTelegramSource} from '../telegram-user-source.mjs';
 
 const KEY='nuvexa:source:telegram:user:v1';
-const eventText='资讯助理\n市场早报。\n\nBună dimineața!';
+const eventText='助理：\n市场早报。\nBună dimineața!';
 function harness(twoFactor=false){
   const table=new Map();
   const redis={get:async key=>table.get(key)||null,set:async(key,v)=>{table.set(key,v);return 'OK'},del:async key=>Number(table.delete(key))};

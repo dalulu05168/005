@@ -14,7 +14,7 @@ function between(begin,end){
 }
 const parser=between('function personaCodes(','function normalizeAccount(');
 const routing=between('function selectSender(','function parseTelegram(');
-const {selectSender,excludeConfirmedNotSent}=Function('isAccountOnline',parser+'\n'+routing+'\nreturn {selectSender,excludeConfirmedNotSent};')(a=>a?.status==='ONLINE');
+const {selectSender,excludeConfirmedNotSent}=Function('isAccountOnline','accountIdentity',parser+'\n'+routing+'\nreturn {selectSender,excludeConfirmedNotSent};')(a=>a?.status==='ONLINE',a=>a?.identity||'老男');
 function build({member='OFFLINE',b1='ONLINE',b2='ONLINE',b3='ONLINE'}={}){
   return {accounts:[
     {id:'assistant1',kind:'ASSISTANT',slot:'PRIMARY',status:'OFFLINE'},
@@ -73,4 +73,36 @@ test('after a confirmed unsent primary send, first shared reserve is selected',(
  const s=build({member:'ONLINE'}),target={};
  excludeConfirmedNotSent(target,'member45');
  assert.equal(selectSender(s,member,target).account.id,'reserve1');
+});
+
+test('unknown role code never falls through to unassigned shared reserve',()=>{
+ const s=build();
+ const result=selectSender(s,{role:'AUXILIARY',auxCode:'70'},{});
+ assert.equal(result.blocked,true);
+ assert.equal(result.reason,'ROLE_ACCOUNT_NOT_MAPPED');
+});
+test('one code assigned to multiple main accounts is rejected before dispatch',()=>{
+ const s=build({member:'ONLINE'});
+ s.accounts.push({id:'duplicate45',kind:'AUXILIARY',slot:'PRIMARY',
+   auxCode:'46',personaCodes:['45'],status:'ONLINE'});
+ const result=selectSender(s,{role:'AUXILIARY',auxCode:'45'},{});
+ assert.equal(result.blocked,true);
+ assert.equal(result.reason,'DUPLICATE_PERSONA_ACCOUNT_MAPPING');
+});
+
+test('changed member identity matches new Telegram header only',()=>{
+ const s=build({member:'ONLINE'});
+ s.accounts.find(a=>a.id==='member45').identity='新女';
+ assert.equal(selectSender(s,{role:'AUXILIARY',auxCode:'45',identity:'新女'},{}).account.id,'member45');
+ const wrong=selectSender(s,{role:'AUXILIARY',auxCode:'45',identity:'老男'},{});
+ assert.equal(wrong.blocked,true);
+ assert.equal(wrong.reason,'ROLE_IDENTITY_MISMATCH');
+});
+test('changing the code preserves WhatsApp slot but changes routing identity',()=>{
+ const s=build({member:'ONLINE'});
+ s.accounts.find(a=>a.id==='member45').auxCode='77';
+ s.accounts.find(a=>a.id==='member45').personaCodes=['77'];
+ s.accounts.find(a=>a.id==='member45').identity='老女';
+ assert.equal(selectSender(s,{role:'AUXILIARY',auxCode:'77',identity:'老女'},{}).account.id,'member45');
+ assert.equal(selectSender(s,{role:'AUXILIARY',auxCode:'45',identity:'老男'},{}).blocked,true);
 });

@@ -4,7 +4,9 @@ import { createHmac, createHash, randomBytes, randomUUID, timingSafeEqual } from
 import { createClient } from 'redis';
 import { createTelegramSource } from './telegram-user-source.mjs';
 import { zipStored } from './build-connector-zip.mjs';
-import { normalizeTelegramUpdate, textWithoutRole, extractPreparedText, identifySourceRole } from './telegram-collector.mjs';
+import { normalizeTelegramUpdate, extractPreparedText, identifySourceRole, parseFixedTelegramMessage } from './telegram-collector.mjs';
+import { selectNextDispatchTask } from './priority-scheduler.mjs';
+import {createDailySeatPlan,findSeatPlanStep,markSeatPlanReceived,reconcileSeatPlan,desiredSeatAccounts,resolveAccountForRole} from './seat-plan.mjs';
 
 const PORT=Number(process.env.PORT||10000);
 const REDIS_URL=String(process.env.REDIS_URL||'').trim();
@@ -30,6 +32,19 @@ const TELEGRAM_CONFIGURED=Boolean(TELEGRAM_BOT_TOKEN&&TELEGRAM_WEBHOOK_SECRET&&T
 const MAX_BODY=4*1024*1024;
 const TERMINAL_TARGETS=new Set(['ACKED','SKIPPED_DISABLED','FAILED']);
 const TERMINAL_TASKS=new Set(['ACKED','FAILED','CANCELLED']);
+// Only a short-lived HMAC-free hash of source IDs is kept for duplicate prevention.
+// No completed message content, media references or send history survives in state.
+const COMPLETED_DEDUP_TTL_SECONDS=60*60;
+function completedTaskKey(sourceChatId,sourceMessageId,messageType){
+  return 'nuvexa:ops:dedup:v1:'+createHash('sha256')
+    .update(JSON.stringify([String(sourceChatId||''),String(sourceMessageId||''),String(messageType||'')]))
+    .digest('hex');
+}
+function removeFinishedTasks(state){
+  const finished=(state.tasks||[]).filter(t=>TERMINAL_TASKS.has(t.status));
+  state.tasks=(state.tasks||[]).filter(t=>!TERMINAL_TASKS.has(t.status));
+  return finished;
+}
 
 if(!REDIS_URL||!ADMIN_PASSWORD||!SESSION_SECRET||!AGENT_KEY){
   console.error('Missing required environment configuration');
@@ -108,6 +123,18 @@ async function body(req){
 }
 
 
+const MEMBER_IDENTITIES=new Set(['老女','新女','老男','新男']);
+function defaultMemberIdentity(code){
+  const n=Number(code);
+  return n>=1&&n<=10?'老女':n<=30&&n>=11?'新女':n<=50&&n>=31?'老男':n<=65&&n>=51?'新男':'';
+}
+function accountIdentity(account){
+  // Existing accounts predate editable identity; derive the default from the
+  // stable slot id (not a code the operator may later edit).
+  const slot=String(account?.id||'').match(/^member-(\d{2})$/);
+  const base=slot?Number(slot[1]):Number(account?.auxCode);
+  return MEMBER_IDENTITIES.has(account?.identity)?account.identity:defaultMemberIdentity(base);
+}
 function standard72AccountSlots(){
   const add=(id,name,kind,slot,auxCode='',backupOrder=0)=>({
     id,name,kind,slot,auxCode:String(auxCode),backupOrder,
@@ -121,8 +148,8 @@ function standard72AccountSlots(){
     add('role-professor-backup','教授2号','PROFESSOR','BACKUP')
   ];
   for(let n=1;n<=65;n++){
-    const group=n<=20?'老男成员':n<=30?'老女成员':n<=50?'新男成员':'新女成员';
-    accounts.push({...add('member-'+String(n).padStart(2,'0'),group+String(n).padStart(2,'0'),'AUXILIARY','PRIMARY',n),personaCodes:[String(n)]});
+    const group=n<=10?'老女成员':n<=30?'新女成员':n<=50?'老男成员':'新男成员';
+    accounts.push({...add('member-'+String(n).padStart(2,'0'),group+String(n).padStart(2,'0'),'AUXILIARY','PRIMARY',n),identity:defaultMemberIdentity(n),personaCodes:[String(n)]});
   }
   for(let n=1;n<=3;n++)accounts.push(add('reserve-'+n,'备用'+n,'AUX_BACKUP','BACKUP','',n));
   return accounts;
@@ -153,6 +180,7 @@ function defaultState(){
     groups:[],
     tasks:[],
     pendingImages:[],
+    seatPlan:{enabled:false,maxSeats:7,cursor:0,entries:[]},
     queue:{
       paused:false,
       pauseReason:'',
@@ -180,10 +208,23 @@ async function getState(){
       groups:Array.isArray(s.groups)?s.groups:[],
       tasks:Array.isArray(s.tasks)?s.tasks:[],
       pendingImages:Array.isArray(s.pendingImages)?s.pendingImages:[],
+      seatPlan:s.seatPlan&&Array.isArray(s.seatPlan.entries)?s.seatPlan:d.seatPlan,
     };
   }catch{return defaultState()}
 }
 async function setState(state){
+  // Retain pending/in-flight/VERIFYING tasks only. Completed tasks carry private
+  // content and are deleted immediately after each entire task reaches a terminal
+  // result, rather than persisting into historical dashboards.
+  // Commit plan advancement before completed tasks are purged from Redis.
+  reconcileSeatPlan(state.seatPlan,state.tasks||[]);
+  const finished=removeFinishedTasks(state);
+  for(const task of finished){
+    if(task.sourceChatId&&task.sourceMessageId&&task.messageType){
+      await redis.set(completedTaskKey(task.sourceChatId,task.sourceMessageId,task.messageType),
+        '1',{EX:COMPLETED_DEDUP_TTL_SECONDS});
+    }
+  }
   state.updatedAt=nowIso();
   await redis.set(STATE_KEY,JSON.stringify(state));
   return state;
@@ -210,17 +251,18 @@ function normalizeRange(value,prev){
 }
 function personaCodes(raw,fallback=''){
   const values=Array.isArray(raw)?raw:(raw===undefined||raw===null?[fallback]:String(raw).split(/[,，;；\s]+/));
-  return [...new Set(values.map(v=>String(v).trim()).filter(v=>/^(?:[1-9]|[1-5]\d|6[0-5])$/.test(v)).map(v=>String(Number(v))))].slice(0,65);
+  return [...new Set(values.map(v=>String(v).trim()).filter(v=>/^(?:0?[1-9]|[1-9]\d)$/.test(v)).map(v=>String(Number(v))))].slice(0,99);
 }
 function normalizeAccount(a,index=0){
   const kind=['ASSISTANT','PROFESSOR','AUXILIARY','AUX_BACKUP'].includes(a.kind)?a.kind:'AUXILIARY';
   const slot=['PRIMARY','BACKUP'].includes(a.slot)?a.slot:(kind==='AUX_BACKUP'?'BACKUP':'PRIMARY');
-  const status=['ONLINE','OFFLINE','UNCONFIGURED','CONFIRMED_UNAVAILABLE','NEEDS_QR','VERIFYING'].includes(a.status)?a.status:'UNCONFIGURED';
+  const status=['ONLINE','OFFLINE','SLEEPING','UNCONFIGURED','CONFIRMED_UNAVAILABLE','NEEDS_QR','VERIFYING'].includes(a.status)?a.status:'UNCONFIGURED';
   return {
     id:safeString(a.id,120)||randomUUID(),
     name:safeString(a.name,120)||('账号 '+(index+1)),
     kind,slot,status,
     auxCode:safeString(a.auxCode,32),
+    identity:kind==='AUXILIARY'?accountIdentity(a):'',
     personaCodes:kind==='AUXILIARY'?personaCodes(a.personaCodes,a.auxCode):[],
     backupOrder:Math.max(0,Number(a.backupOrder)||0),
     phoneLast4:safeString(a.phoneLast4,8),
@@ -315,7 +357,13 @@ function selectSender(state,task,target={}){
     String(Number(a.auxCode||0))===roleId ||
     personaCodes(a.personaCodes,a.auxCode).includes(roleId)
   ));
-  const primary=candidates.find(a=>String(Number(a.auxCode||0))===roleId)||candidates[0]||null;
+  // A unique source code must have exactly one configured primary account.
+  // Never route an unassigned or multiply-assigned role to arbitrary reserves.
+  if(candidates.length===0)return {blocked:true,reason:'ROLE_ACCOUNT_NOT_MAPPED',account:null};
+  if(candidates.length!==1)return {blocked:true,reason:'DUPLICATE_PERSONA_ACCOUNT_MAPPING',account:null};
+  const primary=candidates[0];
+  if(task.identity&&accountIdentity(primary)!==task.identity)
+    return {blocked:true,reason:'ROLE_IDENTITY_MISMATCH',account:primary};
   if(available(primary))return {account:primary,backup:false};
   // When a role has no dedicated primary, use a real sender explicitly assigned
   // multiple persona IDs. Otherwise a failed dedicated sender borrows reserve 1 first.
@@ -339,22 +387,32 @@ function excludeConfirmedNotSent(target,accountId){
 }
 function parseTelegram(input){
   const raw=safeString(input.text??input.caption,12000);
-  const parsedSource=identifySourceRole(raw);
+  const parsed=parseFixedTelegramMessage(raw);
+  if(!parsed.ok)return {ok:false,error:parsed.error,raw};
+  // Telegram header is the only source of role identity. Client-supplied
+  // role/code/translation overrides must not reroute messages.
   const explicitRole=safeString(input.role,32).toUpperCase();
-  let role='',auxCode=safeString(input.auxCode,32);
-  if(['ASSISTANT','PROFESSOR','AUXILIARY'].includes(explicitRole))role=explicitRole;
-  else role=parsedSource?.role||'';
-  if(!auxCode)auxCode=parsedSource?.auxCode||'';
-  const roleName=safeString(input.roleName,120)||parsedSource?.roleName||role;
-  const translatedRoleName=safeString(input.translatedRoleName,120)||parsedSource?.translatedRoleName||'';
-  let romanian=safeString(input.romanianText,10000);
-  if(!romanian)romanian=safeString(extractPreparedText(raw),10000);
-  const mediaRef=safeString(input.mediaRef||input.imageUrl,2000);
-  if(!role)return {ok:false,error:'ROLE_NOT_RECOGNIZED'};
-  if(role==='AUXILIARY'&&!auxCode)return {ok:false,error:'AUX_CODE_REQUIRED'};
-  const common={role,auxCode,roleName,translatedRoleName,romanianText:romanian,mediaRef,raw};
-  if(!romanian&&!mediaRef)return {ok:false,error:'ROMANIAN_TRANSLATION_REQUIRED',...common};
-  return {ok:true,...common};
+  const explicitCode=safeString(input.auxCode,32);
+  const suppliedRomanian=safeString(input.romanianText,10000);
+  if((explicitRole&&explicitRole!==parsed.role)||
+     (explicitCode&&explicitCode!==parsed.auxCode)||
+     (suppliedRomanian&&suppliedRomanian!==parsed.romanianText)){
+    return {ok:false,error:'TELEGRAM_ROLE_OR_TEXT_MISMATCH',raw};
+  }
+  return {
+    ok:true,role:parsed.role,auxCode:parsed.auxCode,identity:parsed.identity||'',
+    roleName:parsed.roleName,translatedRoleName:parsed.translatedRoleName,
+    romanianText:parsed.romanianText,
+    mediaRef:safeString(input.mediaRef||input.imageUrl,2000),raw
+  };
+}
+function verifiedForwardReceipt(input,target){
+  const sender=safeString(input.actualSenderAccountId,120);
+  const group=safeString(input.actualGroupId,220);
+  const messageId=safeString(input.whatsAppMessageId,300);
+  const providerState=safeString(input.providerAck,40).toUpperCase();
+  return Boolean(messageId)&&sender===target.senderAccountId&&group===target.groupId
+    &&['ACK_SERVER','ACK_DEVICE','ACK_READ','ACK_PLAYED'].includes(providerState);
 }
 function enabledTargets(state){
   return (state.groups||[]).filter(g=>g.enabled).sort((a,b)=>a.order-b.order).map(g=>({
@@ -373,11 +431,15 @@ function enabledTargets(state){
   }));
 }
 function deriveTaskStatus(task){
-  if((task.targets||[]).some(t=>t.status==='VERIFYING'))return 'VERIFYING';
-  if((task.targets||[]).some(t=>t.status==='SENDING'))return 'SENDING';
-  if((task.targets||[]).some(t=>t.status==='WAITING'))return 'WAITING';
-  if((task.targets||[]).some(t=>t.status==='FAILED'))return 'FAILED';
-  return 'ACKED';
+  const targets=task.targets||[];
+  // Only explicit provider-confirmed ACKs from EVERY required group can
+  // produce a successful task. Disabled/missing groups are not deliveries.
+  if(!targets.length)return 'FAILED';
+  if(targets.some(t=>t.status==='VERIFYING'))return 'VERIFYING';
+  if(targets.some(t=>t.status==='SENDING'))return 'SENDING';
+  if(targets.some(t=>t.status==='WAITING'))return 'WAITING';
+  if(targets.some(t=>t.status==='FAILED'||t.status==='SKIPPED_DISABLED'))return 'FAILED';
+  return targets.every(t=>t.status==='ACKED')?'ACKED':'VERIFYING';
 }
 function reconcile(state){
   const groupMap=new Map((state.groups||[]).map(g=>[g.id,g]));
@@ -396,7 +458,7 @@ function reconcile(state){
     task.status=deriveTaskStatus(task);
     if(task.status==='ACKED'&&!task.completedAt)task.completedAt=nowIso();
   }
-  const head=(state.tasks||[]).find(t=>!TERMINAL_TASKS.has(t.status));
+  const head=selectNextDispatchTask(state.tasks||[]);
   state.queue.headTaskId=head?.id||null;
   state.queue.updatedAt=nowIso();
   return head||null;
@@ -434,6 +496,7 @@ function publicState(state){
     groups:state.groups,
     tasks:(state.tasks||[]).slice(-200),
     queue:state.queue,
+    seatPlan:state.seatPlan,
     summary:summary(state),
   };
 }
@@ -528,7 +591,7 @@ async function handleLease(){
         messageType:head.messageType||'TEXT',
         roleName:outboundRoleName(head),
         translatedRoleName:outboundRoleName(head),
-        outboundText:head.messageType==='IMAGE'?'':outboundRoleName(head)+'\n'+(head.romanianText||''),
+        outboundText:head.messageType==='IMAGE'?'':(head.romanianText||''),
         sourceMessageId:head.sourceMessageId||'',
       },
       target:{id:target.id,groupId:target.groupId,groupName:target.groupName},
@@ -763,9 +826,15 @@ const server=createServer(async(req,res)=>{
       state.collector.lastHeartbeatAt=now;
       state.collector.running=true;
       state.collector.status='RUNNING';
+      // No configured target means NO forwarding, never a fake ACKED task.
+      // This is enforced on every ingest route, including Telegram webhooks.
+      if(!(state.groups||[]).some(g=>g.enabled)){
+        await setState(state);
+        return send(res,409,{error:'NO_ENABLED_WHATSAPP_TARGET_GROUPS',queued:false});
+      }
       // A photo without a role is held for the next matching role message.
       // No image content analysis, OCR or translation is performed.
-      if(media&&!parsed.role){
+      if(media&&!String(input.text??input.caption??'').trim()){
         if(!chatId||!messageId)return send(res,422,{error:'PHOTO_SOURCE_REQUIRED'});
         if(!state.pendingImages.some(p=>p.chatId===chatId&&p.messageId===messageId)){
           state.pendingImages.push({chatId,messageId,senderId,threadId:safeString(input.sourceThreadId,220),media,receivedAt:now});
@@ -774,10 +843,21 @@ const server=createServer(async(req,res)=>{
         await setState(state);
         return send(res,202,{ok:true,queued:false,status:'AWAITING_ROLE',imageInspected:false});
       }
-      if(!parsed.role){
+      if(!parsed.ok){
         state.collector.rejected=(state.collector.rejected||0)+1;
         await setState(state);
-        return send(res,422,{error:parsed.error||'ROLE_NOT_RECOGNIZED'});
+        return send(res,422,{error:parsed.error||'SOURCE_FORMAT_INVALID',queued:false});
+      }
+      if(parsed.role==='AUXILIARY'){
+        const match=(state.accounts||[]).filter(a=>a.kind==='AUXILIARY'&&a.slot==='PRIMARY'&&
+          (String(Number(a.auxCode||0))===parsed.auxCode||
+            personaCodes(a.personaCodes,a.auxCode).includes(parsed.auxCode)));
+        if(match.length!==1||accountIdentity(match[0])!==parsed.identity){
+          state.collector.rejected=(state.collector.rejected||0)+1;
+          await setState(state);
+          return send(res,422,{error:match.length===0?'ROLE_ACCOUNT_NOT_MAPPED':
+            match.length>1?'DUPLICATE_PERSONA_ACCOUNT_MAPPING':'ROLE_IDENTITY_MISMATCH',queued:false});
+        }
       }
       const replyId=safeString(input.replyToMessageId,220);
       const threadId=safeString(input.sourceThreadId,220);
@@ -792,10 +872,8 @@ const server=createServer(async(req,res)=>{
       }
       const paired=candidates[0]||null;
       const photoRef=media||paired?.media||'';
-      const rawText=safeString(input.text??input.caption,12000);
-      const roleOnly=textWithoutRole(rawText)==='';
-      const containsText=Boolean(parsed.romanianText)||(!roleOnly&&Boolean(rawText));
-      const translationUnsafe=Boolean(parsed.romanianText&&hasChinese(parsed.romanianText));
+      const containsText=true; // Strict three-line format requires text.
+      const translationUnsafe=hasChinese(parsed.romanianText);
       const translatedText=translationUnsafe?'':parsed.romanianText;
       if(!photoRef&&!translatedText){
         await setState(state);
@@ -804,7 +882,29 @@ const server=createServer(async(req,res)=>{
       const imageMessageId=paired?.messageId||messageId;
       const knownImage=state.tasks.find(t=>t.sourceChatId===chatId&&t.sourceMessageId===imageMessageId&&t.messageType==='IMAGE');
       const knownText=state.tasks.find(t=>t.sourceChatId===chatId&&t.sourceMessageId===messageId&&t.messageType!=='IMAGE');
+      // Completed items were removed immediately. A one-hour hashed marker
+      // prevents Telegram redelivery from silently forwarding them twice.
+      const completedImage=imageMessageId?await redis.get(completedTaskKey(chatId,imageMessageId,'IMAGE')):null;
+      const completedText=messageId?await redis.get(completedTaskKey(chatId,messageId,'TEXT')):null;
       const targets=()=>enabledTargets(state);
+      // Duplicates must NOT consume a second daily-plan slot. A received
+      // Telegram message can generate text and image tasks for one plan step.
+      const newOutput=Boolean((photoRef&&!knownImage&&!completedImage)||
+        (translatedText&&!knownText&&!completedText));
+      const plan=state.seatPlan;
+      const planStep=plan?.enabled&&newOutput?findSeatPlanStep(plan,parsed):null;
+      if(plan?.enabled&&newOutput&&!planStep){
+        await setState(state);
+        return send(res,409,{error:'SEAT_PLAN_ROLE_NOT_SCHEDULED_OR_OUT_OF_ORDER',queued:false});
+      }
+      // Never silently truncate in-flight tasks to fit the Redis state cap.
+      // Reject the new intake before mutating the queue when it is full.
+      const neededSlots=Number(Boolean(photoRef&&!knownImage&&!completedImage))+
+        Number(Boolean(translatedText&&!knownText&&!completedText));
+      if((state.tasks||[]).length+neededSlots>1000){
+        await setState(state);
+        return send(res,429,{error:'FORWARD_QUEUE_AT_CAPACITY',queued:false});
+      }
       const taskIds=[];
       function queueItem(kind,sourceId,ref,romanian){
         const task={
@@ -812,24 +912,25 @@ const server=createServer(async(req,res)=>{
           sequence:(state.tasks.reduce((m,t)=>Math.max(m,Number(t.sequence)||0),0)||0)+1,
           sourceChatId:chatId,sourceMessageId:sourceId,
           sourceAt:input.sourceAt||now,createdAt:now,
-          role:parsed.role,roleName:parsed.roleName||parsed.role,
+          role:parsed.role,roleName:parsed.roleName||parsed.role,identity:parsed.identity||'',
           translatedRoleName:parsed.translatedRoleName,
           auxCode:parsed.auxCode||'',romanianText:romanian,mediaRef:ref,
+          seatPlanStepId:planStep?.id||null,
           status:'WAITING',completedAt:null,targets:targets()
         };
         if(!task.targets.length){task.status='ACKED';task.completedAt=now;}
         state.tasks.push(task);taskIds.push(task.id);
       }
       // The image is ready once its sending role is known. Translation does not delay it.
-      if(photoRef&&!knownImage)queueItem('IMAGE',imageMessageId,photoRef,'');
-      if(translatedText&&!knownText)queueItem('TEXT',messageId,'',translatedText);
+      if(photoRef&&!knownImage&&!completedImage)queueItem('IMAGE',imageMessageId,photoRef,'');
+      if(translatedText&&!knownText&&!completedText)queueItem('TEXT',messageId,'',translatedText);
       if(paired&&(!containsText||translatedText))state.pendingImages=state.pendingImages.filter(p=>p!==paired);
+      if(taskIds.length&&planStep)markSeatPlanReceived(planStep,taskIds);
       if(!taskIds.length){
         await setState(state);
         if(containsText&&!translatedText)return send(res,422,{error:translationUnsafe?'OUTBOUND_CHINESE_BLOCKED':'ROMANIAN_TRANSLATION_REQUIRED',queued:false,hasImage:Boolean(photoRef)});
         return send(res,200,{ok:true,duplicate:true,taskId:knownText?.id||knownImage?.id||null});
       }
-      state.tasks=state.tasks.slice(-1000);
       state.collector.parsed=(state.collector.parsed||0)+1;
       reconcile(state);
       await setState(state);
@@ -851,7 +952,7 @@ const server=createServer(async(req,res)=>{
       if(url.pathname==='/v1/download/whatsapp-connector.zip'&&!userAuth(req))
         return send(res,401,{error:'ADMIN_AUTH_REQUIRED'});
       const folder=new URL('../whatsapp-connector/',import.meta.url);
-      const names=['README.md','START-WHATSAPP.cmd','package.json','connector.mjs','runtime.mjs'];
+      const names=['README.md','START-WHATSAPP.cmd','package.json','connector.mjs','runtime.mjs','seat-controller.mjs'];
       const entries=await Promise.all(names.map(async name=>({
         name:'Nuvexa-WhatsApp-Connector/'+name,
         bytes:await readFile(new URL(name,folder))
@@ -962,7 +1063,7 @@ const server=createServer(async(req,res)=>{
           const account=state.accounts.find(a=>a.id===safeString(report.accountId,120));
           if(!account)continue;
           const status=safeString(report.status,36);
-          if(!['ONLINE','OFFLINE','NEEDS_QR','VERIFYING','CONFIRMED_UNAVAILABLE'].includes(status))continue;
+          if(!['ONLINE','OFFLINE','SLEEPING','NEEDS_QR','VERIFYING','CONFIRMED_UNAVAILABLE'].includes(status))continue;
           account.status=status;
           if(report.phoneLast4!==undefined)account.phoneLast4=String(report.phoneLast4||'').replace(/\D/g,'').slice(-4);
           account.lastHeartbeatAt=time;
@@ -991,6 +1092,11 @@ const server=createServer(async(req,res)=>{
         onlineAccounts:state.accounts.filter(isAccountOnline).length,
         totalAccounts:state.accounts.length
       });
+    }
+    if(url.pathname==='/v1/worker/seat-plan'&&req.method==='GET'){
+      if(!await connectorAuth(req))return send(res,401,{error:'DEVICE_CONNECTOR_AUTH_REQUIRED'});
+      const state=await getState();
+      return send(res,200,desiredSeatAccounts(state.seatPlan,state.accounts,state.tasks));
     }
     if(url.pathname==='/v1/worker/accounts/requests'&&req.method==='GET'){
       if(!await connectorAuth(req))return send(res,401,{error:'DEVICE_CONNECTOR_AUTH_REQUIRED'});
@@ -1154,7 +1260,13 @@ const server=createServer(async(req,res)=>{
         if(target.status!=='SENDING')return send(res,409,{error:'LEASE_NOT_ACTIVE',status:target.status});
         const result=safeString(input.result,64).toUpperCase();
         const account=state.accounts.find(a=>a.id===target.senderAccountId);
-        if(result==='ACKED'){
+        if(result==='ACKED'&&!verifiedForwardReceipt(input,target)){
+          // Never call "sent" successful solely because a worker reports ACKED.
+          // Preserve the in-flight payload for manual reconciliation; no blind retry.
+          target.status='VERIFYING';
+          target.error='FORWARD_RECEIPT_MISSING_OR_MISMATCHED';
+          target.leaseUntil=null;
+        }else if(result==='ACKED'){
           target.status='ACKED';
           target.ackedAt=nowIso();
           target.error=null;
@@ -1211,6 +1323,9 @@ const server=createServer(async(req,res)=>{
         if(!task||!target)return send(res,404,{error:'TARGET_NOT_FOUND'});
         if(target.status!=='VERIFYING')return send(res,409,{error:'TARGET_NOT_VERIFYING'});
         const resolution=safeString(input.resolution,32).toUpperCase();
+        if(resolution==='ACKED'&&!verifiedForwardReceipt(input,target)){
+          return send(res,409,{error:'FORWARD_RECEIPT_MISSING_OR_MISMATCHED'});
+        }
         if(resolution==='ACKED'){
           target.status='ACKED';target.ackedAt=nowIso();target.error=null;
           if(task.messageType!=='IMAGE')state.queue.lastAck={at:target.ackedAt,groupId:target.groupId,logicalSenderKey:logicalSenderKey(task),actualAccountId:target.senderAccountId};
@@ -1229,6 +1344,33 @@ const server=createServer(async(req,res)=>{
     const user=userAuth(req);
     if(!user)return send(res,401,{error:'AUTH_REQUIRED'});
 
+    if(url.pathname==='/v1/seat-plan'&&req.method==='GET'){
+      const state=await getState();
+      return send(res,200,{seatPlan:state.seatPlan,
+        roster:desiredSeatAccounts(state.seatPlan,state.accounts,state.tasks)});
+    }
+    if(url.pathname==='/v1/seat-plan'&&req.method==='PUT'){
+      const input=await body(req);
+      return await withLock(async()=>{
+        const state=await getState();
+        // Do not overwrite active plans or in-flight delivery with a new
+        // order; otherwise completed messages can be sent twice or skipped.
+        if((state.seatPlan?.enabled)&&state.seatPlan.entries.some(x=>x.status==='IN_FLIGHT'))
+          return send(res,409,{error:'SEAT_PLAN_HAS_INFLIGHT_TASKS'});
+        if((state.tasks||[]).some(t=>t.status==='SENDING'||t.status==='VERIFYING'))
+          return send(res,409,{error:'SEND_OR_VERIFY_IN_PROGRESS'});
+        if(input.enabled===false){
+          state.seatPlan={enabled:false,maxSeats:7,cursor:0,entries:[]};
+        }else{
+          try{state.seatPlan=createDailySeatPlan(input.items,state.accounts,
+            {maxSeats:input.maxSeats===undefined?7:input.maxSeats});}
+          catch(e){return send(res,422,{error:String(e.message||'INVALID_SEAT_PLAN')});}
+        }
+        await setState(state);
+        return send(res,200,{seatPlan:state.seatPlan,
+          roster:desiredSeatAccounts(state.seatPlan,state.accounts,state.tasks)});
+      });
+    }
     if(url.pathname==='/v1/dashboard'&&req.method==='GET'){
       const state=await getState();
       const data=publicState(state);
@@ -1246,6 +1388,14 @@ const server=createServer(async(req,res)=>{
       const existing=new Map(state.accounts.map(a=>[a.id,a]));
       const items=input.items.slice(0,200).map((value,i)=>{
         const normalized=normalizeAccount(value,i),previous=existing.get(normalized.id);
+        // When an existing account changes its primary code, retire the old
+        // primary code automatically rather than keeping a stale alias.
+        if(normalized.kind==='AUXILIARY'&&previous&&
+          String(Number(previous.auxCode||0))!==String(Number(normalized.auxCode||0))){
+          const oldCode=String(Number(previous.auxCode||0));
+          const newCode=String(Number(normalized.auxCode||0));
+          normalized.personaCodes=[...new Set(normalized.personaCodes.filter(c=>c!==oldCode).concat([newCode]))];
+        }
         return {...normalized,
           meta:previous?.meta||normalized.meta,
           personaCodes:normalized.personaCodes,
@@ -1261,11 +1411,34 @@ const server=createServer(async(req,res)=>{
       const primaryProfessor=items.filter(a=>a.kind==='PROFESSOR'&&a.slot==='PRIMARY').length;
       const backupProfessor=items.filter(a=>a.kind==='PROFESSOR'&&a.slot==='BACKUP').length;
       if(primaryAssistant>1||backupAssistant>1||primaryProfessor>1||backupProfessor>1)return send(res,400,{error:'助理1/助理2/教授1/教授2各只能配置一个账号'});
-      const auxCodes=new Set();
+      const codeOwner=new Map();
       for(const a of items.filter(x=>x.kind==='AUXILIARY'&&x.slot==='PRIMARY')){
-        if(!a.auxCode)return send(res,400,{error:'成员角色必须有独立的人物编号'});
-        if(auxCodes.has(a.auxCode))return send(res,400,{error:'人物编号不能重复（同一发送账号可以分配多个不同的人物编号）: '+a.auxCode});
-        auxCodes.add(a.auxCode);
+        if(!/^(?:0?[1-9]|[1-9][0-9])$/.test(String(a.auxCode)))
+          return send(res,400,{error:'人物编号必须在01–99范围内'});
+        if(!MEMBER_IDENTITIES.has(a.identity))
+          return send(res,400,{error:'人物身份必须选择老女、新女、老男或新男'});
+        const codes=new Set([a.auxCode,...personaCodes(a.personaCodes,a.auxCode)]);
+        for(const rawCode of codes){
+          const id=Number(rawCode);
+          if(!Number.isInteger(id)||id<1||id>99)
+            return send(res,400,{error:'人物编号必须在01–99范围内'});
+          const code=String(id);
+          const previous=codeOwner.get(code);
+          if(previous&&previous!==a.id)
+            return send(res,400,{error:'同一人物编号只能绑定一个主发送账号: '+code});
+          codeOwner.set(code,a.id);
+        }
+      }
+      // An in-progress day plan stores concrete physical account mappings.
+      // Do not silently reroute a scheduled role after an admin renumber/
+      // identity edit; require explicit safe plan reconfiguration instead.
+      if(state.seatPlan?.enabled){
+        const changed=state.seatPlan.entries.some(step=>{
+          const mapped=resolveAccountForRole(step,items);
+          return !mapped||mapped.id!==step.accountId;
+        });
+        if(changed)return send(res,409,{error:'SEAT_PLAN_RECONFIGURATION_REQUIRED',
+          message:'当前全天计划绑定的角色发生变化，请先安全完成或停止计划后重新保存'});
       }
       state.accounts=items;
       await setState(state);
