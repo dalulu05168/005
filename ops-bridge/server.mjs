@@ -431,11 +431,15 @@ function enabledTargets(state){
   }));
 }
 function deriveTaskStatus(task){
-  if((task.targets||[]).some(t=>t.status==='VERIFYING'))return 'VERIFYING';
-  if((task.targets||[]).some(t=>t.status==='SENDING'))return 'SENDING';
-  if((task.targets||[]).some(t=>t.status==='WAITING'))return 'WAITING';
-  if((task.targets||[]).some(t=>t.status==='FAILED'))return 'FAILED';
-  return 'ACKED';
+  const targets=task.targets||[];
+  // Only explicit provider-confirmed ACKs from EVERY required group can
+  // produce a successful task. Disabled/missing groups are not deliveries.
+  if(!targets.length)return 'FAILED';
+  if(targets.some(t=>t.status==='VERIFYING'))return 'VERIFYING';
+  if(targets.some(t=>t.status==='SENDING'))return 'SENDING';
+  if(targets.some(t=>t.status==='WAITING'))return 'WAITING';
+  if(targets.some(t=>t.status==='FAILED'||t.status==='SKIPPED_DISABLED'))return 'FAILED';
+  return targets.every(t=>t.status==='ACKED')?'ACKED':'VERIFYING';
 }
 function reconcile(state){
   const groupMap=new Map((state.groups||[]).map(g=>[g.id,g]));
