@@ -70,7 +70,8 @@ test('one-click account QR uses local authorized worker without asking for CMD e
  assert.ok(pageStart>=0&&pageEnd>pageStart,'account page renderer exists');
  const page=html.slice(pageStart,pageEnd);
  assert.ok(page.includes('本地后台服务'),'account page explains local service');
- for(const obsolete of ['id="waDownload"','id="waEnroll"','id="waConnectMode"','连接 Windows 扫码程序','下载 Windows 扫码程序','连接云端扫码服务']){
+ assert.ok(page.includes('service-setup')&&page.includes('id="waEnroll"'),'first-time enrollment is available under optional maintenance');
+ for(const obsolete of ['id="waDownload"','id="waConnectMode"','连接 Windows 扫码程序','下载 Windows 扫码程序','连接云端扫码服务']){
   assert.ok(!page.includes(obsolete),'daily UI must not expose legacy setup controls: '+obsolete);
  }
  assert.ok(!html.includes('class="wa-direct-download"'),'no global Windows download');
