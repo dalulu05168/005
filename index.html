@@ -1136,7 +1136,7 @@ function applyListPagination(kind){const host=kind==='accounts'?$('#accountsBody
  const query=String(ui.accountSearch||'').trim().toLowerCase();
  const rowText=[r.cells[0]?.textContent,r.querySelector('.acc-name')?.value,r.querySelector('.acc-code')?.value,r.querySelector('.acc-identity')?.value,r.querySelector('.acc-personas')?.value,r.querySelector('.acc-live-phone')?.textContent].join(' ').toLowerCase();
  return byRole&&byStatus&&(!query||rowText.includes(query));
-}):allRows,size=kind==='accounts'?8:4,pages=Math.max(1,Math.ceil(rows.length/size));ui.pages[kind]=Math.min(ui.pages[kind]||0,pages-1);const p=ui.pages[kind];allRows.forEach(r=>{r.hidden=true});rows.forEach((r,i)=>{r.hidden=i<p*size||i>=(p+1)*size;});let pager=$('#'+kind+'Pager');if(!pager){pager=document.createElement('div');pager.id=kind+'Pager';pager.className='pager';(kind==='accounts'?host.closest('.table-wrap'):host).after(pager);}pager.innerHTML='<span class="count">'+rows.length+' 条 · 每页 '+size+' 条</span><button data-page-step="-1" '+(p===0?'disabled':'')+'>上一页</button><span>'+(p+1)+' / '+pages+'</span><button data-page-step="1" '+(p===pages-1?'disabled':'')+'>下一页</button>';pager.querySelectorAll('button').forEach(b=>b.onclick=()=>{ui.pages[kind]+=Number(b.dataset.pageStep);applyListPagination(kind)});}
+}):allRows,available=kind==='accounts'?(host.closest('.table-wrap')?.clientHeight||400):0,size=kind==='accounts'?Math.max(1,Math.min(8,Math.floor((available-43)/((window.innerWidth<1100)?33:37)))):4,pages=Math.max(1,Math.ceil(rows.length/size));ui.pages[kind]=Math.min(ui.pages[kind]||0,pages-1);const p=ui.pages[kind];allRows.forEach(r=>{r.hidden=true});rows.forEach((r,i)=>{r.hidden=i<p*size||i>=(p+1)*size;});let pager=$('#'+kind+'Pager');if(!pager){pager=document.createElement('div');pager.id=kind+'Pager';pager.className='pager';(kind==='accounts'?host.closest('.table-wrap'):host).after(pager);}pager.innerHTML='<span class="count">'+rows.length+' 条 · 每页 '+size+' 条</span><button data-page-step="-1" '+(p===0?'disabled':'')+'>上一页</button><span>'+(p+1)+' / '+pages+'</span><button data-page-step="1" '+(p===pages-1?'disabled':'')+'>下一页</button>';pager.querySelectorAll('button').forEach(b=>b.onclick=()=>{ui.pages[kind]+=Number(b.dataset.pageStep);applyListPagination(kind)});}
 function bindWorkspace(){
 if(state.page==='group'){
 if(ui.intervalDraft)for(const [id,value] of Object.entries(ui.intervalDraft))$('#'+id).value=value;
@@ -1168,7 +1168,7 @@ if(state.page==='accounts'||state.page==='group'){
  }
 }
 if(state.page==='accounts'){
- $('.account-view-switch button').forEach(b=>b.onclick=()=>{const next=b.dataset.accountView;if(next===ui.accountsSubview)return;if(ui.dirty){toast('请先保存当前页面的修改，再切换标签',true);return}ui.accountsSubview=next;render()});
+ $('.accounts-view-switch button').forEach(b=>b.onclick=()=>{const next=b.dataset.accountView;if(next===ui.accountsSubview)return;if(ui.dirty){toast('请先保存当前页面的修改，再切换标签',true);return}ui.accountsSubview=next;render()});
  $('.acc-connect').forEach(b=>b.onclick=()=>beginAccountConnect(b.dataset.connectId))
 }
 $('#waQrClose').onclick=stopWaQr;
