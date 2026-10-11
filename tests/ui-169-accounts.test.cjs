@@ -17,6 +17,8 @@ test('16:9 single-screen accounts layout and no page scrolling', () => {
 test('tab switching retains seat plan functions separately from account list', () => {
   assert.match(html, /data-account-view="list"/);
   assert.match(html, /data-account-view="plan"/);
+  assert.match(html, /\$\$\('\.accounts-view-switch button'\)\.forEach/);
+  assert.match(html, /host\.closest\('\.table-wrap'\)\?\.clientHeight/);
   assert.match(html, /ui\.accountsSubview==='plan'\?seatPlanPanel\(\):accountsPageCore\(\)/);
   assert.match(html, /id="saveDailySeats"/);
   assert.match(html, /id="saveAccounts"/);
