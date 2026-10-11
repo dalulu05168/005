@@ -63,20 +63,20 @@ test('cloud worker refuses ephemeral profile storage and never sends WhatsApp me
  assert.ok(cloudFile.includes('new ws.LocalAuth'));
 });
 
-test('one-click admin QR keeps cloud backend and does not require local CMD or pairing codes for daily login',async()=>{
+test('one-click account QR uses local authorized worker without asking for CMD each time',async()=>{
  const html=await readFile(new URL('../../index.html',import.meta.url),'utf8');
- const start=html.indexOf('function accountsPageCore()');
- const end=html.indexOf('function accountRow(',start);
- assert.ok(start>=0&&end>start,'account screen exists');
- const page=html.slice(start,end);
- assert.ok(page.includes('class="btn acc-connect"')||html.includes('class="btn acc-connect"'),'login button exists');
- assert.ok(page.includes('云端直接扫码'),'cloud QR is the only daily login option');
- for(const obsolete of ['id="waDownload"','id="waEnroll"','id="waConnectMode"','连接 Windows 扫码程序','下载 Windows 扫码程序']){
-  assert.ok(!page.includes(obsolete),'no daily Windows setup control: '+obsolete);
+ const pageStart=html.indexOf('function accountsPageCore()');
+ const pageEnd=html.indexOf('function accountRow(',pageStart);
+ assert.ok(pageStart>=0&&pageEnd>pageStart,'account page renderer exists');
+ const page=html.slice(pageStart,pageEnd);
+ assert.ok(page.includes('本地后台服务'),'account page explains local service');
+ for(const obsolete of ['id="waDownload"','id="waEnroll"','id="waConnectMode"','连接 Windows 扫码程序','下载 Windows 扫码程序','连接云端扫码服务']){
+  assert.ok(!page.includes(obsolete),'daily UI must not expose legacy setup controls: '+obsolete);
  }
- assert.ok(!html.includes('class="wa-direct-download"'),'no top-bar Windows download');
- assert.match(html,/const mode='cloud';/);
- assert.ok(html.includes("body:JSON.stringify({accountId,mode})"),'cloud mode sent to actual backend');
- assert.ok(source.includes("if(input.mode==='cloud')"),'backend cloud route exists');
- assert.ok(html.includes('CLOUD_CONNECTOR_OFFLINE'),'honest failure when cloud worker is absent');
+ assert.ok(!html.includes('class="wa-direct-download"'),'no global Windows download');
+ assert.match(html,/const mode='windows';/);
+ assert.ok(html.includes("body:JSON.stringify({accountId,mode})"),'backend receives Windows connection mode');
+ assert.ok(source.includes("if(url.pathname==='/v1/worker/accounts/heartbeat'"),'auth-protected local heartbeat exists');
+ assert.ok(html.includes('WHATSAPP_CONNECTOR_OFFLINE'),'must report offline honestly');
+ assert.ok(!html.includes('const mode=\'cloud\';'),'cloud-only mode must not override local worker');
 });
