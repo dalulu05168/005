@@ -6,6 +6,7 @@ import { createTelegramSource } from './telegram-user-source.mjs';
 import { zipStored } from './build-connector-zip.mjs';
 import { normalizeTelegramUpdate, extractPreparedText, identifySourceRole, parseFixedTelegramMessage } from './telegram-collector.mjs';
 import { selectNextDispatchTask } from './priority-scheduler.mjs';
+import {createDailySeatPlan,findSeatPlanStep,markSeatPlanReceived,reconcileSeatPlan,desiredSeatAccounts} from './seat-plan.mjs';
 
 const PORT=Number(process.env.PORT||10000);
 const REDIS_URL=String(process.env.REDIS_URL||'').trim();
@@ -179,6 +180,7 @@ function defaultState(){
     groups:[],
     tasks:[],
     pendingImages:[],
+    seatPlan:{enabled:false,maxSeats:7,cursor:0,entries:[]},
     queue:{
       paused:false,
       pauseReason:'',
@@ -206,6 +208,7 @@ async function getState(){
       groups:Array.isArray(s.groups)?s.groups:[],
       tasks:Array.isArray(s.tasks)?s.tasks:[],
       pendingImages:Array.isArray(s.pendingImages)?s.pendingImages:[],
+      seatPlan:s.seatPlan&&Array.isArray(s.seatPlan.entries)?s.seatPlan:d.seatPlan,
     };
   }catch{return defaultState()}
 }
@@ -213,6 +216,8 @@ async function setState(state){
   // Retain pending/in-flight/VERIFYING tasks only. Completed tasks carry private
   // content and are deleted immediately after each entire task reaches a terminal
   // result, rather than persisting into historical dashboards.
+  // Commit plan advancement before completed tasks are purged from Redis.
+  reconcileSeatPlan(state.seatPlan,state.tasks||[]);
   const finished=removeFinishedTasks(state);
   for(const task of finished){
     if(task.sourceChatId&&task.sourceMessageId&&task.messageType){
@@ -251,7 +256,7 @@ function personaCodes(raw,fallback=''){
 function normalizeAccount(a,index=0){
   const kind=['ASSISTANT','PROFESSOR','AUXILIARY','AUX_BACKUP'].includes(a.kind)?a.kind:'AUXILIARY';
   const slot=['PRIMARY','BACKUP'].includes(a.slot)?a.slot:(kind==='AUX_BACKUP'?'BACKUP':'PRIMARY');
-  const status=['ONLINE','OFFLINE','UNCONFIGURED','CONFIRMED_UNAVAILABLE','NEEDS_QR','VERIFYING'].includes(a.status)?a.status:'UNCONFIGURED';
+  const status=['ONLINE','OFFLINE','SLEEPING','UNCONFIGURED','CONFIRMED_UNAVAILABLE','NEEDS_QR','VERIFYING'].includes(a.status)?a.status:'UNCONFIGURED';
   return {
     id:safeString(a.id,120)||randomUUID(),
     name:safeString(a.name,120)||('账号 '+(index+1)),
@@ -487,6 +492,7 @@ function publicState(state){
     groups:state.groups,
     tasks:(state.tasks||[]).slice(-200),
     queue:state.queue,
+    seatPlan:state.seatPlan,
     summary:summary(state),
   };
 }
@@ -877,6 +883,16 @@ const server=createServer(async(req,res)=>{
       const completedImage=imageMessageId?await redis.get(completedTaskKey(chatId,imageMessageId,'IMAGE')):null;
       const completedText=messageId?await redis.get(completedTaskKey(chatId,messageId,'TEXT')):null;
       const targets=()=>enabledTargets(state);
+      // Duplicates must NOT consume a second daily-plan slot. A received
+      // Telegram message can generate text and image tasks for one plan step.
+      const newOutput=Boolean((photoRef&&!knownImage&&!completedImage)||
+        (translatedText&&!knownText&&!completedText));
+      const plan=state.seatPlan;
+      const planStep=plan?.enabled&&newOutput?findSeatPlanStep(plan,parsed):null;
+      if(plan?.enabled&&newOutput&&!planStep){
+        await setState(state);
+        return send(res,409,{error:'SEAT_PLAN_ROLE_NOT_SCHEDULED_OR_OUT_OF_ORDER',queued:false});
+      }
       const taskIds=[];
       function queueItem(kind,sourceId,ref,romanian){
         const task={
@@ -887,6 +903,7 @@ const server=createServer(async(req,res)=>{
           role:parsed.role,roleName:parsed.roleName||parsed.role,identity:parsed.identity||'',
           translatedRoleName:parsed.translatedRoleName,
           auxCode:parsed.auxCode||'',romanianText:romanian,mediaRef:ref,
+          seatPlanStepId:planStep?.id||null,
           status:'WAITING',completedAt:null,targets:targets()
         };
         if(!task.targets.length){task.status='ACKED';task.completedAt=now;}
@@ -896,6 +913,7 @@ const server=createServer(async(req,res)=>{
       if(photoRef&&!knownImage&&!completedImage)queueItem('IMAGE',imageMessageId,photoRef,'');
       if(translatedText&&!knownText&&!completedText)queueItem('TEXT',messageId,'',translatedText);
       if(paired&&(!containsText||translatedText))state.pendingImages=state.pendingImages.filter(p=>p!==paired);
+      if(taskIds.length&&planStep)markSeatPlanReceived(planStep,taskIds);
       if(!taskIds.length){
         await setState(state);
         if(containsText&&!translatedText)return send(res,422,{error:translationUnsafe?'OUTBOUND_CHINESE_BLOCKED':'ROMANIAN_TRANSLATION_REQUIRED',queued:false,hasImage:Boolean(photoRef)});
@@ -923,7 +941,7 @@ const server=createServer(async(req,res)=>{
       if(url.pathname==='/v1/download/whatsapp-connector.zip'&&!userAuth(req))
         return send(res,401,{error:'ADMIN_AUTH_REQUIRED'});
       const folder=new URL('../whatsapp-connector/',import.meta.url);
-      const names=['README.md','START-WHATSAPP.cmd','package.json','connector.mjs','runtime.mjs'];
+      const names=['README.md','START-WHATSAPP.cmd','package.json','connector.mjs','runtime.mjs','seat-controller.mjs'];
       const entries=await Promise.all(names.map(async name=>({
         name:'Nuvexa-WhatsApp-Connector/'+name,
         bytes:await readFile(new URL(name,folder))
@@ -1034,7 +1052,7 @@ const server=createServer(async(req,res)=>{
           const account=state.accounts.find(a=>a.id===safeString(report.accountId,120));
           if(!account)continue;
           const status=safeString(report.status,36);
-          if(!['ONLINE','OFFLINE','NEEDS_QR','VERIFYING','CONFIRMED_UNAVAILABLE'].includes(status))continue;
+          if(!['ONLINE','OFFLINE','SLEEPING','NEEDS_QR','VERIFYING','CONFIRMED_UNAVAILABLE'].includes(status))continue;
           account.status=status;
           if(report.phoneLast4!==undefined)account.phoneLast4=String(report.phoneLast4||'').replace(/\D/g,'').slice(-4);
           account.lastHeartbeatAt=time;
@@ -1063,6 +1081,11 @@ const server=createServer(async(req,res)=>{
         onlineAccounts:state.accounts.filter(isAccountOnline).length,
         totalAccounts:state.accounts.length
       });
+    }
+    if(url.pathname==='/v1/worker/seat-plan'&&req.method==='GET'){
+      if(!await connectorAuth(req))return send(res,401,{error:'DEVICE_CONNECTOR_AUTH_REQUIRED'});
+      const state=await getState();
+      return send(res,200,desiredSeatAccounts(state.seatPlan,state.accounts,state.tasks));
     }
     if(url.pathname==='/v1/worker/accounts/requests'&&req.method==='GET'){
       if(!await connectorAuth(req))return send(res,401,{error:'DEVICE_CONNECTOR_AUTH_REQUIRED'});
@@ -1310,6 +1333,33 @@ const server=createServer(async(req,res)=>{
     const user=userAuth(req);
     if(!user)return send(res,401,{error:'AUTH_REQUIRED'});
 
+    if(url.pathname==='/v1/seat-plan'&&req.method==='GET'){
+      const state=await getState();
+      return send(res,200,{seatPlan:state.seatPlan,
+        roster:desiredSeatAccounts(state.seatPlan,state.accounts,state.tasks)});
+    }
+    if(url.pathname==='/v1/seat-plan'&&req.method==='PUT'){
+      const input=await body(req);
+      return await withLock(async()=>{
+        const state=await getState();
+        // Do not overwrite active plans or in-flight delivery with a new
+        // order; otherwise completed messages can be sent twice or skipped.
+        if((state.seatPlan?.enabled)&&state.seatPlan.entries.some(x=>x.status==='IN_FLIGHT'))
+          return send(res,409,{error:'SEAT_PLAN_HAS_INFLIGHT_TASKS'});
+        if((state.tasks||[]).some(t=>t.status==='SENDING'||t.status==='VERIFYING'))
+          return send(res,409,{error:'SEND_OR_VERIFY_IN_PROGRESS'});
+        if(input.enabled===false){
+          state.seatPlan={enabled:false,maxSeats:7,cursor:0,entries:[]};
+        }else{
+          try{state.seatPlan=createDailySeatPlan(input.items,state.accounts,
+            {maxSeats:input.maxSeats===undefined?7:input.maxSeats});}
+          catch(e){return send(res,422,{error:String(e.message||'INVALID_SEAT_PLAN')});}
+        }
+        await setState(state);
+        return send(res,200,{seatPlan:state.seatPlan,
+          roster:desiredSeatAccounts(state.seatPlan,state.accounts,state.tasks)});
+      });
+    }
     if(url.pathname==='/v1/dashboard'&&req.method==='GET'){
       const state=await getState();
       const data=publicState(state);
