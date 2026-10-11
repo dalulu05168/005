@@ -51,7 +51,7 @@ export class WhatsAppSessionRuntime{
     if(current?.client)return true;
     if(this.sessions.size>=this.maxActive){this.log('已达到并发上限，暂缓启动 '+id);return false}
     const record={id,client:null,status:'OFFLINE',phoneLast4:current?.phoneLast4||'',
-      lastQr:'',qrAt:0,pending:false,restartAfter:0,initializing:true};
+      lastQr:'',qrAt:0,pending:false,restartAfter:0,initializing:true,startedAt:this.clock(),releasing:false};
     this.sessions.set(id,record);this.sleeping.delete(id);
     let client;
     try{client=await this.createClient(id)}catch(e){
@@ -60,7 +60,7 @@ export class WhatsAppSessionRuntime{
       return false;
     }
     record.client=client;
-    const live=()=>!this.closed&&this.sessions.get(id)===record;
+    const live=()=>!this.closed&&!record.releasing&&this.sessions.get(id)===record;
     client.on('qr',qr=>{
       if(!live())return;
       record.status='NEEDS_QR';record.lastQr=qr;record.qrAt=this.clock();
@@ -80,14 +80,14 @@ export class WhatsAppSessionRuntime{
     });
     client.on('auth_failure',()=>{
       if(!live())return;
-      record.status='NEEDS_QR';record.lastQr='';
+      record.status='NEEDS_QR';record.lastQr='';record.initializing=false;
       this.log('授权需要重新验证：'+id);
     });
     client.on('disconnected',reason=>{
       if(!live()||record.client!==client)return;
       const loggedOut=String(reason||'').toUpperCase().includes('LOGOUT');
       record.status=loggedOut?'NEEDS_QR':'OFFLINE';
-      record.lastQr='';record.client=null;record.pending=false;
+      record.lastQr='';record.client=null;record.pending=false;record.initializing=false;
       const fail=(this.reconnectFailures.get(id)||0)+1;
       this.reconnectFailures.set(id,fail);
       record.restartAfter=loggedOut?Infinity:this.clock()+Math.min(RECONNECT_MAX_MS,RECONNECT_MIN_MS*2**Math.min(fail-1,3));
@@ -97,7 +97,7 @@ export class WhatsAppSessionRuntime{
     });
     void Promise.resolve().then(()=>client.initialize()).catch(async e=>{
       if(!live())return;
-      record.status='OFFLINE';record.lastQr='';record.client=null;
+      record.status='OFFLINE';record.lastQr='';record.client=null;record.initializing=false;
       const fail=(this.reconnectFailures.get(id)||0)+1;
       this.reconnectFailures.set(id,fail);
       record.restartAfter=this.clock()+Math.min(RECONNECT_MAX_MS,RECONNECT_MIN_MS*2**Math.min(fail-1,3));
@@ -114,8 +114,13 @@ export class WhatsAppSessionRuntime{
     const rec=this.sessions.get(id);
     if(!rec){if(this.knownAccounts.has(id))this.sleeping.add(id);return true}
     // Incomplete initialization and pending manual QR pairing are not safe to evict.
-    if(rec.initializing||rec.pending||rec.status==='VERIFYING')return false;
+    if(rec.pending||rec.status==='VERIFYING')return false;
+    // If Chromium hangs during initial setup, never kill immediately;
+    // after a bounded timeout the seat can safely be reclaimed.
+    if(rec.initializing&&this.clock()-rec.startedAt<120000)return false;
+    rec.releasing=true;
     try{if(rec.client)await rec.client.destroy()}catch(e){
+      rec.releasing=false;
       this.log('座位释放失败 '+id+' '+String(e?.message||e));
       return false;
     }
