@@ -6,7 +6,7 @@ import { createTelegramSource } from './telegram-user-source.mjs';
 import { zipStored } from './build-connector-zip.mjs';
 import { normalizeTelegramUpdate, extractPreparedText, identifySourceRole, parseFixedTelegramMessage } from './telegram-collector.mjs';
 import { selectNextDispatchTask } from './priority-scheduler.mjs';
-import {createDailySeatPlan,findSeatPlanStep,markSeatPlanReceived,reconcileSeatPlan,desiredSeatAccounts} from './seat-plan.mjs';
+import {createDailySeatPlan,findSeatPlanStep,markSeatPlanReceived,reconcileSeatPlan,desiredSeatAccounts,resolveAccountForRole} from './seat-plan.mjs';
 
 const PORT=Number(process.env.PORT||10000);
 const REDIS_URL=String(process.env.REDIS_URL||'').trim();
@@ -1428,6 +1428,17 @@ const server=createServer(async(req,res)=>{
             return send(res,400,{error:'同一人物编号只能绑定一个主发送账号: '+code});
           codeOwner.set(code,a.id);
         }
+      }
+      // An in-progress day plan stores concrete physical account mappings.
+      // Do not silently reroute a scheduled role after an admin renumber/
+      // identity edit; require explicit safe plan reconfiguration instead.
+      if(state.seatPlan?.enabled){
+        const changed=state.seatPlan.entries.some(step=>{
+          const mapped=resolveAccountForRole(step,items);
+          return !mapped||mapped.id!==step.accountId;
+        });
+        if(changed)return send(res,409,{error:'SEAT_PLAN_RECONFIGURATION_REQUIRED',
+          message:'当前全天计划绑定的角色发生变化，请先安全完成或停止计划后重新保存'});
       }
       state.accounts=items;
       await setState(state);
