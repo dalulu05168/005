@@ -1,6 +1,6 @@
 import { createServer } from 'node:http';
 
-const ORIGIN = 'https://nuvexa-ops-ui-preview.onrender.com';
+const ALLOWED_ORIGINS = new Set(['https://nuvexa-ops-ui-preview.onrender.com', 'https://nuvexa-169-ui-review.onrender.com']);
 const UPSTREAM = 'https://nuvexa-ops-bridge.onrender.com';
 const PORT = Number(process.env.PORT || 10000);
 const MAX_BODY = 4 * 1024 * 1024;
@@ -48,8 +48,8 @@ createServer(async (req, res) => {
   }
 
   // A private preview-only transport; no open proxy and no production DNS changes.
-  if (origin !== ORIGIN) return respond(res, 403, { error: 'PREVIEW_ORIGIN_REQUIRED' });
-  res.setHeader('access-control-allow-origin', ORIGIN);
+  if (!ALLOWED_ORIGINS.has(origin)) return respond(res, 403, { error: 'PREVIEW_ORIGIN_REQUIRED' });
+  res.setHeader('access-control-allow-origin', origin);
   res.setHeader('vary', 'Origin');
   res.setHeader('access-control-allow-methods', 'GET,POST,PUT,PATCH,OPTIONS');
   res.setHeader('access-control-allow-headers', 'Content-Type,Authorization');
