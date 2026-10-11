@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {createHash} from 'node:crypto';
+import {reconcileSeatPlan} from '../seat-plan.mjs';
 
 const source=await readFile(new URL('../server.mjs',import.meta.url),'utf8');
 function section(start,end){
@@ -66,10 +67,10 @@ test('persisting state removes delivered contents and stores only timed de-dup m
   };
   const snippet=section('async function setState(', 'async function withLock(');
   const persist=Function('redis','nowIso','STATE_KEY','removeFinishedTasks',
-      'completedTaskKey','COMPLETED_DEDUP_TTL_SECONDS',
+      'completedTaskKey','COMPLETED_DEDUP_TTL_SECONDS','reconcileSeatPlan',
       snippet+'\nreturn setState'
   )(redis,()=>new Date(0).toISOString(),'nuvexa:cloud:state:v3',
-    removeFinishedTasks,completedTaskKey,COMPLETED_DEDUP_TTL_SECONDS);
+    removeFinishedTasks,completedTaskKey,COMPLETED_DEDUP_TTL_SECONDS,reconcileSeatPlan);
   const state={tasks:[
     {id:'done',status:'ACKED',sourceChatId:'c',sourceMessageId:'12',messageType:'TEXT',romanianText:'secret content'},
     {id:'waiting',status:'WAITING',sourceChatId:'c',sourceMessageId:'13',messageType:'TEXT',romanianText:'pending'}
