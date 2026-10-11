@@ -17,7 +17,7 @@ test('16:9 single-screen accounts layout and no page scrolling', () => {
 test('tab switching retains seat plan functions separately from account list', () => {
   assert.match(html, /data-account-view="list"/);
   assert.match(html, /data-account-view="plan"/);
-  assert.match(html, /\$\$\('\.accounts-view-switch button'\)\.forEach/);
+  assert.ok(html.includes("document.querySelectorAll('.accounts-view-switch button').forEach"));
   assert.match(html, /host\.closest\('\.table-wrap'\)\?\.clientHeight/);
   assert.match(html, /ui\.accountsSubview==='plan'\?seatPlanPanel\(\):accountsPageCore\(\)/);
   assert.match(html, /id="saveDailySeats"/);
@@ -25,6 +25,7 @@ test('tab switching retains seat plan functions separately from account list', (
 });
 test('existing real WhatsApp QR and heartbeat pathways are preserved', () => {
   assert.match(html, /beginAccountConnect\(b\.dataset\.connectId\)/);
+  assert.ok(html.includes("document.querySelectorAll('.acc-connect').forEach"));
   assert.match(html, /api\('\/v1\/worker\/accounts\/status'\)/);
   assert.match(html, /id="waWorkerHealth"/);
   assert.match(html, /id="accFind"/);
