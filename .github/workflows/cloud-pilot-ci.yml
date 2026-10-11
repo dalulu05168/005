@@ -36,6 +36,7 @@ jobs:
           node --test ops-bridge/tests/member-config.test.mjs
           node --test ops-bridge/tests/priority-scheduler.test.mjs
           node --test ops-bridge/tests/seat-plan.test.mjs
+          node --test ops-bridge/tests/seat-plan-rolling-integration.test.mjs
           node --test ops-bridge/tests/shared-reserve-routing.test.mjs
           node --test ops-bridge/tests/ephemeral-confirmation.test.mjs
       - name: Validate protected cloud pilot integration
