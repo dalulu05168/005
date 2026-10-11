@@ -28,6 +28,8 @@ jobs:
           node --check ops-bridge/server.mjs
           bash -n oci-free/setup.sh oci-free/pair.sh
           node --input-type=module -e 'import fs from "node:fs";import vm from "node:vm";const h=fs.readFileSync("index.html","utf8");for(const m of h.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/g)){new vm.Script(m[1])}'
+      - name: Verify 16:9 Nuvexa accounts UI contract
+        run: node --test tests/ui-169-accounts.test.cjs
       - name: QR session/runtime and extraction tests
         run: |
           node --test whatsapp-connector/tests/runtime.test.mjs

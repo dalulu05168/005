@@ -498,6 +498,149 @@ body:has(#appView:not(.hidden)){
  #appView .account-filter-controls{justify-content:flex-start}
 }
 
+
+/* Nuvexa Pro 2026-10-11: GetIn-inspired 16:9 desktop UI, no business-logic or session changes. */
+:root{--bg:#f5f7fa;--panel:#fff;--panel2:#f9fafb;--line:#e5eaf0;--line2:#dce4ec;--text:#182334;--muted:#718096;--green:#079f87;--green2:#13b89e;--yellow:#cb8a25;--shadow:0 4px 22px rgba(39,64,102,.045)}
+body:has(#appView:not(.hidden)){background:#eef1f6}
+@media (min-width:821px){
+  #viewport:has(#appView:not(.hidden)){position:fixed;inset:auto;top:50%;left:50%;width:min(100vw,177.7778dvh);height:min(100dvh,56.25vw);padding:0;transform:translate(-50%,-50%)!important;border:1px solid #e5e9ef;box-shadow:0 16px 68px rgba(35,53,78,.075)}
+}
+#appView.app{grid-template-columns:206px minmax(0,1fr);background:#fff}
+#appView.app.sidebar-collapsed{grid-template-columns:64px minmax(0,1fr)}
+#appView .sidebar{background:#f2f5f8;overflow:hidden;border-right:1px solid #e5eaf0}
+#appView .sidebar .logo{position:relative;height:68px;padding:0 42px 0 15px;display:flex;justify-content:flex-start;align-items:center;gap:9px;white-space:nowrap;border-bottom:1px solid #e5eaf0}
+#appView .sidebar .logo-mark{width:28px;height:28px;flex:0 0 28px;border-radius:8px;background:linear-gradient(145deg,#149cba,#3b72ec);color:#fff;letter-spacing:0;box-shadow:0 4px 10px rgba(40,128,205,.12)}
+#appView .sidebar .logo-mark:before{content:'N';font-size:19px;font-weight:800}
+#appView .sidebar .logo>span:not(.logo-mark){display:inline;color:#182334!important;font-size:15px;font-weight:750}
+#appView .sidebar .logo .version{display:none!important}
+#appView .sidebar-toggle{position:absolute;right:8px;top:17px;border:1px solid #dfe6ee;background:#fff;color:#596579!important;width:27px;height:30px;border-radius:8px;display:grid;place-items:center;cursor:pointer;font-size:13px}
+#appView .sidebar-toggle:focus-visible{outline:2px solid #12ac91;outline-offset:2px}
+#appView .nav{padding:16px 10px;gap:4px}
+#appView .nav button{flex-direction:row;justify-content:flex-start;padding:0 13px;height:46px;gap:12px;border:1px solid transparent;border-radius:9px;color:#687487!important}
+#appView .nav button>span:last-child{font-size:12px;font-weight:550;white-space:nowrap}
+#appView .nav button .ico{width:21px;flex:0 0 21px}
+#appView .nav button .ico svg{width:19px;height:19px;stroke-width:1.65}
+#appView .nav button.active{background:#fff;color:#088d7b!important;border:1px solid #e7ebf0;box-shadow:0 3px 8px rgba(22,55,87,.025)}
+#appView .nav button.active span{color:#088d7b!important}
+#appView .side-foot{padding:12px 10px}
+#appView .side-foot .status-line{justify-content:flex-start;gap:8px;padding:5px 12px}
+#appView .side-foot .status-line>span:last-child{display:inline;font-size:10px;white-space:nowrap}
+#appView .logout{font-size:12px;justify-content:flex-start;gap:8px;padding-left:12px}
+#appView .sidebar-collapsed .logo>span:not(.logo-mark){display:none}
+#appView.app.sidebar-collapsed .sidebar .logo{justify-content:center;padding:0}
+#appView.app.sidebar-collapsed .sidebar .logo-mark{display:none}
+#appView.app.sidebar-collapsed .sidebar-toggle{right:17px;top:18px}
+#appView.app.sidebar-collapsed .nav{padding:16px 6px}
+#appView.app.sidebar-collapsed .nav button{justify-content:center;padding:0}
+#appView.app.sidebar-collapsed .nav button>span:last-child,#appView.app.sidebar-collapsed .side-foot .status-line>span:last-child{display:none}
+#appView.app.sidebar-collapsed .side-foot .status-line{justify-content:center}
+#appView .topbar{height:64px;min-height:64px;flex-basis:64px;background:#fff;padding:0 22px}
+#appView .top-title strong{font-size:16px;font-weight:650}
+#appView .top-title span{color:#8792a2!important;font-size:11px}
+#appView .top-status{min-width:0;gap:7px}
+#appView .pill{border-radius:7px;padding:7px 9px;border-color:#e5eaf0;background:#fdfefe;color:#526378!important;font-size:10px}
+#appView .user-badge{font-size:11px;font-weight:600}
+#appView .content{background:#f8fafc}
+#appView .page-head h1{color:#19283d!important;font-size:20px;font-weight:720;letter-spacing:0}
+#appView .page-head p{color:#718096!important;font-size:11px}
+#appView .panel,#appView .metric{border:1px solid #e5eaf0;border-radius:12px;background:#fff;box-shadow:0 2px 13px rgba(37,54,80,.024)}
+#appView .btn,#appView .filters button,#appView .pager button{border:1px solid #dfe6ee;border-radius:8px;background:#fff;color:#516077!important;font-size:11px;font-weight:550}
+#appView .btn.green{background:#eefaf6;border-color:#b8e0d4;color:#088b72!important}
+#appView .nav button,#appView button{transition:background .15s ease,border-color .15s ease,box-shadow .15s ease}
+#appView .metric:hover,#appView .panel:hover{transform:none}
+#appView .content[data-page="accounts"]{display:flex;flex-direction:column;overflow:hidden!important;padding:14px 18px;gap:0}
+#appView .accounts-screen{display:flex;flex-direction:column;flex:1 1 auto;min-height:0}
+#appView .accounts-view-switch{flex:0 0 32px;display:flex;align-items:center;gap:8px;margin:0 0 9px}
+#appView .accounts-view-switch button{border:1px solid #e4e9f0;border-radius:8px;background:#fff;padding:6px 14px;font-size:11px;color:#637084!important}
+#appView .accounts-view-switch button.active{border-color:#93d9cc;background:#eaf9f5;color:#058b76!important;font-weight:700}
+#appView .accounts-pane{display:flex;flex-direction:column;flex:1 1 auto;min-height:0}
+#appView .accounts-pane>.page-head{flex:0 0 50px;min-height:50px;margin:0 0 7px;gap:12px}
+#appView .accounts-pane>.page-head h1{margin-bottom:2px}
+#appView .accounts-pane>.page-head .toolbar{flex-wrap:nowrap}
+#appView .accounts-pane>.page-head .toolbar>*{flex-shrink:0}
+#appView .accounts-pane>.page-head .btn{padding:8px 9px}
+#appView .account-summary-strip{flex:0 0 99px;min-height:0;margin:0 0 9px;display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:9px;padding:0;background:transparent;border:0;border-radius:0}
+#appView .account-summary-items{display:contents}
+#appView .account-summary-items>span,#appView .account-connector-mini{height:99px;min-width:0;display:flex;flex-direction:column;align-items:stretch;justify-content:flex-start;gap:6px;padding:13px 13px 10px;border:1px solid #e5eaf0;border-radius:11px;background:#fff!important;color:#68758a!important;font-size:11px;font-weight:600;white-space:nowrap;overflow:hidden}
+#appView .account-summary-items>span:before{content:'';display:inline-block;width:8px;height:8px;background:#a7bfdc;border-radius:50%;position:absolute;right:14px;top:15px}
+#appView .account-summary-items>span{position:relative}
+#appView .account-summary-items>.stat-on:before{background:#10b995}
+#appView .account-summary-items>.stat-off:before{background:#ed7e7e}
+#appView .account-summary-items>.stat-alert:before{background:#efad57}
+#appView .account-summary-items strong{font-size:27px;font-weight:720;letter-spacing:-.5px;line-height:1.25;margin:0;text-align:center;font-variant-numeric:tabular-nums;color:#182334!important}
+#appView .account-summary-items .stat-on strong{color:#079d78!important}
+#appView .account-summary-items .stat-alert strong{color:#b77932!important}
+#appView .account-connector-mini{flex:initial;justify-content:center;align-items:center;text-align:center;white-space:normal;gap:9px;color:#57728a!important;font-size:11px;line-height:1.4}
+#appView .account-connector-mini .worker-dot{width:9px;height:9px}
+#appView .accounts-pane>section.panel{flex:1 1 auto;min-height:0;padding:11px 13px 7px;display:flex;flex-direction:column;overflow:hidden}
+#appView .account-role-filters{flex:0 0 auto;display:flex;flex-wrap:nowrap;overflow:hidden;gap:5px;margin:0 0 7px}
+#appView .account-role-filters .btn{padding:6px 8px;font-size:10px;min-width:0;flex:1 1 auto;text-align:center}
+#appView .account-role-filters .btn.active{background:#edf9f5;color:#078e76!important}
+#appView .account-filter-controls{flex:0 0 32px;min-height:32px;flex-wrap:nowrap;gap:7px;margin:0 0 7px}
+#appView .cloud-login-hint{margin-right:auto;font-size:10px;color:#8e9bad!important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#appView .account-filter-controls select,#appView .account-filter-controls input{height:31px;font-size:11px}
+#appView .account-filter-controls input{width:180px}
+#appView .accounts-pane .table-wrap{flex:1 1 auto;min-height:0;overflow:hidden!important}
+#appView .content[data-page="accounts"] .table{width:100%;min-width:0!important;table-layout:fixed;font-size:11px}
+#appView .content[data-page="accounts"] .table th{height:38px;padding:5px 7px;font-size:10px;line-height:1.35;color:#718096!important;font-weight:650;border-bottom:1px solid #e6ebf1}
+#appView .content[data-page="accounts"] .table th:nth-child(1){width:12%}
+#appView .content[data-page="accounts"] .table th:nth-child(2){width:14%}
+#appView .content[data-page="accounts"] .table th:nth-child(3){width:8%}
+#appView .content[data-page="accounts"] .table th:nth-child(4){width:9%}
+#appView .content[data-page="accounts"] .table th:nth-child(5){width:14%}
+#appView .content[data-page="accounts"] .table th:nth-child(6){width:8%}
+#appView .content[data-page="accounts"] .table th:nth-child(7){width:10%}
+#appView .content[data-page="accounts"] .table th:nth-child(8){width:8%}
+#appView .content[data-page="accounts"] .table th:nth-child(9){width:10%}
+#appView .content[data-page="accounts"] .table th:nth-child(10){width:7%}
+#appView .content[data-page="accounts"] .table th:nth-child(6),#appView .content[data-page="accounts"] .table td:nth-child(6){text-align:center}
+#appView .content[data-page="accounts"] .table td{height:37px;padding:3px 7px;font-size:10px;color:#324359!important;border-color:#edf0f4}
+#appView .content[data-page="accounts"] .table input,#appView .content[data-page="accounts"] .table select{width:100%!important;max-width:100%!important;height:29px;min-width:0;padding:4px 6px!important;border:1px solid #e2e8f0!important;border-radius:7px!important;background:#fff!important;color:#243348!important;font-size:10px}
+#appView .content[data-page="accounts"] .table td:nth-child(9){font-size:9px}
+#appView .content[data-page="accounts"] .acc-connect{padding:6px 4px;font-size:10px}
+#appView .content[data-page="accounts"] .pager{flex:0 0 34px;margin:0;padding:6px 0 0;gap:7px;font-size:10px}
+#appView .content[data-page="accounts"] .pager button{padding:5px 9px;font-size:10px}
+#appView .accounts-pane .banner{flex:0 0 auto;margin-top:5px;padding:5px 9px;border:1px dashed #d9e3ee;border-radius:7px;background:#f9fbff;color:#6d7a8d!important;font-size:10px;line-height:1.5}
+#appView .accounts-pane .banner summary{cursor:pointer;font-weight:600}
+#appView .accounts-pane .banner p{margin:5px 0}
+#appView .accounts-pane>.panel.section-gap{margin-top:0}
+@media(max-height:820px) and (min-width:821px){
+ #appView .accounts-pane>.page-head{flex-basis:43px;min-height:43px}
+ #appView .account-summary-strip{flex-basis:80px}
+ #appView .account-summary-items>span,#appView .account-connector-mini{height:80px;padding:8px 10px;gap:3px}
+ #appView .account-summary-items strong{font-size:23px}
+ #appView .content[data-page="accounts"] .table td{height:33px}
+ #appView .accounts-pane>section.panel{padding-top:8px}
+ #appView .account-role-filters .btn{padding:5px 6px}
+}
+@media(max-width:1100px){
+ #appView.app{grid-template-columns:165px minmax(0,1fr)}
+ #appView .sidebar .logo>span:not(.logo-mark){font-size:13px}
+ #appView .nav button{padding:0 8px}
+ #appView .content[data-page="accounts"]{padding:10px}
+ #appView .account-summary-strip{gap:5px}
+ #appView .account-summary-items>span,#appView .account-connector-mini{padding:8px 7px}
+ #appView .account-summary-items strong{font-size:22px}
+ #appView .account-role-filters .btn{font-size:9px;padding:5px 3px}
+ #appView .content[data-page="accounts"] .table th,#appView .content[data-page="accounts"] .table td{padding-left:3px;padding-right:3px}
+ #appView .cloud-login-hint{display:none}
+}
+@media(max-width:820px){
+ #appView.app{grid-template-columns:60px minmax(0,1fr)}
+ #appView .sidebar .logo{padding:0;justify-content:center}
+ #appView .sidebar .logo>span:not(.logo-mark),#appView .sidebar-toggle,#appView .nav button>span:last-child,#appView .side-foot .status-line>span:last-child{display:none!important}
+ #appView .nav{padding:10px 5px}
+ #appView .nav button{justify-content:center;padding:0}
+ #appView .account-summary-strip{grid-template-columns:repeat(3,minmax(0,1fr));flex-basis:148px}
+ #appView .account-summary-items>span,#appView .account-connector-mini{height:70px;padding:6px}
+ #appView .account-summary-items strong{font-size:19px}
+ #appView .accounts-pane>.page-head{flex-wrap:wrap;flex-basis:auto}
+ #appView .accounts-pane>.page-head p{display:none}
+ #appView .account-role-filters{overflow-x:auto}
+ #appView .account-role-filters .btn{flex:0 0 auto}
+}
+@media(prefers-reduced-motion:reduce){#appView *{transition:none!important}}
+
 </style>
 <!-- Tabler Icons license
 MIT License
@@ -533,7 +676,7 @@ SOFTWARE.
   <div class="login-side"><form id="loginForm" class="login-card"><h2>欢迎回来</h2><p>登录 Nuvexa Pro Cloud Edition 管理中心</p><div class="field"><label for="username">账号</label><input id="username" name="username" autocomplete="username" placeholder="请输入管理员账号" spellcheck="false" required></div><div class="field"><label for="password">密码</label><input id="password" name="password" type="password" autocomplete="current-password" placeholder="请输入登录密码" required></div><button id="loginBtn" class="primary" type="submit">进入系统</button><div id="loginError" class="login-error"></div><div class="login-status"><span>Cloud API <b id="loginCloud">检测中</b></span><span>数据 <b id="cloudDataMode">等待云端同步</b></span></div></form></div>
 </section>
 <div id="appView" class="app hidden">
-  <aside class="sidebar"><div class="logo"><span class="logo-mark"></span><span>Nuvexa Pro</span><span class="version">v0.3</span></div><nav class="nav"><button data-page="dashboard" class="active"><span class="ico"><!--
+  <aside class="sidebar"><div class="logo"><span class="logo-mark"></span><span>Nuvexa Pro</span><span class="version">v0.3</span><button id="sidebarToggle" class="sidebar-toggle" aria-label="收起导航" title="伸缩导航" type="button">☰</button></div><nav class="nav"><button data-page="dashboard" class="active"><span class="ico"><!--
 tags: [dashboard, layout, grid, admin, panel, overview, widgets, ui]
 category: Design
 version: "1.55"
@@ -628,7 +771,7 @@ const ICONS={"search":"<!--\ncategory: System\ntags: [find, magnifier, magnifyin
 const icon=name=>ICONS[name].replace('<svg ','<svg aria-hidden="true" ');
 function fitViewport(){document.documentElement.style.setProperty('--fit',Math.min(innerWidth/1440,innerHeight/810));}
 addEventListener('resize',fitViewport);fitViewport();
-const ui={tab:'queue',groupTab:0,filter:'all',search:'',pages:{},accountFilter:'all',accountStatusFilter:'all',accountSearch:'',dirty:false,edited:new Set(),intervalDraft:null};
+const ui={tab:'queue',groupTab:0,filter:'all',search:'',pages:{},accountFilter:'all',accountStatusFilter:'all',accountSearch:'',accountsSubview:'list',dirty:false,edited:new Set(),intervalDraft:null};
 function markDirty(section){ui.edited.add(section);ui.dirty=true;}
 function clearDirty(section){ui.edited.delete(section);ui.dirty=ui.edited.size>0;if(section==='intervals')ui.intervalDraft=null;}
 const API='https://nuvexa-ops-bridge.onrender.com';
@@ -645,6 +788,7 @@ async function cloudCheck(){try{const r=await fetch(API+'/v1/health',{cache:'no-
 function logout(){state.token='';sessionStorage.removeItem('nuvexa_ops_token');clearInterval(state.timer);state.timer=null;$('#appView').classList.add('hidden');$('#loginView').classList.remove('hidden')}
 function loginSuccess(token){state.token=token;sessionStorage.setItem('nuvexa_ops_token',token);$('#loginView').classList.add('hidden');$('#appView').classList.remove('hidden');setPage(location.hash.replace('#','')||'dashboard');refresh();clearInterval(state.timer);state.timer=setInterval(refresh,4000)}
 $('#loginForm').addEventListener('submit',async e=>{e.preventDefault();const btn=$('#loginBtn');btn.disabled=true;$('#loginError').textContent='';try{const j=await api('/v1/auth/login',{method:'POST',body:JSON.stringify({username:$('#username').value.trim(),password:$('#password').value})});loginSuccess(j.token)}catch(err){$('#loginError').textContent=err instanceof TypeError?'云端服务暂时不可用，请稍后重试。':(err.message||'登录失败，请稍后重试。')}finally{btn.disabled=false}});
+$('#sidebarToggle')?.addEventListener('click',()=>{const root=$('#appView');const collapsed=root.classList.toggle('sidebar-collapsed');$('#sidebarToggle').setAttribute('aria-label',collapsed?'展开导航':'收起导航');});
 $('#logoutBtn').addEventListener('click',logout);$$('.nav button').forEach(b=>b.addEventListener('click',()=>setPage(b.dataset.page)));
 function setPage(page){if(page!==state.page){if(ui.dirty&&!confirm('有未保存的修改，确定离开当前页面？'))return;ui.dirty=false;ui.edited.clear();ui.intervalDraft=null;}if(!['dashboard','accounts','group','source'].includes(page))page='dashboard';state.page=page;location.hash=page;$$('.nav button').forEach(b=>b.classList.toggle('active',b.dataset.page===page));$('#topPageTitle').textContent={dashboard:'运营大屏',accounts:'账号管理',group:'群组与转发设置',source:'连接来源群'}[page];render();if(page==='source')void loadSource()}
 window.addEventListener('hashchange',()=>setPage(location.hash.replace('#','')));
@@ -859,7 +1003,7 @@ function updateAccountStats(items){
  const metrics={accTotal:stats.total,accOnline:stats.online,accOffline:stats.offline,accPending:stats.pending,accAbnormal:stats.abnormal};
  for(const [id,value] of Object.entries(metrics)){const el=$('#'+id);if(el)el.textContent=num(value)}
 }
-function accountsPageCore(){const items=state.data?.accounts||[],stats=accountStats(items);return '<div class="page-head"><div><h1>账号管理</h1><p>助理1→助理2，教授1→教授2；65个人物共用备用1→2→3。人物编号与WhatsApp账号不是一对一关系。</p></div><div class="toolbar"><details class="service-setup"><summary>本地服务维护（仅首次安装）</summary><button id="waEnroll" type="button" class="btn">获取一次性设备授权码</button></details><button id="seedRoles" class="btn green">补齐72个账号位置</button><button id="saveAccounts" class="btn green">保存账号结构</button></div></div><div class="account-summary-strip" aria-label="账号连接概览"><div class="account-summary-items"><span>账号 <strong id="accTotal">'+num(stats.total)+'</strong></span><span class="stat-on">在线 <strong id="accOnline">'+num(stats.online)+'</strong></span><span class="stat-off">离线 <strong id="accOffline">'+num(stats.offline)+'</strong></span><span>待登录 <strong id="accPending">'+num(stats.pending)+'</strong></span><span class="stat-alert">异常 <strong id="accAbnormal">'+num(stats.abnormal)+'</strong></span></div><span id="waWorkerHealth" class="account-connector-mini" aria-live="polite"><i class="worker-dot" aria-hidden="true"></i> Windows 连接器检测中</span></div><section class="panel"><div class="account-role-filters" role="group" aria-label="账号类别筛选"><button class="btn account-role-filter" data-role-filter="all">全部（'+items.length+'）</button><button class="btn account-role-filter" data-role-filter="assistant">助理2</button><button class="btn account-role-filter" data-role-filter="professor">教授2</button><button class="btn account-role-filter" data-role-filter="oldman">老男31–50</button><button class="btn account-role-filter" data-role-filter="oldwoman">老女01–10</button><button class="btn account-role-filter" data-role-filter="newman">新男51–65</button><button class="btn account-role-filter" data-role-filter="newwoman">新女11–30</button><button class="btn account-role-filter" data-role-filter="backup">备用1–3</button></div><div class="account-filter-controls"><span class="cloud-login-hint">登录方式：Windows本地后台服务 · 点击账号直接扫码</span><label for="accStatusFilter">状态</label><select id="accStatusFilter" aria-label="筛选账号状态"><option value="all">全部状态</option><option value="ONLINE">在线</option><option value="OFFLINE">离线</option><option value="PENDING">待登录</option><option value="ERROR">异常</option></select><label for="accFind">搜索</label><input id="accFind" type="search" placeholder="姓名、人物编号、号码后四位" autocomplete="off" value="'+esc(ui.accountSearch||'')+'"></div><div class="table-wrap"><table class="table"><thead><tr><th>角色</th><th>显示名称</th><th>人物编号</th><th>身份（可修改）</th><th>该账号可服务人物（逗号分隔）</th><th>备用优先级</th><th>Session状态</th><th>号码后四位</th><th>最后心跳</th><th>连接操作</th></tr></thead><tbody id="accountsBody">'+(items.length?items.map(accountRow).join(''):'<tr><td colspan="10"><div class="empty">尚未配置云端 WhatsApp 账号。先初始化角色槽位。</div></td></tr>')+'</tbody></table></div><div class="banner section-gap">65个人物编号不等于65个唯一绑定的发送号码。普通成员掉线或明确未发送：先尝试备用1，再按在线状态尝试备用2、3；助理2、教授2为专属备用。结果不确定时暂停等待确认，防止重复发送。扫码由电脑本地常驻连接服务处理，安装授权一次后，日常直接点击对应账号「扫码登录」。仅按真实 WhatsApp 心跳判断在线，不显示假二维码。</div></section>'}
+function accountsPageCore(){const items=state.data?.accounts||[],stats=accountStats(items);return '<div class="page-head"><div><h1>账号管理</h1><p>助理1→助理2，教授1→教授2；65个人物共用备用1→2→3。人物编号与WhatsApp账号不是一对一关系。</p></div><div class="toolbar"><details class="service-setup"><summary>本地服务维护（仅首次安装）</summary><button id="waEnroll" type="button" class="btn">获取一次性设备授权码</button></details><button id="seedRoles" class="btn green">补齐72个账号位置</button><button id="saveAccounts" class="btn green">保存账号结构</button></div></div><div class="account-summary-strip" aria-label="账号连接概览"><div class="account-summary-items"><span>账号 <strong id="accTotal">'+num(stats.total)+'</strong></span><span class="stat-on">在线 <strong id="accOnline">'+num(stats.online)+'</strong></span><span class="stat-off">离线 <strong id="accOffline">'+num(stats.offline)+'</strong></span><span>待登录 <strong id="accPending">'+num(stats.pending)+'</strong></span><span class="stat-alert">异常 <strong id="accAbnormal">'+num(stats.abnormal)+'</strong></span></div><span id="waWorkerHealth" class="account-connector-mini" aria-live="polite"><i class="worker-dot" aria-hidden="true"></i> Windows 连接器检测中</span></div><section class="panel"><div class="account-role-filters" role="group" aria-label="账号类别筛选"><button class="btn account-role-filter" data-role-filter="all">全部（'+items.length+'）</button><button class="btn account-role-filter" data-role-filter="assistant">助理2</button><button class="btn account-role-filter" data-role-filter="professor">教授2</button><button class="btn account-role-filter" data-role-filter="oldman">老男31–50</button><button class="btn account-role-filter" data-role-filter="oldwoman">老女01–10</button><button class="btn account-role-filter" data-role-filter="newman">新男51–65</button><button class="btn account-role-filter" data-role-filter="newwoman">新女11–30</button><button class="btn account-role-filter" data-role-filter="backup">备用1–3</button></div><div class="account-filter-controls"><span class="cloud-login-hint">登录方式：Windows本地后台服务 · 点击账号直接扫码</span><label for="accStatusFilter">状态</label><select id="accStatusFilter" aria-label="筛选账号状态"><option value="all">全部状态</option><option value="ONLINE">在线</option><option value="OFFLINE">离线</option><option value="PENDING">待登录</option><option value="ERROR">异常</option></select><label for="accFind">搜索</label><input id="accFind" type="search" placeholder="姓名、人物编号、号码后四位" autocomplete="off" value="'+esc(ui.accountSearch||'')+'"></div><div class="table-wrap"><table class="table"><thead><tr><th>角色</th><th>显示名称</th><th>人物编号</th><th>身份（可修改）</th><th>该账号可服务人物（逗号分隔）</th><th>备用优先级</th><th>Session状态</th><th>号码后四位</th><th>最后心跳</th><th>连接操作</th></tr></thead><tbody id="accountsBody">'+(items.length?items.map(accountRow).join(''):'<tr><td colspan="10"><div class="empty">尚未配置云端 WhatsApp 账号。先初始化角色槽位。</div></td></tr>')+'</tbody></table></div><details class="banner section-gap"><summary>备用账号和发送确认规则（点击查看）</summary><p>65个人物编号不等于65个唯一绑定的发送号码。普通成员掉线或明确未发送：先尝试备用1，再按在线状态尝试备用2、3；助理2、教授2为专属备用。结果不确定时暂停等待确认，防止重复发送。扫码由电脑本地常驻连接服务处理，安装授权一次后，日常直接点击对应账号「扫码登录」。仅按真实 WhatsApp 心跳判断在线，不显示假二维码。</p></details></section>'}
 function seatPlanPanel(){
  const plan=state.data?.seatPlan||{};
  const entries=Array.isArray(plan.entries)?plan.entries:[];
@@ -871,7 +1015,7 @@ function seatPlanPanel(){
  '<div class="toolbar"><button id="saveDailySeats" class="btn green">保存全天计划</button><button id="stopDailySeats" class="btn">停止新计划</button><span class="sync-note">已确认：'+completed+' / '+entries.length+' · 待确认或待消息：'+(entries.length-completed)+'</span></div>'+
  '<div class="rule section-gap">保存计划不会登录任何未经授权的账号，也不会凭计划生成假消息。当前连接器需要在已授权测试环境中启用7座模式，实际自动发件仍待联调。</div></section>';
 }
-function accountsPage(){return accountsPageCore()+seatPlanPanel()}
+function accountsPage(){return '<div class="accounts-screen"><nav class="accounts-view-switch" aria-label="账号管理分区"><button type="button" data-account-view="list" class="'+(ui.accountsSubview==='list'?'active':'')+'">账号列表</button><button type="button" data-account-view="plan" class="'+(ui.accountsSubview==='plan'?'active':'')+'">全天座位计划</button></nav><div class="accounts-pane">'+(ui.accountsSubview==='plan'?seatPlanPanel():accountsPageCore())+'</div></div>'}
 function accountRow(a){return '<tr data-account-id="'+esc(a.id)+'" data-kind="'+esc(a.kind)+'" data-slot="'+esc(a.slot)+'" data-role-group="'+esc(accountGroup(a))+'" data-account-status="'+esc(a.status||'UNCONFIGURED')+'"><td>'+accountLabel(a)+'</td><td><input class="acc-name" value="'+esc(a.name||'')+'" style="width:180px;background:#0d1216;color:#fff;border:1px solid var(--line);border-radius:8px;padding:7px"></td><td><input class="acc-code" value="'+esc(a.auxCode||'')+'" '+((a.kind==='AUXILIARY')?'':'disabled')+' style="width:90px;background:#0d1216;color:#fff;border:1px solid var(--line);border-radius:8px;padding:7px"></td><td><select class="acc-identity" aria-label="人物身份" '+(a.kind==='AUXILIARY'?'':'disabled')+' style="width:100px;background:#fff;color:#171717;border:1px solid var(--line);border-radius:6px;padding:7px">'+MEMBER_IDENTITY_OPTIONS.map(v=>'<option value="'+v+'" '+(memberIdentity(a)===v?'selected':'')+'>'+v+'</option>').join('')+'</select></td><td><input class="acc-personas" aria-label="此账号可服务的人物编号" value="'+esc((a.personaCodes||[a.auxCode]).filter(Boolean).join(','))+'" '+(a.kind==='AUXILIARY'?'':'disabled')+' placeholder="例如1,2,45" style="width:160px;padding:7px;background:#fff;border:1px solid var(--line);border-radius:6px"></td><td>'+num(a.backupOrder||0)+'</td><td class="acc-live-status">'+statusBadge(a.status)+'</td><td class="acc-live-phone">'+esc(a.phoneLast4||'—')+'</td><td class="acc-live-heartbeat">'+time(a.lastHeartbeatAt)+'</td><td><button class="btn acc-connect" data-connect-id="'+esc(a.id)+'">扫码登录</button></td></tr>'}
 function groupPage(){const d=state.data||{},groups=d.groups||[],st=d.settings||{};return '<div class="page-head"><div><h1>群组与转发设置</h1><p>支持多个 WhatsApp 群组。每个群组独立开关；同一任务按群组顺序逐个发送。</p></div><div class="toolbar"><button id="addGroup" class="btn">增加群组</button><button id="saveGroups" class="btn green">保存群组</button></div></div>'+
 '<div class="grid2"><section class="panel"><div class="panel-title"><h3>群组池</h3><span>'+groups.length+' 个群组</span></div><div id="groupsHost">'+(groups.length?groups.map(groupRow).join(''):'<div class="empty">尚未配置目标群组。</div>')+'</div><div class="rule section-gap">关闭某个群组只停止该群组，其他已开启群组继续。已经 ACK 成功的群组不会因替补接管而重复发送。</div></section>'+
@@ -992,7 +1136,7 @@ function applyListPagination(kind){const host=kind==='accounts'?$('#accountsBody
  const query=String(ui.accountSearch||'').trim().toLowerCase();
  const rowText=[r.cells[0]?.textContent,r.querySelector('.acc-name')?.value,r.querySelector('.acc-code')?.value,r.querySelector('.acc-identity')?.value,r.querySelector('.acc-personas')?.value,r.querySelector('.acc-live-phone')?.textContent].join(' ').toLowerCase();
  return byRole&&byStatus&&(!query||rowText.includes(query));
-}):allRows,size=kind==='accounts'?8:4,pages=Math.max(1,Math.ceil(rows.length/size));ui.pages[kind]=Math.min(ui.pages[kind]||0,pages-1);const p=ui.pages[kind];allRows.forEach(r=>{r.hidden=true});rows.forEach((r,i)=>{r.hidden=i<p*size||i>=(p+1)*size;});let pager=$('#'+kind+'Pager');if(!pager){pager=document.createElement('div');pager.id=kind+'Pager';pager.className='pager';(kind==='accounts'?host.closest('.table-wrap'):host).after(pager);}pager.innerHTML='<span class="count">'+rows.length+' 条 · 每页 '+size+' 条</span><button data-page-step="-1" '+(p===0?'disabled':'')+'>上一页</button><span>'+(p+1)+' / '+pages+'</span><button data-page-step="1" '+(p===pages-1?'disabled':'')+'>下一页</button>';pager.querySelectorAll('button').forEach(b=>b.onclick=()=>{ui.pages[kind]+=Number(b.dataset.pageStep);applyListPagination(kind)});}
+}):allRows,available=kind==='accounts'?(host.closest('.table-wrap')?.clientHeight||400):0,size=kind==='accounts'?Math.max(1,Math.min(8,Math.floor((available-43)/((window.innerWidth<1100)?33:37)))):4,pages=Math.max(1,Math.ceil(rows.length/size));ui.pages[kind]=Math.min(ui.pages[kind]||0,pages-1);const p=ui.pages[kind];allRows.forEach(r=>{r.hidden=true});rows.forEach((r,i)=>{r.hidden=i<p*size||i>=(p+1)*size;});let pager=$('#'+kind+'Pager');if(!pager){pager=document.createElement('div');pager.id=kind+'Pager';pager.className='pager';(kind==='accounts'?host.closest('.table-wrap'):host).after(pager);}pager.innerHTML='<span class="count">'+rows.length+' 条 · 每页 '+size+' 条</span><button data-page-step="-1" '+(p===0?'disabled':'')+'>上一页</button><span>'+(p+1)+' / '+pages+'</span><button data-page-step="1" '+(p===pages-1?'disabled':'')+'>下一页</button>';pager.querySelectorAll('button').forEach(b=>b.onclick=()=>{ui.pages[kind]+=Number(b.dataset.pageStep);applyListPagination(kind)});}
 function bindWorkspace(){
 if(state.page==='group'){
 if(ui.intervalDraft)for(const [id,value] of Object.entries(ui.intervalDraft))$('#'+id).value=value;
@@ -1023,7 +1167,10 @@ if(state.page==='accounts'||state.page==='group'){
    if(search)search.oninput=()=>{ui.accountSearch=search.value;ui.pages.accounts=0;applyListPagination('accounts')};
  }
 }
-if(state.page==='accounts'){$$('.acc-connect').forEach(b=>b.onclick=()=>beginAccountConnect(b.dataset.connectId))}
+if(state.page==='accounts'){
+ document.querySelectorAll('.accounts-view-switch button').forEach(b=>b.onclick=()=>{const next=b.dataset.accountView;if(next===ui.accountsSubview)return;if(ui.dirty){toast('请先保存当前页面的修改，再切换标签',true);return}ui.accountsSubview=next;render()});
+ document.querySelectorAll('.acc-connect').forEach(b=>b.onclick=()=>beginAccountConnect(b.dataset.connectId))
+}
 $('#waQrClose').onclick=stopWaQr;
 $('#waEnroll')?.addEventListener('click',createWaEnrollment);
 $('#waEnrollCopy').onclick=async()=>{try{await navigator.clipboard.writeText($('#waEnrollCode').value);toast('连接码已复制')}catch{const i=$('#waEnrollCode');i.focus();i.select();toast('请长按或按 Ctrl+C 复制连接码')}};
