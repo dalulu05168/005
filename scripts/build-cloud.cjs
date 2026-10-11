@@ -36,3 +36,6 @@ fs.writeFileSync(path.join(output, 'release.json'), JSON.stringify({
   files: { 'index.html': crypto.createHash('sha256').update(html).digest('hex') },
 }, null, 2) + '\n');
 console.log(JSON.stringify({ output, sourceSha, files: ['index.html', 'release.json'] }));
+
+// Public, credential-free Windows installer for direct browser downloads.
+require('./build-local-download.cjs');
