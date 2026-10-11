@@ -619,7 +619,7 @@ unicode: "eba8"
   <path d="M18 15l3 -3" />
 </svg>
 </button></div></aside>
-  <main class="main"><header class="topbar"><div class="top-title"><strong id="topPageTitle">运营大屏</strong><span>Nuvexa Pro / Cloud Edition</span></div><div class="top-status"><a class="wa-direct-download" href="/download/Nuvexa-WhatsApp-Connector.zip" download="Nuvexa-WhatsApp-Connector.zip" title="直接下载 Windows 扫码程序">下载 Windows 程序</a><span id="cloudPill" class="pill">Cloud API</span><span id="collectorPill" class="pill">采集器 —</span><span id="publishPill" class="pill">发布 —</span><span id="queuePill" class="pill">队列 —</span><span class="user-badge">Chennan118</span></div></header><div id="pageHost" class="content"></div></main>
+  <main class="main"><header class="topbar"><div class="top-title"><strong id="topPageTitle">运营大屏</strong><span>Nuvexa Pro / Cloud Edition</span></div><div class="top-status"><span id="cloudPill" class="pill">Cloud API</span><span id="collectorPill" class="pill">采集器 —</span><span id="publishPill" class="pill">发布 —</span><span id="queuePill" class="pill">队列 —</span><span class="user-badge">Chennan118</span></div></header><div id="pageHost" class="content"></div></main>
 </div>
 </div><div id="waQrOverlay" hidden role="dialog" aria-modal="true" aria-labelledby="waQrTitle"><div class="wa-qr-dialog"><h2 id="waQrTitle">WhatsApp 扫码登录</h2><p id="waQrMessage">仅显示来自真实连接程序的二维码。</p><img id="waQrImage" hidden alt="WhatsApp 真实登录二维码"/><input id="waEnrollCode" readonly hidden aria-label="设备连接码" style="width:100%;padding:12px;text-align:center;letter-spacing:2px;border:1px solid var(--line);border-radius:8px;background:#f5faf8;color:#222"/><button id="waEnrollCopy" hidden type="button">复制连接码</button><div class="qr-dialog-footer"><button id="waQrClose" type="button">关闭</button></div></div></div><div id="toast" class="toast hidden"></div>
 <script>
@@ -628,7 +628,7 @@ const ICONS={"search":"<!--\ncategory: System\ntags: [find, magnifier, magnifyin
 const icon=name=>ICONS[name].replace('<svg ','<svg aria-hidden="true" ');
 function fitViewport(){document.documentElement.style.setProperty('--fit',Math.min(innerWidth/1440,innerHeight/810));}
 addEventListener('resize',fitViewport);fitViewport();
-const ui={tab:'queue',groupTab:0,filter:'all',search:'',pages:{},accountFilter:'all',accountStatusFilter:'all',accountSearch:'',cloudMode:'cloud',dirty:false,edited:new Set(),intervalDraft:null};
+const ui={tab:'queue',groupTab:0,filter:'all',search:'',pages:{},accountFilter:'all',accountStatusFilter:'all',accountSearch:'',dirty:false,edited:new Set(),intervalDraft:null};
 function markDirty(section){ui.edited.add(section);ui.dirty=true;}
 function clearDirty(section){ui.edited.delete(section);ui.dirty=ui.edited.size>0;if(section==='intervals')ui.intervalDraft=null;}
 const API='https://nuvexa-ops-bridge.onrender.com';
@@ -776,13 +776,13 @@ async function beginAccountConnect(accountId){
  const account=(state.data?.accounts||[]).find(a=>a.id===accountId);
  if(!account){toast('账号未找到',true);return}
  try{
-   const mode=ui.cloudMode==='windows'?'windows':'cloud';
+   const mode='cloud';
    const r=await api('/v1/accounts/connect',{method:'POST',body:JSON.stringify({accountId,mode})});
    if(r.status!=='WAITING_FOR_REAL_QR')throw Error('无法启动扫码');
    stopWaQr();
    const layer=$('#waQrOverlay'),image=$('#waQrImage'),msg=$('#waQrMessage');
    layer.hidden=false;$('#waQrTitle').textContent=accountLabel(account)+' · 扫码登录';
-   msg.textContent=(mode==='cloud'?'云端':'Windows')+'连接器等待真实 WhatsApp 二维码…';
+   msg.textContent='等待云端 WhatsApp 服务生成真实二维码…';
    const poll=async()=>{
       if(layer.hidden)return;
       try{
@@ -798,7 +798,7 @@ async function beginAccountConnect(accountId){
       }catch(e){image.hidden=true;msg.textContent='连接状态不可用：'+e.message}
    };
    await poll();waQrInterval=setInterval(poll,3000);
- }catch(e){toast('扫码暂不可用：'+(e.message==='WHATSAPP_CONNECTOR_OFFLINE'?'Windows扫码连接器未启动。':e.message==='CLOUD_CONNECTOR_OFFLINE'?'云端扫码服务尚未部署或授权。':e.message),true)}
+ }catch(e){toast('扫码暂不可用：'+(e.message==='WHATSAPP_CONNECTOR_OFFLINE'?'Windows扫码连接器未启动。':e.message==='CLOUD_CONNECTOR_OFFLINE'?'云端扫码服务未就绪；需要先部署并完成一次云端服务授权，无需启动本机 CMD。':e.message),true)}
 }
 
 function accountLabel(a){
@@ -859,7 +859,7 @@ function updateAccountStats(items){
  const metrics={accTotal:stats.total,accOnline:stats.online,accOffline:stats.offline,accPending:stats.pending,accAbnormal:stats.abnormal};
  for(const [id,value] of Object.entries(metrics)){const el=$('#'+id);if(el)el.textContent=num(value)}
 }
-function accountsPageCore(){const items=state.data?.accounts||[],stats=accountStats(items);return '<div class="page-head"><div><h1>账号管理</h1><p>助理1→助理2，教授1→教授2；65个人物共用备用1→2→3。人物编号与WhatsApp账号不是一对一关系。</p></div><div class="toolbar"><button id="waDownload" class="btn">下载 Windows 扫码程序</button><button id="waEnroll" class="btn">连接 Windows 扫码程序</button><button id="waCloudEnroll" class="btn green">连接云端扫码服务</button><button id="seedRoles" class="btn green">补齐72个账号位置</button><button id="saveAccounts" class="btn green">保存账号结构</button></div></div><div class="account-summary-strip" aria-label="账号连接概览"><div class="account-summary-items"><span>账号 <strong id="accTotal">'+num(stats.total)+'</strong></span><span class="stat-on">在线 <strong id="accOnline">'+num(stats.online)+'</strong></span><span class="stat-off">离线 <strong id="accOffline">'+num(stats.offline)+'</strong></span><span>待登录 <strong id="accPending">'+num(stats.pending)+'</strong></span><span class="stat-alert">异常 <strong id="accAbnormal">'+num(stats.abnormal)+'</strong></span></div><span id="waWorkerHealth" class="account-connector-mini" aria-live="polite"><i class="worker-dot" aria-hidden="true"></i> Windows 连接器检测中</span></div><section class="panel"><div class="account-role-filters" role="group" aria-label="账号类别筛选"><button class="btn account-role-filter" data-role-filter="all">全部（'+items.length+'）</button><button class="btn account-role-filter" data-role-filter="assistant">助理2</button><button class="btn account-role-filter" data-role-filter="professor">教授2</button><button class="btn account-role-filter" data-role-filter="oldman">老男31–50</button><button class="btn account-role-filter" data-role-filter="oldwoman">老女01–10</button><button class="btn account-role-filter" data-role-filter="newman">新男51–65</button><button class="btn account-role-filter" data-role-filter="newwoman">新女11–30</button><button class="btn account-role-filter" data-role-filter="backup">备用1–3</button></div><div class="account-filter-controls"><label for="waConnectMode">扫码方式</label><select id="waConnectMode" aria-label="选择扫码服务"><option value="cloud">云端扫码（首个账号）</option><option value="windows">Windows扫码（原会话）</option></select><label for="accStatusFilter">状态</label><select id="accStatusFilter" aria-label="筛选账号状态"><option value="all">全部状态</option><option value="ONLINE">在线</option><option value="OFFLINE">离线</option><option value="PENDING">待登录</option><option value="ERROR">异常</option></select><label for="accFind">搜索</label><input id="accFind" type="search" placeholder="姓名、人物编号、号码后四位" autocomplete="off" value="'+esc(ui.accountSearch||'')+'"></div><div class="table-wrap"><table class="table"><thead><tr><th>角色</th><th>显示名称</th><th>人物编号</th><th>身份（可修改）</th><th>该账号可服务人物（逗号分隔）</th><th>备用优先级</th><th>Session状态</th><th>号码后四位</th><th>最后心跳</th><th>连接操作</th></tr></thead><tbody id="accountsBody">'+(items.length?items.map(accountRow).join(''):'<tr><td colspan="10"><div class="empty">尚未配置云端 WhatsApp 账号。先初始化角色槽位。</div></td></tr>')+'</tbody></table></div><div class="banner section-gap">65个人物编号不等于65个唯一绑定的发送号码。普通成员掉线或明确未发送：先尝试备用1，再按在线状态尝试备用2、3；助理2、教授2为专属备用。结果不确定时暂停等待确认，防止重复发送。真实扫码需要本地WhatsApp连接程序在线，后台不会生成假二维码。</div></section>'}
+function accountsPageCore(){const items=state.data?.accounts||[],stats=accountStats(items);return '<div class="page-head"><div><h1>账号管理</h1><p>助理1→助理2，教授1→教授2；65个人物共用备用1→2→3。人物编号与WhatsApp账号不是一对一关系。</p></div><div class="toolbar"><details class="service-setup"><summary>云端服务维护（仅首次部署）</summary><button id="waCloudEnroll" type="button" class="btn">首次授权云端服务</button></details><button id="seedRoles" class="btn green">补齐72个账号位置</button><button id="saveAccounts" class="btn green">保存账号结构</button></div></div><div class="account-summary-strip" aria-label="账号连接概览"><div class="account-summary-items"><span>账号 <strong id="accTotal">'+num(stats.total)+'</strong></span><span class="stat-on">在线 <strong id="accOnline">'+num(stats.online)+'</strong></span><span class="stat-off">离线 <strong id="accOffline">'+num(stats.offline)+'</strong></span><span>待登录 <strong id="accPending">'+num(stats.pending)+'</strong></span><span class="stat-alert">异常 <strong id="accAbnormal">'+num(stats.abnormal)+'</strong></span></div><span id="waWorkerHealth" class="account-connector-mini" aria-live="polite"><i class="worker-dot" aria-hidden="true"></i> Windows 连接器检测中</span></div><section class="panel"><div class="account-role-filters" role="group" aria-label="账号类别筛选"><button class="btn account-role-filter" data-role-filter="all">全部（'+items.length+'）</button><button class="btn account-role-filter" data-role-filter="assistant">助理2</button><button class="btn account-role-filter" data-role-filter="professor">教授2</button><button class="btn account-role-filter" data-role-filter="oldman">老男31–50</button><button class="btn account-role-filter" data-role-filter="oldwoman">老女01–10</button><button class="btn account-role-filter" data-role-filter="newman">新男51–65</button><button class="btn account-role-filter" data-role-filter="newwoman">新女11–30</button><button class="btn account-role-filter" data-role-filter="backup">备用1–3</button></div><div class="account-filter-controls"><span class="cloud-login-hint">登录方式：云端直接扫码（单账号试点）</span><label for="accStatusFilter">状态</label><select id="accStatusFilter" aria-label="筛选账号状态"><option value="all">全部状态</option><option value="ONLINE">在线</option><option value="OFFLINE">离线</option><option value="PENDING">待登录</option><option value="ERROR">异常</option></select><label for="accFind">搜索</label><input id="accFind" type="search" placeholder="姓名、人物编号、号码后四位" autocomplete="off" value="'+esc(ui.accountSearch||'')+'"></div><div class="table-wrap"><table class="table"><thead><tr><th>角色</th><th>显示名称</th><th>人物编号</th><th>身份（可修改）</th><th>该账号可服务人物（逗号分隔）</th><th>备用优先级</th><th>Session状态</th><th>号码后四位</th><th>最后心跳</th><th>连接操作</th></tr></thead><tbody id="accountsBody">'+(items.length?items.map(accountRow).join(''):'<tr><td colspan="10"><div class="empty">尚未配置云端 WhatsApp 账号。先初始化角色槽位。</div></td></tr>')+'</tbody></table></div><div class="banner section-gap">65个人物编号不等于65个唯一绑定的发送号码。普通成员掉线或明确未发送：先尝试备用1，再按在线状态尝试备用2、3；助理2、教授2为专属备用。结果不确定时暂停等待确认，防止重复发送。扫码登录由云端服务处理：首次授权后，点击对应账号「扫码登录」即可；服务离线或尚未部署时显示错误，不会生成假二维码。</div></section>'}
 function seatPlanPanel(){
  const plan=state.data?.seatPlan||{};
  const entries=Array.isArray(plan.entries)?plan.entries:[];
@@ -1019,16 +1019,12 @@ if(state.page==='accounts'||state.page==='group'){
      statusFilter.value=ui.accountStatusFilter;
      statusFilter.onchange=()=>{ui.accountStatusFilter=statusFilter.value;ui.pages.accounts=0;applyListPagination('accounts')}
    }
-   const modeSelect=$('#waConnectMode');
-   if(modeSelect){modeSelect.value=ui.cloudMode;modeSelect.onchange=()=>{ui.cloudMode=modeSelect.value}}
    const search=$('#accFind');
    if(search)search.oninput=()=>{ui.accountSearch=search.value;ui.pages.accounts=0;applyListPagination('accounts')};
  }
 }
 if(state.page==='accounts'){$$('.acc-connect').forEach(b=>b.onclick=()=>beginAccountConnect(b.dataset.connectId))}
 $('#waQrClose').onclick=stopWaQr;
-$('#waDownload')?.addEventListener('click',downloadWaConnector);
-$('#waEnroll')?.addEventListener('click',createWaEnrollment);
 $('#waCloudEnroll')?.addEventListener('click',createCloudEnrollment);
 $('#waEnrollCopy').onclick=async()=>{try{await navigator.clipboard.writeText($('#waEnrollCode').value);toast('连接码已复制')}catch{const i=$('#waEnrollCode');i.focus();i.select();toast('请长按或按 Ctrl+C 复制连接码')}};
 $('#waQrOverlay').onclick=e=>{if(e.target.id==='waQrOverlay')stopWaQr()};
